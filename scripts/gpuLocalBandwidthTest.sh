@@ -2,6 +2,7 @@
 #
 # MH:
 # This file is supposed to be used for GPU instance in LLM cluster with PXB topology. Test the localhost only
+# This version can detect more than 8 GPUs but may not correctly work on systems with more than 8 GPUs
 #
 # Requirement: pre-compiled bandwidthTest from cuda_samples on instances.
 #
@@ -14,23 +15,33 @@
 #
 # Find me at minghungchen@ibm.com if any questions
 #
-# Ver. 1.2
+# Ver. 1.3
 
 PROG="/home/autopilot/bandwidthTest"
 FN="gpuBandwidthTest.log"
 T="7"
 
+RES=$(ls -d /dev/nvidia* 2>1)
 numre='^[0-9]+$'
-D=0
-if [[ -e "/dev/nvidia0" ]]; then
-    for d in $(ls -d /dev/nvidia*); do 
+D=-1
+for d in $RES; do
+  d=${d#*"nvidia"*}
+  if [[ "$d" =~ $numre ]]; then
+    D=0
+    break
+  fi
+done
+if [[ $D -eq 0 ]]; then
+  echo -n "Detected NVIDIA GPU: "
+  for d in $RES; do 
     d=${d#*"nvidia"*}
     if [[ "$d" =~ $numre ]]; then
-        D=$((D+1))
+      echo -n "$d "
+      D=$((D+1))
     fi
-    done
-fi
-if [[ "$D" == "0" ]]; then
+  done
+  echo "Total: $D"
+else
   echo "No NVIDIA GPU detected. Skipping the bandwidth test."
   echo "SKIP"
   exit 0
@@ -41,7 +52,6 @@ if [[ "$D" != "8" ]]; then
   exit 0
 fi
 
-#echo "bandwidthTest Program: $PROG Devices: $D"
 D=$((D-1))
 for i in $(seq 0 1 $D) ; do
   EXEC=$($PROG --htod --memory=pinned --device=$i --csv | tee -a $FN |grep bandwidthTest-H2D-Pinned | awk -v T=$T -v C=$i '{if ($4 < T) print " GPU " C " has low memory bandwidth: " $4 " GB/s"; }')
