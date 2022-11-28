@@ -10,12 +10,16 @@ WORKDIR cuda-samples/Samples/1_Utilities/bandwidthTest
 RUN make SMS="60 70 80 86" 
 
 
-FROM ubuntu:18.04
+FROM python:3.9.15-slim
 
 RUN useradd -ms /bin/bash autopilot && usermod -g root autopilot 
 
 WORKDIR /home/autopilot
 COPY gpuLocalBandwidthTest.sh /home/autopilot/gpuLocalBandwidthTest.sh
 COPY --from=build /workspace/cuda-samples/Samples/1_Utilities/bandwidthTest/bandwidthTest /home/autopilot/bandwidthTest
+COPY reporter.py /home/autopilot/reporter.py
+
+RUN python -m pip install --upgrade pip && pip install kubernetes
 
 RUN chmod 755 /home/autopilot/gpuLocalBandwidthTest.sh && chown -hR autopilot /home/autopilot
+RUN apt update -y && apt install -y vim
