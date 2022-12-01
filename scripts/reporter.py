@@ -1,4 +1,6 @@
 from kubernetes import client, config
+from kubernetes.client.rest import ApiException
+from pprint import pprint
 import os
 
 
@@ -9,6 +11,10 @@ def main():
     output = os.popen('./gpuLocalBandwidthTest.sh')
     result = output.read()
     print(result)
+
+    if "FAIL" not in result:
+        print("No report will be issued")
+        return 0 
 
 #
 # apiVersion: my.domain/v1alpha1
@@ -39,7 +45,10 @@ def main():
     v = "v1alpha1"
     plural = "healthcheckreports"
     namespace = "default"
-    api.create_namespaced_custom_object(group, v, namespace, plural, hrr_manifest)
+    try:
+        api.create_namespaced_custom_object(group, v, namespace, plural, hrr_manifest)
+    except ApiException as e:
+        print("Exception when calling create health check report:\n", e)
 
     # all_reports = api.list_namespaced_custom_object(group, v, namespace, plural)
 
