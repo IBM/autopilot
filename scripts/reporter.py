@@ -16,7 +16,6 @@ def main():
         print("No report will be issued")
         return 0 
 
-#
 # apiVersion: my.domain/v1alpha1
 # kind: HealthCheckReport
 # metadata:
@@ -29,6 +28,21 @@ def main():
 
 
     nodename = os.getenv("NODE_NAME")
+    podname = os.getenv("POD_NAME")
+    namespace = os.getenv("NAMESPACE")
+    api_instance = client.CoreV1Api()
+
+    body = {
+        "metadata": {
+            "labels": {
+                "deschedule": ""}
+        }
+    }
+
+    try:
+        api_instance.patch_namespaced_pod(namespace=namespace, name=podname, body=body)
+    except ApiException as e:
+        print("Exception when patching pod:\n", e)
 
     hrr_manifest = {
         'apiVersion': 'my.domain/v1alpha1',
