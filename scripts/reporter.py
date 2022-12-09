@@ -8,7 +8,8 @@ def main():
     config.load_incluster_config()
 
     api = client.CustomObjectsApi()
-    output = os.popen('./gpuLocalBandwidthTest.sh')
+    bw_threshold = os.getenv("BW")
+    output = os.popen('./gpuLocalBandwidthTest.sh -t ' + bw_threshold)
     result = output.read()
     print(result)
 

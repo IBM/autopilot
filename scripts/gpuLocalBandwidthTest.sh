@@ -21,6 +21,16 @@ PROG="/home/autopilot/bandwidthTest"
 FN="gpuBandwidthTest.log"
 T="7"
 
+while getopts t:f: flag
+do
+    case "${flag}" in
+        t) T=${OPTARG};;
+        f) FN=${OPTARG};;
+    esac
+done
+echo "Threshold: $T";
+echo "Log filename: $FN";
+
 RES=$(ls -d /dev/nvidia* 2>1)
 numre='^[0-9]+$'
 D=-1
