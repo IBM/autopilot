@@ -29,3 +29,12 @@ NAME                                                              READY   STATUS
 autopilot-webhook-webhook-v0-c956bd6c9-9jxzd                      1/1     Running     0          22s
 healthcheckreport-controller-manager-7c757d848d-d25mp             2/2     Running     0          89s
 ```
+
+
+# Uninstall 
+To remove the charts, just run the `uninstall` command with the chosen release names for the webhook and the controller.
+
+```
+helm uninstall hrr-operator-v0
+helm uninstall webhook-v0
+```
