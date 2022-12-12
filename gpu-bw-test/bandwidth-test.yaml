@@ -19,6 +19,8 @@ spec:
       - name: all-icr-io 
       containers:
         - image: us.icr.io/cil15-shared-registry/autopilot/healthcheck:latest
+          command:
+           - python reporter.py
           imagePullPolicy: Always 
           name: bandwidth-test
           ports:
