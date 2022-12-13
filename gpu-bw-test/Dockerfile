@@ -21,5 +21,5 @@ COPY reporter.py /home/autopilot/reporter.py
 
 RUN python -m pip install --upgrade pip && pip install kubernetes
 
-RUN chmod 755 /home/autopilot/gpuLocalBandwidthTest.sh && chown -hR autopilot /home/autopilot
-# RUN apt update -y && apt install -y vim
+RUN chmod 755 /home/autopilot/gpuLocalBandwidthTest.sh && chown -hR autopilot /home/autopilot && chmod -R g=u /home/autopilot
+# RUN apt -y update && apt -y upgrade && apt install -y vim
