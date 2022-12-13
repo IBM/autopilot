@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bandwidth-test
+  name: bandwidth-test
+  namespace: performance-testing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bandwidth-test
+  template:
+    metadata:
+      labels:
+        app: bandwidth-test
+    spec:
+      imagePullSecrets:
+      - name: all-icr-io 
+      containers:
+        - image: us.icr.io/cil15-shared-registry/autopilot/healthcheck:latest
+          command:
+           - python reporter.py
+          imagePullPolicy: Always 
+          name: bandwidth-test
+          ports:
+            - containerPort: 3333
+          resources:
+            limits:
+              cpu: 1m
+              memory: 50M
+              nvidia.com/gpu: 8
+            requests:
+              cpu: 1m
+              memory: 50M
+              nvidia.com/gpu: 8
