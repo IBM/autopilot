@@ -76,6 +76,7 @@ if [[ "$F" -eq "1" ]]; then
   echo "FAIL"
   exit 1
 else
+  cat $FN
   rm -f $FN
   echo "SUCCESS"
 fi
