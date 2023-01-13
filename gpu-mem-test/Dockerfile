@@ -11,7 +11,7 @@ COPY gpucheck.cu .
 RUN nvcc -gencode arch=compute_60,code=sm_60 -gencode arch=compute_70,code=sm_70 -gencode arch=compute_80,code=sm_80 -gencode arch=compute_86,code=sm_86 gpucheck.cu -o gpucheck -lcublas --linker-options -lnvidia-ml -O3
 
 
-FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu20.04
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
 
 
 RUN apt -y update && apt -y upgrade && apt -y clean && apt -y autoremove 
