@@ -49,11 +49,11 @@ def main():
         'apiVersion': 'my.domain/v1alpha1',
         'kind': 'HealthCheckReport',
         'metadata': {
-            'name': "hrr-"+nodename
+            'name': "hrr-pciebw-"+nodename
         },
         'spec': {
             'node': nodename,
-            'bandwidth': result
+            'report': result
         }
     }
     group = "my.domain"
