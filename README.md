@@ -28,10 +28,11 @@ The toolkit will provide pre-flight, in-flight and post-flight checks. In more d
   - improve anomaly detection based on infrastructure validation data
 
 ### Pre-Flight check
-The current status of the Auto-Pilot toolkit includes:
+The current status of the [Auto-Pilot toolkit](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot-mutating-webhook#autopilot-mutating-webhook) includes:
 
 - A Mutating Webhook to inject a pre-flight container to jobs before they are executed
 - The PCIe NVIDIA bandwidth test to check host-to-device connection locally to each node, distributed via Docker container
+- The memory test is a cuda program performing `daxpy` and `cuda_dgemm` reporting host to device and device to host memory bandwidth measurements, HBM bandwidth, along with other information about temperature, power usage and clock speed
 - A HealthCheckReport Custom Resource Definition (CRD) and a controller that takes action based on the bandwidth test result
 
 The Mutating Webhook and HealthCheckReport Operator are linked in this repository as submodules.
@@ -43,7 +44,7 @@ The image below shows the current execution flow of a pre-flight check
 
 At a high level, the flow is the following (omitting the MCAD part for simplification):
 
-- A job is created by the user, containing the label `admission-webhook: enabled`.
+- A job is created by the user, containing the label `autopilot:""`.
 - The mutating webhook will check if the pods are also requesting GPUs. If so, it will inject the init container with the PCIe bandwidth test.
 - At execution time, each pod will first run the health check container. If the test will succeed, then the pod will keep running normally.
 - If the test fails, the init container will create a HealthCheckReport CRD indicating the result of the test and the node involved. Also, the pod will label itself with `deschedule` so that it can be removed from the faulty node.
@@ -60,6 +61,11 @@ make submodule-init
 To build the GPU bandwidth test:
 ```
 make gpu-bw-image 
+```
+
+To build the GPU memory test
+```
+make gpu-mem-image
 ```
 
 # Install the Auto-pilot components
@@ -89,14 +95,14 @@ To quickly run it:
 ```
 oc create -f autopilot-mutating-webhook/manifests/incomplete-pod.yaml
 ```
+
 ### Important side effect! Do not skip this paragraph!
 
 It is **VERY IMPORTANT** to remember that the entire pipeline of webhook+operator may disable one or more nodes by marking them as `unschedulable`. 
 
 Depending on the result of the `incomplete-pod` test, this may happen. 
 
-Make sure to check the nodes with `oc get nodes` and `oc uncordon` the ones affected by the test.
-
+Make sure to check the nodes with `oc get nodes` and `oc uncordon <nodename>` the ones affected by the test.
 
 
 # Uninstall 
