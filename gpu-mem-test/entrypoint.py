@@ -27,7 +27,7 @@ def main():
 #   name: healthcheckreport-sample
 # spec:
 #   node: "worker-0"
-#   bandwidth: "6GB/s"
+#   report: <the output>
 
 
     nodename = os.getenv("NODE_NAME")

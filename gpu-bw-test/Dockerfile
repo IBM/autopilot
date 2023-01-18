@@ -18,8 +18,10 @@ WORKDIR /home/autopilot
 COPY gpuLocalBandwidthTest.sh /home/autopilot/gpuLocalBandwidthTest.sh
 COPY --from=build /workspace/cuda-samples/Samples/1_Utilities/bandwidthTest/bandwidthTest /home/autopilot/bandwidthTest
 COPY reporter.py /home/autopilot/reporter.py
-
+COPY precheck.sh /home/autopilot/precheck.sh
 RUN python -m pip install --upgrade pip && pip install kubernetes
 
 RUN chmod 755 /home/autopilot/gpuLocalBandwidthTest.sh && chown -hR autopilot /home/autopilot && chmod -R g=u /home/autopilot
 # RUN apt -y update && apt -y upgrade && apt install -y vim
+
+CMD python reporter.py

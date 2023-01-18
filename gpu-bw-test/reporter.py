@@ -8,14 +8,22 @@ def main():
     config.load_incluster_config()
 
     api = client.CustomObjectsApi()
-    bw_threshold = os.getenv("BW")
-    output = os.popen('./gpuLocalBandwidthTest.sh -t ' + bw_threshold)
+
+    output = os.popen('bash ./precheck.sh')
     result = output.read()
     print(result)
 
-    if "FAIL" not in result:
-        print("No report will be issued")
-        return 0 
+    if "ABORT" not in result:
+        print("Precheck successful. Continue with pci-e bw evaluation.")
+        bw_threshold = os.getenv("BW")
+        output = os.popen('./gpuLocalBandwidthTest.sh -t ' + bw_threshold)
+        result = output.read()
+        print(result)
+
+        if "FAIL" not in result:
+            print("No report will be issued")
+            return 0 
+
 
 # apiVersion: my.domain/v1alpha1
 # kind: HealthCheckReport
@@ -25,7 +33,7 @@ def main():
 #   name: healthcheckreport-sample
 # spec:
 #   node: "worker-0"
-#   bandwidth: "6GB/s"
+#   report: <the output>
 
 
     nodename = os.getenv("NODE_NAME")
