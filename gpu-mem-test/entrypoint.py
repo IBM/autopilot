@@ -16,7 +16,9 @@ def main():
 
     if "ABORT" not in result:
         print("Precheck successful. Continue with memory evaluation.")
-        os.popen('./gpucheck.sh')
+        output = os.popen('./gpucheck')
+        result = output.read()
+        print(result)
         return 0 
 
 # apiVersion: my.domain/v1alpha1
@@ -61,7 +63,6 @@ def main():
     group = "my.domain"
     v = "v1alpha1"
     plural = "healthcheckreports"
-    namespace = "default"
     try:
         api.create_namespaced_custom_object(group, v, namespace, plural, hrr_manifest)
     except ApiException as e:

@@ -67,7 +67,6 @@ def main():
     group = "my.domain"
     v = "v1alpha1"
     plural = "healthcheckreports"
-    namespace = "default"
     try:
         api.create_namespaced_custom_object(group, v, namespace, plural, hrr_manifest)
     except ApiException as e:
