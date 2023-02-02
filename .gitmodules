@@ -1,6 +1,6 @@
 [submodule "autopilot-mutating-webhook"]
 	path = autopilot-mutating-webhook
-	url = git@github.ibm.com:c-misale/autopilot-mutating-webhook.git
+	url = git@github.ibm.com:hybrid-cloud-infrastructure-research/autopilot-mutating-webhook.git
 [submodule "healthcheckoperator"]
 	path = healthcheckoperator
 	url = git@github.ibm.com:hybrid-cloud-infrastructure-research/healthcheckoperator.git
