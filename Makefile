@@ -6,6 +6,10 @@ gpu-bw-image:
 gpu-mem-image:
 	docker build -t gpu-memcheck:dev -f gpu-mem-test/Dockerfile gpu-mem-test/
 
+.PHONY: net-reach-image
+net-reach-image:
+	docker build -t network-test:dev -f network-reach-test/Dockerfile network-reach-test/
+
 .PHONY: install
 install:
 	helm install mw-v0 autopilot-mutating-webhook/helm-charts/mutating-webhook
