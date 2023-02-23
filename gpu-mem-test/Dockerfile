@@ -23,7 +23,7 @@ RUN useradd -ms /bin/bash autopilot && usermod -g root autopilot
 WORKDIR /home/autopilot
 
 COPY --from=build /workspace/gpucheck /home/autopilot/gpucheck
-COPY precheck.sh /home/autopilot/precheck.sh
+COPY briefings.sh /home/autopilot/briefings.sh
 COPY entrypoint.py /home/autopilot/entrypoint.py
 RUN chown -hR autopilot /home/autopilot && chmod -R g=u /home/autopilot
 RUN python3 -m pip install --upgrade pip && pip install kubernetes
