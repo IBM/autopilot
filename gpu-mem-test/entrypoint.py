@@ -10,12 +10,12 @@ def main():
     config.load_incluster_config()
 
     api = client.CustomObjectsApi()
-    output = os.popen('bash ./precheck.sh')
+    output = os.popen('bash ./briefings.sh')
     result = output.read()
     print(result)
 
     if "ABORT" not in result:
-        print("Precheck successful. Continue with memory evaluation.")
+        print("Briefings completed. Continue with memory evaluation.")
         output = os.popen('./gpucheck')
         result = output.read()
         print(result)
@@ -53,11 +53,12 @@ def main():
         'apiVersion': 'my.domain/v1alpha1',
         'kind': 'HealthCheckReport',
         'metadata': {
-            'name': "hrr-memcheck-"+nodename
+            'name': "hcr-memcheck-"+nodename
         },
         'spec': {
             'node': nodename,
-            'report': result
+            'report': result,
+            'issuer': "gpu-mem"
         }
     }
     group = "my.domain"

@@ -13,11 +13,11 @@ net-reach-image:
 .PHONY: install
 install:
 	helm install mw-v0 autopilot-mutating-webhook/helm-charts/mutating-webhook
-	helm install hrr-v0 healthcheckoperator/helm-charts/healthcheckoperator
+	helm install hcr-v0 healthcheckoperator/helm-charts/healthcheckoperator
 
 .PHONY: uninstall
 uninstall:
-	helm uninstall hrr-v0
+	helm uninstall hcr-v0
 	helm uninstall mw-v0
 
 .PHONY: submodule-init

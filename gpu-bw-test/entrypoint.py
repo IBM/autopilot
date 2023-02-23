@@ -9,12 +9,12 @@ def main():
 
     api = client.CustomObjectsApi()
 
-    output = os.popen('bash ./precheck.sh')
+    output = os.popen('bash ./briefings.sh')
     result = output.read()
     print(result)
 
     if "ABORT" not in result:
-        print("Precheck successful. Continue with pci-e bw evaluation.")
+        print("Briefings completed. Continue with pci-e bw evaluation.")
         bw_threshold = os.getenv("BW")
         output = os.popen('./gpuLocalBandwidthTest.sh -t ' + bw_threshold)
         result = output.read()
@@ -57,11 +57,12 @@ def main():
         'apiVersion': 'my.domain/v1alpha1',
         'kind': 'HealthCheckReport',
         'metadata': {
-            'name': "hrr-pciebw-"+nodename
+            'name': "hcr-pciebw-"+nodename
         },
         'spec': {
             'node': nodename,
-            'report': result
+            'report': result,
+            'issuer': "gpu-pciebw"
         }
     }
     group = "my.domain"
