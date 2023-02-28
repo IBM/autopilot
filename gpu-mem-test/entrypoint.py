@@ -18,8 +18,9 @@ def main():
         print("Briefings completed. Continue with memory evaluation.")
         output = os.popen('./gpucheck')
         result = output.read()
-        print(result)
-        return 0 
+        if "NONE" in result:
+            print(result)
+            return 0 
 
 # apiVersion: my.domain/v1alpha1
 # kind: HealthCheckReport
