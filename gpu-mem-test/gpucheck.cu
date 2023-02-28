@@ -9,6 +9,7 @@
 
 #define MAX_BLOCKS 512
 #define THREADS_PER_BLOCK 256
+#define btoa(x) ((x)?"true":"false")
 
 double cuda_dgemm(const char *, const char *, int *, int *, int *, double *, double *, int *, double *, int *, double *, double *, int *);
 void cuda_dgemm_free();
@@ -82,7 +83,12 @@ int main(int argc, char * argv[])
 
    metrics = (double *) malloc(numDevices*9*sizeof(double));
    y = (double *) malloc(npts*sizeof(double));
-  
+   
+   bool* faulty = (bool*) malloc(numDevices*sizeof(bool));
+   for (i = 0; i < numDevices; ++i)
+      faulty[i] = false;
+
+
    for (d = 0; d < numDevices; d++) {
       mydevice = d; /*local_rank % numDevices;*/
 
@@ -107,6 +113,8 @@ int main(int argc, char * argv[])
          alpha = 3.0;
          maxiter = 20;
 
+         
+
          time1 = walltime();
          CUDA_RC(cudaMemcpy(dev_x, x, npts*sizeof(double), cudaMemcpyHostToDevice));
          CUDA_RC(cudaDeviceSynchronize());
@@ -114,6 +122,9 @@ int main(int argc, char * argv[])
 
          BW_pinned_h2d = 8.0e-9*((double) npts)/(time2 - time1);
          metrics[9*d+0] = BW_pinned_h2d;
+         // Check here for low values in pinned h2d
+         if (BW_pinned_h2d < 4)
+            faulty[d] = true;
 
          time1 = walltime();
          CUDA_RC(cudaMemcpy(dev_y, y, npts*sizeof(double), cudaMemcpyHostToDevice));
@@ -122,7 +133,7 @@ int main(int argc, char * argv[])
 
          BW_pageable_h2d = 8.0e-9*((double) npts)/(time2 - time1);
          metrics[9*d+1] = BW_pageable_h2d;
-
+   
          time1 = walltime();
          CUDA_RC(cudaMemcpy(x, dev_x, npts*sizeof(double), cudaMemcpyDeviceToHost));
          CUDA_RC(cudaDeviceSynchronize());
@@ -130,6 +141,7 @@ int main(int argc, char * argv[])
 
          BW_pinned_d2h = 8.0e-9*((double) npts)/(time2 - time1);
          metrics[9*d+2] = BW_pinned_d2h;
+         
 
          time1 = walltime();
          CUDA_RC(cudaMemcpy(y, dev_y, npts*sizeof(double), cudaMemcpyDeviceToHost));
@@ -153,6 +165,8 @@ int main(int argc, char * argv[])
 
          BW_daxpy = 3.0*8.0e-9*((double) npts)*((double) maxiter)/(time2 - time1);
          metrics[9*d+4] = BW_daxpy;
+         if(BW_daxpy < 1300)
+            faulty[d] = true;
 
          //   free(y);
          CUDA_RC(cudaFreeHost(x));
@@ -163,18 +177,32 @@ int main(int argc, char * argv[])
          TFlops = cuda_dgemm("N", "N", &m, &n, &k, &alpha, Amat, &lda, Bmat, &ldb, &beta, Cmat, &ldc);
          cuda_dgemm_free();
          metrics[9*d+5] = TFlops;
+         if(TFlops < 16)
+            faulty[d] = true;
 
          metrics[9*d+6] = (double) temperature;
          metrics[9*d+7] = 1.0e-3*((double) power);  // convert to Watts
          metrics[9*d+8] = (double) smMHz;
    }
-   printf(" gpu  H2D(p)  H2D   D2H(p)  D2H   daxpy   dgemm   temp   power   smMHz\n");
+   printf(" GPU H2D(p)  H2D   D2H(p)  D2H   daxpy  dgemm   temp     power     smMHz\n");
    for (d = 0; d < numDevices; d++) {    
       printf("%3d %6.2lf %6.2lf %6.2lf %6.2lf %7.2lf %6.2lf %6.0lf %8.0lf %8.0lf\n", 
                d, metrics[9*d], metrics[9*d+1], metrics[9*d+2], metrics[9*d+3], metrics[9*d+4], metrics[9*d+5], metrics[9*d+6], metrics[9*d+7], metrics[9*d+8]);
    }
+   printf("Summary of GPU errors:");
+   bool allgood = true;
+   for (d = 0; d < numDevices; d++) {
+      if (faulty[d]) {
+         allgood = false;
+         printf("GPU %d -- H2D(p): %f; daxpy: %f; dgemm: %f", d, metrics[9*d+0], metrics[9*d+4], metrics[9*d+5]);
+      }
+   }
+   if (allgood) {
+      printf(" NONE ");
+   }
    free(y);
    free(metrics);
+   free(faulty);
    return 0;
 }
 
