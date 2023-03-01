@@ -59,5 +59,53 @@ It should look something like this:
 https://hooks.slack.com/services/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
 ```
 
-## Create an `AlertManager` receiver using the OpenShift UI
+## Create an `AlertManager` receiver using the OpenShift Web UI
+- Log into the OpenShift WebUI as an admin
+- Click on Administration -> Cluster Settings -> Configuration -> Alertmanager
+
+You should see this page:
+![Alert Manager](images/alertmanager.png)
+
+Click on `Create Receiver`
+
+- Choose a Receiver name and set the Receiver type as Slack
+- Click on `Create` and fill out the following fields:
+
+  - Paste the Slack Webhook URL you copied in the previous step into the `Slack API URL` field
+  - Write the Slack channel name to send notifications to in the `Channel field`
+  - Click on `Show advanced configuration`
+    - If you want to set a custom Slack username for the AlertManager such as `Cordoned Node Alert` and a custom icon such as a Slack emoji (I used `:warning:`), you can set those fields there.
+    - The title can remain as default title.
+    - The required field to set here is the Text field - this is what the Slack message for the notification will be. I set mine to `Node is cordoned - check node health`
+  - In the Routing Labels section, provide the label that we provided in the Prometheus `AlertingRule` in the first step.
+    - Set Name to `cordon`
+    - Set Value to `autopilot`
+
+    This ensures that Prometheus will route the `AlertingRule` we created to this specific `AlertManager` receiver. 
+
+- Click on `Save`
+
+This will generate a yaml file like `alertmanager.yaml` in this folder and will update the `AlertManager` pod configuration to add your new receiver. Now we will start receiving alerts from the Prometheus `AlertingRule` we created. Note that in `alertmanager.yaml`, I added a `default` receiver to catch all alerts that Prometheus fires and route them to my `#random` channel in my Slack workspace. This is optional.
+
+You can check the status of the `AlertManager` pod with this command:
+```console
+$kubectl logs alertmanager-main-0 -c alertmanager -n openshift-monitoring
+```
+
+Once the AlertManager is updated, you can test the notifications by cordoning a node:
+```console
+kubectl get nodes
+kubectl cordon a100-huge-m25p7-worker-2-2tfzd
+```
+You should see a Slack message in the channel you specified in your personal Slack workspace like this:
+![Slack notif](images/notif.png)
+
+Now if you uncordon that node and there are no cordoned nodes left, you should see a `Resolved` message like this:
+![Slack resolved](images/resolved.png)
+
+That's it! Now you can get notifications in Slack everytime a node is cordoned on your OpenShift cluster. If there is something else you wish to get notification for, you simply need to create a new `PrometheusRule` with a new `expr` and label, and create a new `AlertManager` Slack receiver with a matching label. 
+
+
+
+
 
