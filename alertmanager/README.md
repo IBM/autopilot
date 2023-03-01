@@ -41,7 +41,7 @@ spec:
         severity: critical
         cordon: autopilot
 ```
-## Create a Slack webhook application
+## Create a Slack incoming webhook application
 - Create a Slack workspace using your personal Slack account (not your IBM Slack)
 - Go to https://slack.com/apps and select your workspace from the dropdown menu in the top right of the page
 - Click on `Get Essential Apps` and search the App Directory for `Incoming WebHooks`
