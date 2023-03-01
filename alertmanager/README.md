@@ -17,7 +17,7 @@ kubectl create -f alertingrule.yaml
 Note the following lines in the alerting rule below:
 
 - The `PrometheusRule` is created in the `openshift-monitoring` namespace - this is the namespace where Prometheus and Alert manager is deployed on the OpenShift cluster.
-- A `cordon: autopilot` label is added - this is important to match the alert with an Alert Manager receiver that we will create in the next step. This is how Prometheus knows which Alert Manager receiver to send the alert to. 
+- A `cordon: autopilot` label is added - this is important to match the alert with an Alert Manager receiver that we will create in the last step. This is how Prometheus knows which Alert Manager receiver to send the alert to. 
 - `expr: sum (kube_node_spec_unschedulable) by (node) > 0` is the expression used to count how many nodes are unschedulable (or cordoned) and if it's more than 0
 ```
 apiVersion: monitoring.coreos.com/v1
@@ -43,9 +43,21 @@ spec:
 ```
 ## Create a Slack webhook application
 - Create a Slack workspace using your personal Slack account (not your IBM Slack)
-- Go to https://slack.com/apps and select your workspace in the top right of the page
+- Go to https://slack.com/apps and select your workspace from the dropdown menu in the top right of the page
 - Click on `Get Essential Apps` and search the App Directory for `Incoming WebHooks`
 
 You should see a page like this:
+![Slack Webhook](images/slack.png)
 
-![](https://file%2B.vscode-resource.vscode-cdn.net/Users/tonia/Desktop/Screenshot%202023-03-01%20at%203.23.04%20PM.png?version%3D1677702447511)
+- Click on `Add to Slack` and choose which Slack channel to post messages to from the dropdown menu or create a new channel.
+
+- Click on `Add Incoming Webhooks Integration`
+
+- Copy and paste the `WebhookURL`. We will use this when we configure the `AlertManager` Receiver in the next step.
+It should look something like this:
+```
+https://hooks.slack.com/services/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
+```
+
+## Create an `AlertManager` receiver using the OpenShift UI
+
