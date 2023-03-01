@@ -5,7 +5,7 @@ This folder contains the files needed to set up Slack notifications for cordoned
 There are 3 main steps to set it up:
 1) Create a Prometheus `AlertingRule`
 2) Create a Slack webhook application
-3) Create an AlertManager Receiver
+3) Create an `AlertManager` Receiver
 
 These steps are explained in more detail below.
 
@@ -14,7 +14,7 @@ These steps are explained in more detail below.
 kubectl create -f alertingrule.yaml
 ```
 
-Note the following things in the alerting rule below:
+Note the following lines in the alerting rule below:
 
 - The `PrometheusRule` is created in the `openshift-monitoring` namespace - this is the namespace where Prometheus and Alert manager is deployed on the OpenShift cluster.
 - A `cordon: autopilot` label is added - this is important to match the alert with an Alert Manager receiver that we will create in the next step. This is how Prometheus knows which Alert Manager receiver to send the alert to. 
@@ -42,6 +42,10 @@ spec:
         cordon: autopilot
 ```
 ## Create a Slack webhook application
+- Create a Slack workspace using your personal Slack account (not your IBM Slack)
+- Go to https://slack.com/apps and select your workspace in the top right of the page
+- Click on `Get Essential Apps` and search the App Directory for `Incoming WebHooks`
 
+You should see a page like this:
 
-
+![](https://file%2B.vscode-resource.vscode-cdn.net/Users/tonia/Desktop/Screenshot%202023-03-01%20at%203.23.04%20PM.png?version%3D1677702447511)
