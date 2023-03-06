@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cordon-node-alert
+  namespace: openshift-monitoring
+  labels:
+    cordon: autopilot
+spec:
+  groups:
+  - name: example
+    rules:
+    - alert: CordonAlert
+      annotations:
+        description: A node has been cordoned - check health of nodes
+        summary: A node has been cordoned - check health of nodes
+      expr: sum (kube_node_spec_unschedulable) by (node) > 0
+      for: 1m
+      labels:
+        severity: critical
+        cordon: autopilot
