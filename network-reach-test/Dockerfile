@@ -8,4 +8,4 @@ RUN pip install kubernetes netifaces
 
 COPY entrypoint.py /entrypoint.py
 
-CMD python entrypoint.py && sleep inf
+CMD python entrypoint.py

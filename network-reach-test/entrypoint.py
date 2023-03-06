@@ -5,6 +5,7 @@ import os
 import requests
 import json
 import netifaces
+from datetime import datetime
 
 def main():
     config.load_incluster_config()
@@ -60,7 +61,7 @@ def main():
         nodename = os.getenv("NODE_NAME")
         podname = os.getenv("POD_NAME")
         namespace = os.getenv("NAMESPACE")
-        api_instance = client.CoreV1Api()
+        # api_instance = client.CoreV1Api()
 
         # We probably don't need to deschedule the pod at all costs.. Also, a less aggressive option should be considered instead of cordining the node, in this case, as it should be an issue with the secondary nic operator.
 
@@ -80,12 +81,12 @@ def main():
         for h in unreachable:
             result = result + str(h) + "\n"
 
-
-        hrr_manifest = {
+        dt = datetime.now()
+        hcr_manifest = {
             'apiVersion': 'my.domain/v1alpha1',
             'kind': 'HealthCheckReport',
             'metadata': {
-                'name': "hcr-netcheck-"+nodename
+                'name': "netcheck-"+nodename+"-"+dt.strftime("%d-%m-%Y-%H.%M.%S.%f")
             },
             'spec': {
                 'node': nodename,
@@ -98,10 +99,11 @@ def main():
         plural = "healthcheckreports"
         namespace = "default"
         try:
-            api.create_namespaced_custom_object(group, v, namespace, plural, hrr_manifest)
+            api.create_namespaced_custom_object(group, v, namespace, plural, hcr_manifest)
         except ApiException as e:
             print("Exception when calling create health check report:\n", e)
 
+        raise TypeError("Failing init container.")
         # all_reports = api.list_namespaced_custom_object(group, v, namespace, plural)
 
 def get_local_ifaces():
