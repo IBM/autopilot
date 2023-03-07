@@ -2,6 +2,10 @@
 gpu-bw-image:
 	docker build -t pcie-test:dev -f gpu-bw-test/Dockerfile gpu-bw-test/
 
+.PHONY: gpu-bw-minimal
+gpu-bw-minimal:
+	docker build -t pcie-mini:dev -f gpu-bw-test/Dockerfile.reduced gpu-bw-test/
+
 .PHONY: gpu-mem-image
 gpu-mem-image:
 	docker build -t gpu-memcheck:dev -f gpu-mem-test/Dockerfile gpu-mem-test/
