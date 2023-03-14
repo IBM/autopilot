@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pcie-bw-cronjob
+  labels:
+    autopilot: ""
+    gpu-pcie-bw: ""
+spec:
+  schedule: "0 * * * *"
+  concurrencyPolicy: Allow
+  jobTemplate:
+    metadata:
+      labels:
+        autopilot: ""
+        gpu-pcie-bw: ""
+    spec:
+      parallelism: 4
+      template:
+        spec:
+          imagePullSecrets:
+          - name: all-icr-io
+          containers:
+          - name: main
+            image: busybox
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - date; echo Another instance of batch job 
+            resources:
+              limits:
+                cpu: 1m
+                memory: 5G
+                nvidia.com/gpu: 8
+              requests:
+                cpu: 1m
+                memory: 5G
+                nvidia.com/gpu: 8
+          restartPolicy: Never
