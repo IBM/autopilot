@@ -10,8 +10,8 @@ spec:
       template:
         metadata:
           annotations:
-            k8s.v1.cni.cncf.io/networks: multinic-ipvlanl3
-            # k8s.v1.cni.cncf.io/networks: multi-nic-network
+            #k8s.v1.cni.cncf.io/networks: multinic-ipvlanl3
+            k8s.v1.cni.cncf.io/networks: multi-nic-network
         spec:
           containers:
             - name: pytorch
@@ -26,8 +26,8 @@ spec:
       template:
         metadata:
           annotations:
-            k8s.v1.cni.cncf.io/networks: multinic-ipvlanl3
-            # k8s.v1.cni.cncf.io/networks: multi-nic-network
+            #k8s.v1.cni.cncf.io/networks: multinic-ipvlanl3
+            k8s.v1.cni.cncf.io/networks: multi-nic-network
         spec:
           containers:
             - name: pytorch
