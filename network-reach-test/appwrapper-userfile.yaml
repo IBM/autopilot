@@ -1,5 +1,5 @@
 # Job name and namespace
-namespace: default
+namespace: nlp-kubeflow-dev
 jobName: reachability-pytorch-test
 priority: "default-priority"
 
@@ -9,7 +9,7 @@ containerImage: nginx
 # Runtime hardward specificiation
 numPods: 1
 numCpusPerPod: 1
-numGpusPerPod: 2
+numGpusPerPod: 0
 totalMemoryPerPod: 1Gi
 
 limitCpusPerPod: 5
@@ -23,4 +23,4 @@ setupCommands:
 #mainProgram: sleep inf #torch run sleep inf - must change in appwrapper file
 
 # Multinic support
-multiNicNetworkName:  multinic-ipvlanl3
+multiNicNetworkName:  multi-nic-network
