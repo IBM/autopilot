@@ -4,7 +4,7 @@ apiVersion: mcad.ibm.com/v1beta1
 kind: AppWrapper
 metadata:
     name: reachability-pytorch-test
-    namespace: default
+    namespace: nlp-kubeflow-dev
 spec:
     priority: 5
     priorityslope: 0.0
@@ -19,7 +19,7 @@ spec:
                   kind: PodGroup
                   metadata:
                       name: reachability-pytorch-test
-                      namespace: default
+                      namespace: nlp-kubeflow-dev
                       labels:
                           appwrapper.mcad.ibm.com: reachability-pytorch-test
                   spec:
@@ -30,7 +30,7 @@ spec:
                   - replicas: 1
                     requests:
                         cpu: 1
-                        nvidia.com/gpu: 2
+                        nvidia.com/gpu: 0
                         memory: 1Gi
                     limits:
                         cpu: 5
@@ -41,7 +41,7 @@ spec:
                   kind: "PyTorchJob"
                   metadata:
                       name: reachability-pytorch-test
-                      namespace: default
+                      namespace: nlp-kubeflow-dev
                       labels:
                           appwrapper.mcad.ibm.com: reachability-pytorch-test
                           pod-group.scheduling.sigs.k8s.io: reachability-pytorch-test
@@ -52,12 +52,12 @@ spec:
                               restartPolicy: Never
                               template:
                                   metadata:
-                                      namespace: default
+                                      namespace: nlp-kubeflow-dev
                                       labels:
                                           appwrapper.mcad.ibm.com: reachability-pytorch-test
                                           pod-group.scheduling.sigs.k8s.io: reachability-pytorch-test
                                       annotations:
-                                          k8s.v1.cni.cncf.io/networks: multinic-ipvlanl3
+                                          k8s.v1.cni.cncf.io/networks: multi-nic-network
                                   spec:
                                       schedulerName: scheduler-plugins-scheduler
                                       priorityClassName: "default-priority"
@@ -82,7 +82,7 @@ spec:
                                             resources:
                                                 requests:
                                                     cpu: 1
-                                                    nvidia.com/gpu: 2
+                                                    nvidia.com/gpu: 0
                                                     memory: 1Gi
                                                 limits:
                                                     cpu: 5
