@@ -1,0 +1,25 @@
+# Job name and namespace
+namespace: eletonia
+jobName: reachability-pytorch-test
+priority: "default-priority"
+
+# Container image to be used
+containerImage: nginx
+
+# Runtime hardward specificiation
+numPods: 1
+numCpusPerPod: 1
+numGpusPerPod: 2
+totalMemoryPerPod: 1Gi
+
+limitCpusPerPod: 5
+limitGpusPerPod: 2
+limitMemoryPerPod: 2Gi
+
+setupCommands:
+    - sleep inf
+
+#mainProgram: sleep inf #torch run sleep inf - must change in appwrapper file
+
+# Multinic support
+multiNicNetworkName:  multi-nic-network
