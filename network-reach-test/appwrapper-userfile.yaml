@@ -9,7 +9,7 @@ containerImage: nginx
 # Runtime hardward specificiation
 numPods: 1
 numCpusPerPod: 1
-numGpusPerPod: 0
+numGpusPerPod: 2
 totalMemoryPerPod: 1Gi
 
 limitCpusPerPod: 5
@@ -17,8 +17,7 @@ limitGpusPerPod: 2
 limitMemoryPerPod: 2Gi
 
 setupCommands:
-    - sleep
-    - inf
+    - sleep inf
 
 #mainProgram: sleep inf #torch run sleep inf - must change in appwrapper file
 
