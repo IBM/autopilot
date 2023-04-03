@@ -30,11 +30,11 @@ spec:
                   - replicas: 1
                     requests:
                         cpu: 1
-                        nvidia.com/gpu: 2
+                        nvidia.com/gpu: 0
                         memory: 1Gi
                     limits:
                         cpu: 5
-                        nvidia.com/gpu: 2
+                        nvidia.com/gpu: 0
                         memory: 2Gi
               generictemplate:
                   apiVersion: "kubeflow.org/v1"
@@ -81,11 +81,11 @@ spec:
                                             resources:
                                                 requests:
                                                     cpu: 1
-                                                    nvidia.com/gpu: 2
+                                                    nvidia.com/gpu: 0
                                                     memory: 1Gi
                                                 limits:
                                                     cpu: 5
-                                                    nvidia.com/gpu: 2
+                                                    nvidia.com/gpu: 0
                                                     memory: 2Gi
                                             volumeMounts:
                                                 - name: dshm

@@ -1,4 +1,4 @@
-FROM python:slim
+FROM python:latest
 
 RUN apt -y update && apt -y upgrade && \
         apt install -y --no-install-recommends build-essential vim iperf3 && \
