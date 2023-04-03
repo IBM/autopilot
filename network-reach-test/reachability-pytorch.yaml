@@ -9,8 +9,10 @@ spec:
       restartPolicy: OnFailure
       template:
         metadata:
+          labels:
+            autopilot: ""
+            net-reach: ""
           annotations:
-            #k8s.v1.cni.cncf.io/networks: multinic-ipvlanl3
             k8s.v1.cni.cncf.io/networks: multi-nic-network
         spec:
           containers:
@@ -20,13 +22,17 @@ spec:
               command:
                 - sleep
                 - inf
+          imagePullSecrets:
+            - name: icr-io
     Worker:
       replicas: 1
       restartPolicy: OnFailure
       template:
         metadata:
+          labels:
+            autopilot: ""
+            net-reach: ""
           annotations:
-            #k8s.v1.cni.cncf.io/networks: multinic-ipvlanl3
             k8s.v1.cni.cncf.io/networks: multi-nic-network
         spec:
           containers:
@@ -36,3 +42,5 @@ spec:
               command:
                 - sleep
                 - inf
+          imagePullSecrets:
+            - name: icr-io

@@ -2,12 +2,20 @@ from kubernetes import client, config, watch
 from kubernetes.client.rest import ApiException
 from pprint import pprint
 import os
+import subprocess
+from subprocess import Popen
 import requests
 import json
 import netifaces
 from datetime import datetime
+import time
 
 def main():
+
+    print("Start server on host")
+    proc = Popen(["iperf3", "-s",  "-D"])
+    proc.wait()
+    
     config.load_incluster_config()
 
     v1 = client.CoreV1Api()
@@ -16,7 +24,7 @@ def main():
     namespace = os.getenv("NAMESPACE")
     selector = os.getenv("SELECTOR")
     ifaces = []
-    for event in w.stream(v1.list_namespaced_pod, namespace=namespace,label_selector=selector, timeout_seconds=120):
+    for event in w.stream(v1.list_namespaced_pod, namespace=namespace,label_selector=selector, timeout_seconds=20):
         entry = json.loads(event['object'].metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
         for i in entry[1]['ips']:
             ifaces.append(i)
@@ -26,24 +34,32 @@ def main():
     print("Finished with Pod list stream.")
     print(ifaces)
 
-    print("Start server on host")
-
-    os.popen(f"iperf3 -s -D")
-
     print("Reaching out all hosts..")
-    unreachable = []
+    unreachableHosts = []
     for host in ifaces:
-        output = os.popen(f"iperf3 -c {host} -t 3 --connect-timeout 2000").read()
-        print(output)
-        if"error" in output:
-            # print(output)
-            # print(str(host) + " is unreachable")
-            unreachable.append(host)
-
+        maxRetries = 3
+        numTry = 0
+        unreachable = True
+        while (numTry < maxRetries):
+            proc = Popen(["iperf3","-c", host, "-t", "3", "--connect-timeout", "60000"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            proc.wait()
+            print(proc.stdout.read().decode())
+            output = proc.stderr.read().decode()
+            if "error" in output:
+                print(output)
+                time.sleep(3)
+            else:
+                unreachable = False
+                break
+            numTry+=1
+        if unreachable: 
+            print(str(host) + " is unreachable")
+            unreachableHosts.append(host)
+        
     print("Test completed")
 
-    if len(unreachable) != 0:
-        print("The follwing hosts were unreachable ", unreachable)
+    if len(unreachableHosts) != 0:
+        print("The following hosts were unreachable ", unreachableHosts)
         api = client.CustomObjectsApi()
  
 
@@ -78,7 +94,7 @@ def main():
         #     print("Exception when patching pod:\n", e)
 
         result = "Cannot reach the following addresses: " 
-        for h in unreachable:
+        for h in unreachableHosts:
             result = result + str(h) + "\n"
 
         dt = datetime.now()
@@ -97,7 +113,6 @@ def main():
         group = "my.domain"
         v = "v1alpha1"
         plural = "healthcheckreports"
-        namespace = "default"
         try:
             api.create_namespaced_custom_object(group, v, namespace, plural, hcr_manifest)
         except ApiException as e:
