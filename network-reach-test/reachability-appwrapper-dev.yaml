@@ -30,11 +30,11 @@ spec:
                   - replicas: 1
                     requests:
                         cpu: 1
-                        nvidia.com/gpu: 0
+                        nvidia.com/gpu: 1
                         memory: 1Gi
                     limits:
                         cpu: 5
-                        nvidia.com/gpu: 0
+                        nvidia.com/gpu: 1
                         memory: 2Gi
               generictemplate:
                   apiVersion: "kubeflow.org/v1"
@@ -56,6 +56,8 @@ spec:
                                       labels:
                                           appwrapper.mcad.ibm.com: reachability-pytorch-test
                                           pod-group.scheduling.sigs.k8s.io: reachability-pytorch-test
+                                          autopilot: ""
+                                          net-reach: ""
                                       annotations:
                                           k8s.v1.cni.cncf.io/networks: multi-nic-network
                                   spec:
@@ -81,11 +83,11 @@ spec:
                                             resources:
                                                 requests:
                                                     cpu: 1
-                                                    nvidia.com/gpu: 0
+                                                    nvidia.com/gpu: 1
                                                     memory: 1Gi
                                                 limits:
                                                     cpu: 5
-                                                    nvidia.com/gpu: 0
+                                                    nvidia.com/gpu: 1
                                                     memory: 2Gi
                                             volumeMounts:
                                                 - name: dshm
