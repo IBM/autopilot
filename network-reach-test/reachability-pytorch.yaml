@@ -1,0 +1,46 @@
+apiVersion: "kubeflow.org/v1"
+kind: PyTorchJob
+metadata:
+  name: reachability-pytorch
+spec:
+  pytorchReplicaSpecs:
+    Master:
+      replicas: 1
+      restartPolicy: OnFailure
+      template:
+        metadata:
+          labels:
+            autopilot: ""
+            net-reach: ""
+          annotations:
+            k8s.v1.cni.cncf.io/networks: multi-nic-network
+        spec:
+          containers:
+            - name: pytorch
+              image: nginx 
+              imagePullPolicy: IfNotPresent
+              command:
+                - sleep
+                - inf
+          imagePullSecrets:
+            - name: icr-io
+    Worker:
+      replicas: 1
+      restartPolicy: OnFailure
+      template:
+        metadata:
+          labels:
+            autopilot: ""
+            net-reach: ""
+          annotations:
+            k8s.v1.cni.cncf.io/networks: multi-nic-network
+        spec:
+          containers:
+            - name: pytorch
+              image: nginx
+              imagePullPolicy: IfNotPresent
+              command:
+                - sleep
+                - inf
+          imagePullSecrets:
+            - name: icr-io
