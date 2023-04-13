@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: autopilot-allnodes-test
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: autopilot-allnodes-test
+spec:
+  selector:
+    matchLabels:
+      name: autopilot-allnodes-test
+  template:
+    metadata:
+      labels:
+        name: autopilot-allnodes-test
+        {{- if .Values.autopilotHealthChecks }}
+        autopilot: ""
+          {{- range $healthcheck := .Values.autopilotHealthChecks }}
+        {{ $healthcheck }}: ""
+          {{- end }}
+        {{- end }}
+    spec:
+      imagePullSecrets:
+      - name: {{ .Values.imagePullSecret }}
+      # tolerations:
+      # # these tolerations are to have the daemonset runnable on control plane nodes
+      # # remove them if your control plane nodes should not run pods
+      # - key: node-role.kubernetes.io/control-plane
+      #   operator: Exists
+      #   effect: NoSchedule
+      # - key: node-role.kubernetes.io/master
+      #   operator: Exists
+      #   effect: NoSchedule
+      containers:
+      - name: completion
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        command:
+          - /bin/sh
+          - -c
+          - date; echo All tests completed successfully; sleep inf
+        resources:
+          limits:
+            cpu: 8m
+            memory: 15G
+            nvidia.com/gpu: 8
+          requests:
+            cpu: 8m
+            memory: 15G
+            nvidia.com/gpu: 8
