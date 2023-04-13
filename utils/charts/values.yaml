@@ -1,4 +1,0 @@
-namespace: 
-nodename:
-bw: "4"
-image: "us.icr.io/cil15-shared-registry/autopilot/pcie-mini:v0"
