@@ -1,0 +1,9 @@
+namespace: "default"
+imagePullSecret: "icr-io"
+autopilotHealthChecks: # List of labels enabling one or more system health pre-flight checks. 
+#For the time being, we only provide the host-to-device PCIe bandwidth test, which is checking that the expected bandwidth is above 4Gb/s and that all GPUs are accessible through nvidia-smi. 
+#The init container is added only if all GPUs in the node are requested, in order to guarantee the correctness of the result (i.e., no other jobs are using the GPUs on the node). 
+#Other health check tests will be added in the future. 
+#NOTE: if autopilot is not installed by the admin, those labels have no effect.
+  - gpu-pcie-bw
+  - gpu-mem

@@ -6,7 +6,7 @@ metadata:
 spec:
   restartPolicy: Never
   imagePullSecrets:
-  - name: all-icr-io 
+  - name: {{ .Values.imagePullSecret }}
   nodeSelector:
     kubernetes.io/hostname: {{ .Values.nodename }}
   containers:
