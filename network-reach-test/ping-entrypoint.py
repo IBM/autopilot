@@ -2,20 +2,13 @@ from kubernetes import client, config, watch
 from kubernetes.client.rest import ApiException
 from pprint import pprint
 import os
-import subprocess
 from subprocess import Popen
-import requests
 import json
-import netifaces
 from datetime import datetime
 import time
 
 def main():
-
-    print("Start server on host")
-    proc = Popen(["iperf3", "-s",  "-D"])
-    proc.wait()
-    
+   
     config.load_incluster_config()
 
     v1 = client.CoreV1Api()
@@ -26,27 +19,29 @@ def main():
     ifaces = []
     for event in w.stream(v1.list_namespaced_pod, namespace=namespace,label_selector=selector, timeout_seconds=20):
         entry = json.loads(event['object'].metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
-        for i in entry[1]['ips']:
+        podName = event['object'].metadata.name
+        ips = entry[1]['ips']
+        print("\nPod " + podName + " has these IPs:")
+        print(ips)
+        for i in ips:
             ifaces.append(i)
         count -= 1
         if not count:
             w.stop()
-    print("Finished with Pod list stream.")
+    print("\nFinished with Pod list stream.")
     print(ifaces)
 
-    print("Reaching out all hosts..")
+    print("\nReaching out all hosts..")
     unreachableHosts = []
     for host in ifaces:
-        maxRetries = 5
+        maxRetries = 3
         numTry = 0
         unreachable = True
         while (numTry < maxRetries):
-            proc = Popen(["iperf3","-c", host, "-t", "3", "--connect-timeout", "60000"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            proc = Popen(['ping', host,'-c','1',"-W","2"])
             proc.wait()
-            print(proc.stdout.read().decode())
-            output = proc.stderr.read().decode()
-            if "error" in output:
-                print(output)
+            # If response is not 0, ping was unsuccessful 
+            if proc.poll():
                 time.sleep(3)
             else:
                 unreachable = False
@@ -56,7 +51,7 @@ def main():
             print(str(host) + " is unreachable")
             unreachableHosts.append(host)
         
-    print("Test completed")
+    print("\nTest completed")
 
     if len(unreachableHosts) != 0:
         print("The following hosts were unreachable ", unreachableHosts)
@@ -75,7 +70,6 @@ def main():
 
 
         nodename = os.getenv("NODE_NAME")
-        podname = os.getenv("POD_NAME")
         namespace = os.getenv("NAMESPACE")
         # api_instance = client.CoreV1Api()
 
@@ -120,15 +114,6 @@ def main():
 
         raise TypeError("Failing init container.")
         # all_reports = api.list_namespaced_custom_object(group, v, namespace, plural)
-
-def get_local_ifaces():
-    try:
-        net0=netifaces.ifaddresses('net1-0')
-        net1=netifaces.ifaddresses('net1-1')
-    except:
-        return []
-    ifaces = [net0[2][0]['addr'], net1[2][0]['addr']]
-    return ifaces
 
 if __name__ == '__main__':
     main()
