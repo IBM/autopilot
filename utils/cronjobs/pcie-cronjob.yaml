@@ -6,15 +6,18 @@ metadata:
     autopilot: ""
     gpu-pcie-bw: ""
 spec:
-  schedule: "0 * * * *"
-  concurrencyPolicy: Allow
+  schedule: "30 * * * *"
+  concurrencyPolicy: Replace
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
   jobTemplate:
     metadata:
       labels:
         autopilot: ""
         gpu-pcie-bw: ""
     spec:
-      parallelism: 4
+      parallelism: 9
       template:
         spec:
           imagePullSecrets:
