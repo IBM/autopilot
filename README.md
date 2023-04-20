@@ -50,32 +50,6 @@ At a high level, the flow is the following (omitting the MCAD part for simplific
 <!-- - If the test fails, the init container will create a HealthCheckReport CRD indicating the result of the test and the node involved. Also, the pod will label itself with `deschedule` so that it can be removed from the faulty node. -->
 - The HealthCheckReport controller will get the report created in the previous step. It will then cordon the node if this option is selected at installation time. Eventually, the scheduler will try to place the pod somewhere else until a good node is found. If all the nodes are bad, the job will never run and the bad nodes are all marked as unschedulable.
 
-### Initialize this repository
-Collection of tool for the Autopilot project.
-This repo contains submodules. You can pull them by running 
-
-```bash
-make submodule-init
-```
-
-To build the GPU bandwidth test:
-
-```bash
-make gpu-bw-image 
-```
-
-To build the GPU memory test
-
-```bash
-make gpu-mem-image
-```
-
-To build the secondary nics reachability test
-
-```bash
-make net-reach-image
-```
-
 ### RBAC, Roles and Service Accounts
 
 For the init containers to run correctly, the Webhook will create a service account along with some RBAC, and the service account will be attached to the workload. 
@@ -93,20 +67,24 @@ The admin is the only subject that should delete the report object and take acti
 Each object is named after the node and the name is not unique. This means that, if an object exists for `nodeA`, another object for the same node will not be created. This is to avoid generating an unreasonable and not needed amount of API objects. 
 Once actions are taken on the relevant node, the admin can proceed with the deletion of the corresponding health check report object.
 
-## Admins: install the Autopilot components
-For detailed instructions and information about the Mutating Webhook, HealthCheckReport CRD and Controller, please refer to the relevant submodules' README.
 
-After cloning this repository, run:
+## Install autopilot (Admin)
+**Installation**: Both projects can be installed through Helm and need admin privileges to create objects like services, serviceaccounts, namespaces and RBAC.
 
-```bash
-make submodule-init
-git submodule update --remote
-% UPDATE VALUES IN THE HELM CHARTS
-```
+A basic system requirement is that an image pull secret to `icr.io` or `us.icr.io` is available. An image for each component is pushed in each region. 
 
-You will need to update the relevant Helm charts with the desired options. More details are in each submodule README, but at a glance the admins should know that:
+Webhook options are in [this page](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot-mutating-webhook#customization-available-to-the-admins). 
+CRD options are in [this page](https://github.ibm.com/hybrid-cloud-infrastructure-research/healthcheckoperator#customization).
 
-- By default, it will create a namespace named `autopilot` where to run the autopilot components. Users workloads do not run in the autopilot namespace. The creation of the namespace can be disabled in the `autopilot-mutating-webhook/helm-charts/mutating-webhook/values.yaml` file by setting `create` to false  in the namespace block.
+Helm charts values can be found in these links: [webhook](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot-mutating-webhook/tree/main/helm-charts/mutating-webhook/templates) and [controller](https://github.ibm.com/hybrid-cloud-infrastructure-research/healthcheckoperator/tree/main/helm-charts/healthcheckoperator/templates).
+
+
+
+### Clone main repository with submodules
+
+The Autopilot components are in this repository, but we incorporated it as a submodule in the [Foundation Model Stack](https://github.ibm.com/ai-foundation/foundation-model-stack).
+
+- By default, it will create a namespace named `autopilot` where to run the components. Users workloads do not run in the autopilot namespace. The creation of the namespace can be disabled in the `autopilot-mutating-webhook/helm-charts/mutating-webhook/values.yaml` file by setting `create` to false  in the namespace block.
 
 ```yaml
 namespace: 
@@ -114,7 +92,7 @@ namespace:
   name: autopilot
 ```
 
-- To pull images from a private registry, the admin needs to add `imagePullSecret` data in one of the helm charts. Both webhook and controller have such entry. It is possible to avoid the creation of the pull secret by setting the value `create` to false in the imagePullSecret block, and by setting the name of the one that will be used (i.e., `all-icr-io`).
+- To pull images from `cil15` registry, the admin needs to add `imagePullSecret` data in one of the helm charts. Both webhook and controller have such entry. It is possible to avoid the creation of the pull secret by setting the value `create` to false in the imagePullSecret block, and by setting the name of the one that will be used (i.e., `all-icr-io`).
 
 ```yaml
 pullSecrets:
@@ -123,19 +101,41 @@ pullSecrets:
   imagePullSecretData: 
 ```
 
-Once done with configuration, then run:
+The recommended commands are as follows:
 
 ```bash
+git clone git@github.ibm.com:ai-foundation/foundation-model-stack.git % or clone this repository and skip the next step
+git submodule update --init --recursive
+cd autopilot
+git submodule update --remote
+% UPDATE VALUES IN THE HELM CHARTS
 make install
 ```
 
 The controllers should show up in the selected namespace
 
 ```bash
-$ oc get po
+$ oc get po -n autopilot
 NAME                                                              READY   STATUS      RESTARTS   AGE
 autopilot-webhook-webhook-v0-c956bd6c9-9jxzd                      1/1     Running     0          22s
 healthcheckreport-controller-manager-7c757d848d-d25mp             2/2     Running     0          89s
+```
+
+#### Alternative: install each repository 
+
+```bash
+# Mutating Webhook
+helm install mw-v0 autopilot-mutating-webhook/helm-charts/mutating-webhook
+
+# Health check report CRD and Controller
+helm install hcr-v0 healthcheckoperator/helm-charts/healthcheckoperator
+```
+
+### Uninstall
+
+```bash
+make uninstall 
+% or helm uninstall mw-v0 && helm uninstall hcr-v0
 ```
 
 ### Run a basic example
@@ -148,21 +148,6 @@ To quickly run it:
 oc create -f autopilot-mutating-webhook/manifests/incomplete-pod.yaml
 ```
 
-### Important side effect! Do not skip this paragraph!
-
-It is **VERY IMPORTANT** to remember that the entire pipeline of webhook+operator may disable one or more nodes by marking them as `unschedulable`. 
-
-Depending on the result of the `incomplete-pod` test, this may happen. 
-
-Make sure to check the nodes with `oc get nodes` and `oc uncordon <nodename>` the ones affected by the test.
-
-
-### Uninstall 
-To remove the charts, just run the `uninstall` command with the chosen release names for the webhook and the controller.
-
-```bash
-make uninstall
-```
 
 ## User
 
