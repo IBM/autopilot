@@ -14,7 +14,7 @@ def main():
     result = subprocess.run(command, capture_output=True, text=True)
     output = result.stdout
     print(output)
-    
+
     if "OK" in output:
         print("Node " + nodename + " is reachable")
     else:
@@ -43,8 +43,6 @@ def main():
             api.create_namespaced_custom_object(group, v, namespace, plural, hcr_manifest)
         except ApiException as e:
             print("Exception when calling create health check report:\n", e)
-
-        raise TypeError("Failing init container.")
 
 if __name__ == '__main__':
     main()
