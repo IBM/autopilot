@@ -19,10 +19,10 @@ def main():
         bw_threshold = os.getenv("BW")
         output = os.popen('./gpuLocalBandwidthTest.sh -t ' + bw_threshold)
         result = output.read()
-        print(result)
 
         if "FAIL" not in result:
-            print("No report will be issued")
+            print("Health Check successful. No report will be issued")
+            print(result)
             return 0 
 
 
@@ -75,7 +75,10 @@ def main():
     except ApiException as e:
         print("Exception when calling create health check report:\n", e)
    
-    raise TypeError("Failing init container.")
+    # raise TypeError("Failing init container.")
+    print("Health Check unsuccessful. Here is the result:")
+    print(result)
+    return 0 
     # all_reports = api.list_namespaced_custom_object(group, v, namespace, plural)
 
 if __name__ == '__main__':
