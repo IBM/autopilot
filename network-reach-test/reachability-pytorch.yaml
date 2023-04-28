@@ -23,7 +23,7 @@ spec:
                 - sleep
                 - inf
           imagePullSecrets:
-            - name: icr-io
+            - name: us-icr-io
     Worker:
       replicas: 1
       restartPolicy: OnFailure
@@ -43,4 +43,4 @@ spec:
                 - sleep
                 - inf
           imagePullSecrets:
-            - name: icr-io
+            - name: us-icr-io
