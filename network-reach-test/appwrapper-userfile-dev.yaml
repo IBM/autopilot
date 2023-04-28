@@ -30,5 +30,5 @@ autopilotHealthChecks:
 
 # Image Pull Secrets
 imagePullSecrets:
-    - name: icr-io
+    - name: us-icr-io
 

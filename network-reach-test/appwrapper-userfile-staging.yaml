@@ -27,3 +27,7 @@ multiNicNetworkName:  multi-nic-network
 # Enable autopilot
 autopilotHealthChecks: 
    - net-reach
+
+# Image Pull Secrets
+imagePullSecrets:
+    - name: us-icr-io
