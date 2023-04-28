@@ -3,6 +3,7 @@ from kubernetes.client.rest import ApiException
 import os
 from datetime import datetime
 import subprocess
+import sys
 
 
 
@@ -12,8 +13,13 @@ def main():
     namespace = os.getenv("NAMESPACE")
     command = ['python', 'read_status.py', nodename]
     result = subprocess.run(command, capture_output=True, text=True)
-    output = result.stdout
-    print(output)
+    error = result.stderr
+    if (error):
+        print("Multi-NIC CNI health checker is not reachable - network reachability test cannot run")
+        sys.exit()
+    else:
+        output = result.stdout
+        print(output)
 
     if "OK" in output:
         print("Node " + nodename + " is reachable")
