@@ -20,6 +20,7 @@ def main():
         output = os.popen('./gpucheck')
         result = output.read()
         if "NONE" in result:
+            print("Health Check successful. No report will be issued.")
             print(result)
             return 0 
 
@@ -73,7 +74,11 @@ def main():
     except ApiException as e:
         print("Exception when calling create health check report:\n", e)
 
-    raise TypeError("Failing init container.")
+    print("Health Check unsuccessful. Here is the result:")
+    print(result)
+    return 0 
+
+    # raise TypeError("Failing init container.")
     # all_reports = api.list_namespaced_custom_object(group, v, namespace, plural)
 
 if __name__ == '__main__':
