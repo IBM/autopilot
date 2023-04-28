@@ -1,0 +1,155 @@
+---
+# Source: generator/templates/pytorch-job.yaml
+apiVersion: mcad.ibm.com/v1beta1
+kind: AppWrapper
+metadata:
+    name: reachability-pytorch-test
+    namespace: nlp-kubeflow-dev
+spec:
+    priority: 5
+    priorityslope: 0.0
+    schedulingSpec:
+        minAvailable: 2
+    resources:
+        Items: []
+        GenericItems:
+            - replicas: 1
+              generictemplate:
+                  apiVersion: scheduling.sigs.k8s.io/v1alpha1
+                  kind: PodGroup
+                  metadata:
+                      name: reachability-pytorch-test
+                      namespace: nlp-kubeflow-dev
+                      labels:
+                          appwrapper.mcad.ibm.com: reachability-pytorch-test
+                  spec:
+                      minMember: 2
+            - replicas: 1
+              completionstatus: "Complete"
+              custompodresources:
+                  - replicas: 2
+                    requests:
+                        cpu: 1
+                        nvidia.com/gpu: 0
+                        memory: 1Gi
+                    limits:
+                        cpu: 5
+                        nvidia.com/gpu: 0
+                        memory: 2Gi
+              generictemplate:
+                  apiVersion: "kubeflow.org/v1"
+                  kind: "PyTorchJob"
+                  metadata:
+                      name: reachability-pytorch-test
+                      namespace: nlp-kubeflow-dev
+                      labels:
+                          appwrapper.mcad.ibm.com: reachability-pytorch-test
+                          pod-group.scheduling.sigs.k8s.io: reachability-pytorch-test
+                  spec:
+                      pytorchReplicaSpecs:
+                          Master:
+                              replicas: 1
+                              restartPolicy: Never
+                              template:
+                                  metadata:
+                                      namespace: nlp-kubeflow-dev
+                                      labels:
+                                          appwrapper.mcad.ibm.com: reachability-pytorch-test
+                                          pod-group.scheduling.sigs.k8s.io: reachability-pytorch-test
+                                          autopilot: ""
+                                          net-reach: ""
+                                      annotations:
+                                          k8s.v1.cni.cncf.io/networks: multi-nic-network
+                                  spec:
+                                      schedulerName: scheduler-plugins-scheduler
+                                      priorityClassName: "default-priority"
+                                      containers:
+                                          - name: pytorch
+                                            image: nginx
+                                            imagePullPolicy: IfNotPresent
+                                            env: []
+                                            command:
+                                                - sh
+                                                - -c
+                                                - |
+                                                  echo "Environment variables set by the kubeflow training operator:"
+                                                  echo ${MASTER_ADDR}:${MASTER_PORT}
+                                                  echo "PYTHONUNBUFFERED:"${PYTHONUNBUFFERED}
+                                                  echo My global rank is ${RANK} / ${WORLD_SIZE}
+                                                  echo "Other injected environment variables:"
+                                                  echo "NVME_MOUNT_PATH: "${NVME_MOUNT_PATH}
+                                                  #
+                                                  # User commands
+                                                  #
+                                                  sleep inf
+                                            resources:
+                                                requests:
+                                                    cpu: 1
+                                                    nvidia.com/gpu: 0
+                                                    memory: 1Gi
+                                                limits:
+                                                    cpu: 5
+                                                    nvidia.com/gpu: 0
+                                                    memory: 2Gi
+                                            volumeMounts:
+                                                - name: dshm
+                                                  mountPath: "/dev/shm"
+                                      volumes:
+                                          - name: dshm
+                                            emptyDir:
+                                                medium: Memory
+                                      imagePullSecrets:
+                                          - name: us-icr-io
+                          Worker:
+                              replicas: 1
+                              restartPolicy: Never
+                              template:
+                                  metadata:
+                                      namespace: nlp-kubeflow-dev
+                                      labels:
+                                          appwrapper.mcad.ibm.com: reachability-pytorch-test
+                                          pod-group.scheduling.sigs.k8s.io: reachability-pytorch-test
+                                          autopilot: ""
+                                          net-reach: ""
+                                      annotations:
+                                          k8s.v1.cni.cncf.io/networks: multi-nic-network
+                                  spec:
+                                      schedulerName: scheduler-plugins-scheduler
+                                      priorityClassName: "default-priority"
+                                      containers:
+                                          - name: pytorch
+                                            image: nginx
+                                            imagePullPolicy: IfNotPresent
+                                            env: []
+                                            command:
+                                                - sh
+                                                - -c
+                                                - |
+                                                  echo "Environment variables set by the kubeflow training operator:"
+                                                  echo ${MASTER_ADDR}:${MASTER_PORT}
+                                                  echo "PYTHONUNBUFFERED:"${PYTHONUNBUFFERED}
+                                                  echo My global rank is ${RANK} / ${WORLD_SIZE}
+                                                  echo "Other injected environment variables:"
+                                                  echo "NVME_MOUNT_PATH: "${NVME_MOUNT_PATH}
+                                                  #
+                                                  # User commands
+                                                  #
+                                                  sleep inf
+                                            resources:
+                                                requests:
+                                                    cpu: 1
+                                                    nvidia.com/gpu: 0
+                                                    memory: 1Gi
+                                                limits:
+                                                    cpu: 5
+                                                    nvidia.com/gpu: 0
+                                                    memory: 2Gi
+                                            volumeMounts:
+                                                - name: dshm
+                                                  mountPath: "/dev/shm"
+                                      volumes:
+                                          - name: dshm
+                                            emptyDir:
+                                                medium: Memory
+                                      imagePullSecrets:
+                                          - name: us-icr-io
