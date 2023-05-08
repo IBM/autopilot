@@ -1,0 +1,62 @@
+# Default values for the Autopilot DaemonSet.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+namespace: 
+  create: false
+  name: autopilot
+
+image:
+  repository: icr.io/cmisale/autopilot
+  tag: dev
+  pullPolicy: Always
+
+  PCIeBW: 4
+
+pullSecrets:
+  create: false
+  imagePullSecrets: [name: "mutating-webhook-pull"]
+  imagePullSecretData: 
+
+service:
+  port: 3333
+
+nodeSelector:
+  nvidia.com/gpu.present: 'true'
+  # node-role.kubernetes.io/infra: ''
+
+resources: 
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+    cpu: 8
+    memory: 10Gi
+    nvidia.com/gpu: 0
+  requests:
+    cpu: 8
+    memory: 10Gi
+    nvidia.com/gpu: 0
+
+# serviceAnnotations:
+#    service.beta.openshift.io/serving-cert-secret-name: autopilot-webhook
+
+
+# configAnnotations: 
+#   service.beta.openshift.io/inject-cabundle: "true"
+
+# klog configuration
+loglevel: 2
+logfile: "/home/autopilot/data/report.log"
+
+# optional remote storage. A PVC and secret must exist
+additionalVolumeClaimTemplates:
+  # - name: logdir
+  #   persistentVolumeClaim:
+  #     claimName: webhook-pvc
+additionalVolumeMounts:
+  # - mountPath: /data
+  #   name: logdir

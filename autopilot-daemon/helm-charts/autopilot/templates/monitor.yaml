@@ -1,0 +1,18 @@
+# Prometheus Monitor Service (Metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: autopilot
+    app.kubernetes.io/name: servicemonitor
+    app.kubernetes.io/component: metrics
+  name: autopilot-metrics-monitor
+  namespace: {{ .Values.namespace.name }}
+spec:
+  endpoints:
+    - path: /metrics
+      port: http
+      scheme: http
+  selector:
+    matchLabels:
+      app: autopilot

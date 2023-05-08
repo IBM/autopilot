@@ -10,14 +10,14 @@ def main():
 
     api = client.CustomObjectsApi()
 
-    output = os.popen('bash ./briefings.sh')
+    output = os.popen('bash ./gpubw/briefings.sh')
     result = output.read()
     print(result)
 
     if "ABORT" not in result:
         print("Briefings completed. Continue with pci-e bw evaluation.")
-        bw_threshold = os.getenv("BW")
-        output = os.popen('./gpuLocalBandwidthTest.sh -t ' + bw_threshold)
+        bw_threshold = "4"
+        output = os.popen('./gpubw/gpuLocalBandwidthTest.sh -t ' + bw_threshold)
         result = output.read()
 
         if "FAIL" not in result:
@@ -35,11 +35,24 @@ def main():
 # spec:
 #   node: "worker-0"
 #   report: <the output>
-#   issuer: the hc test
 
 
     nodename = os.getenv("NODE_NAME")
+    podname = os.getenv("POD_NAME")
     namespace = os.getenv("NAMESPACE")
+    # api_instance = client.CoreV1Api()
+
+    # body = {
+    #     "metadata": {
+    #         "labels": {
+    #             "deschedule": ""}
+    #     }
+    # }
+
+    # try:
+    #     api_instance.patch_namespaced_pod(namespace=namespace, name=podname, body=body)
+    # except ApiException as e:
+    #     print("Exception when patching pod:\n", e)
     dt = datetime.now()
 
     hcr_manifest = {
@@ -51,7 +64,7 @@ def main():
         'spec': {
             'node': nodename,
             'report': result,
-            'issuer': "pciebw"
+            'issuer': "gpu-pciebw"
         }
     }
     group = "my.domain"
