@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: autopilot
+  name: autopilot-healthchecks
+  namespace: {{ .Values.namespace.name }}
+  annotations: 
+    {{- toYaml .Values.serviceAnnotations | nindent 4 }}
+spec:
+  # type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      protocol: TCP
+      name: healthcheck
+  selector:
+    app: autopilot

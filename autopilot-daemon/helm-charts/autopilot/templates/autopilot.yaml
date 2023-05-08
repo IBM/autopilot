@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: autopilot
+  name: {{ printf "%s-%s" .Chart.Name .Release.Name }}
+  namespace: {{ .Values.namespace.name }}
+spec:
+  selector:
+    matchLabels:
+      app: autopilot
+  template:
+    metadata:
+      labels:
+        app: autopilot
+    spec:
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      serviceAccountName: autopilot
+      {{- with .Values.pullSecrets.imagePullSecrets }}
+      imagePullSecrets:
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      containers:
+        - image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+          command:
+           - sh
+           - -c
+           - |
+             /usr/local/bin/autopilot --port {{ .Values.service.port }} -loglevel={{ .Values.loglevel }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }} 
+          name: autopilot
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: healthcheck
+            - containerPort: 8081
+              name: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            # - name: autopilot-tls-secret
+            #   mountPath: "/etc/admission-webhook/tls"
+            #   readOnly: true
+            {{- if .Values.additionalVolumeMounts }}
+            {{- toYaml .Values.additionalVolumeMounts | nindent 12 }}
+            {{- end }}
+      volumes:
+        # - name: autopilot-tls-secret
+        #   secret:
+        #     secretName: autopilot-webhook
+        {{- if .Values.additionalVolumeClaimTemplates }}
+        {{- toYaml .Values.additionalVolumeClaimTemplates | nindent 8 }}
+        {{- end}}
+          
