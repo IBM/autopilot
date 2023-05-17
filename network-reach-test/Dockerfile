@@ -9,7 +9,7 @@ RUN apt -y update && apt -y upgrade && \
 RUN setcap cap_net_raw,cap_net_admin+p /bin/ping
 
 # Install required Python libraries
-RUN pip install requests kubernetes
+RUN pip install kubernetes
 
 # Copy main Python script
 COPY metrics-entrypoint.py /metrics-entrypoint.py
