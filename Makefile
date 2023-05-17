@@ -16,14 +16,12 @@ net-reach-image:
 
 .PHONY: install
 install:
-	helm install mw-v0 autopilot-mutating-webhook/helm-charts/mutating-webhook
-	helm install hcr-v0 healthcheckoperator/helm-charts/healthcheckoperator
+	helm install autopilot autopilot-daemon/helm-charts/autopilot
 
 .PHONY: uninstall
 uninstall:
-	helm uninstall hcr-v0
-	helm uninstall mw-v0
+	helm uninstall autopilot
 
-.PHONY: submodule-init
+.PHONY: submodule
 submodule-init:
 	git submodule update --init --recursive

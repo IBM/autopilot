@@ -38,7 +38,6 @@ def main():
 
 
     nodename = os.getenv("NODE_NAME")
-    podname = os.getenv("POD_NAME")
     namespace = os.getenv("NAMESPACE")
     # api_instance = client.CoreV1Api()
 
