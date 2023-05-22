@@ -1,6 +1,5 @@
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
-from pprint import pprint
 from datetime import datetime
 import os
 
@@ -23,6 +22,14 @@ def main():
         if "FAIL" not in result:
             print("Health Check successful. No report will be issued")
             print(result)
+            fhand = open('./gpubw/gpuBandwidthTest.log')
+            bws = ""
+            for line in fhand:
+                if "Bandwidth =" in line:
+                    x = line.split("= ", 2)
+                    y = x[1].split(" GB/s")
+                    bws += y[0] + " "
+            print(bws.strip())
             return 0 
 
 

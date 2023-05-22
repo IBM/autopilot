@@ -18,8 +18,10 @@
 # Ver. 1.3
 
 PROG="/home/autopilot/gpubw/bandwidthTest"
-FN="gpuBandwidthTest.log"
+FN="/home/autopilot/gpubw/gpuBandwidthTest.log"
 T="7"
+
+echo "" > $FN
 
 while getopts t:f: flag
 do
@@ -77,6 +79,5 @@ if [[ "$F" -eq "1" ]]; then
   exit 1
 else
   cat $FN
-  rm -f $FN
   echo "SUCCESS"
 fi
