@@ -16,9 +16,11 @@ spec:
         app: test
     spec:
       imagePullSecrets:
-      - name: us-icr-io
+      #- name: us-icr-io
+      - name: icr-io
       containers:
-        - image: us.icr.io/cil15-shared-registry/autopilot/reachability:v0
+        #- image: us.icr.io/cil15-shared-registry/autopilot/reachability:v0
+        - image: icr.io/eletonia/reachability:latest
           command:
             - sh
             - -c

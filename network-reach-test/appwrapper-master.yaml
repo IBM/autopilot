@@ -1,0 +1,456 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    k8s.v1.cni.cncf.io/network-status: |-
+      [{
+          "name": "openshift-sdn",
+          "interface": "eth0",
+          "ips": [
+              "10.128.3.205"
+          ],
+          "default": true,
+          "dns": {}
+      },{
+          "name": "eletonia/multi-nic-network",
+          "interface": "net1-1",
+          "ips": [
+              "192.168.1.17",
+              "192.168.65.17"
+          ],
+          "mac": "02:00:24:48:e9:8c",
+          "dns": {}
+      }]
+    k8s.v1.cni.cncf.io/networks: multi-nic-network
+    k8s.v1.cni.cncf.io/networks-status: |-
+      [{
+          "name": "openshift-sdn",
+          "interface": "eth0",
+          "ips": [
+              "10.128.3.205"
+          ],
+          "default": true,
+          "dns": {}
+      },{
+          "name": "eletonia/multi-nic-network",
+          "interface": "net1-1",
+          "ips": [
+              "192.168.1.17",
+              "192.168.65.17"
+          ],
+          "mac": "02:00:24:48:e9:8c",
+          "dns": {}
+      }]
+    openshift.io/scc: restricted-v2
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+  creationTimestamp: "2023-04-12T19:45:31Z"
+  labels:
+    appwrapper.mcad.ibm.com: reachability-pytorch-test
+    autopilot: ""
+    autopilot.servicejob: reachability-pytorch-test
+    group-name: kubeflow.org
+    job-name: reachability-pytorch-test
+    job-role: master
+    net-reach: ""
+    pod-group.scheduling.sigs.k8s.io: reachability-pytorch-test
+    replica-index: "0"
+    replica-type: master
+    training.kubeflow.org/job-name: reachability-pytorch-test
+    training.kubeflow.org/job-role: master
+    training.kubeflow.org/operator-name: pytorchjob-controller
+    training.kubeflow.org/replica-index: "0"
+    training.kubeflow.org/replica-type: master
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:k8s.v1.cni.cncf.io/networks: {}
+        f:labels:
+          .: {}
+          f:appwrapper.mcad.ibm.com: {}
+          f:autopilot: {}
+          f:group-name: {}
+          f:job-name: {}
+          f:job-role: {}
+          f:net-reach: {}
+          f:pod-group.scheduling.sigs.k8s.io: {}
+          f:replica-index: {}
+          f:replica-type: {}
+          f:training.kubeflow.org/job-name: {}
+          f:training.kubeflow.org/job-role: {}
+          f:training.kubeflow.org/operator-name: {}
+          f:training.kubeflow.org/replica-index: {}
+          f:training.kubeflow.org/replica-type: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"e8bef574-3e37-453d-8111-904ac05aaf6b"}: {}
+      f:spec:
+        f:containers:
+          k:{"name":"pytorch"}:
+            .: {}
+            f:command: {}
+            f:env:
+              .: {}
+              k:{"name":"MASTER_ADDR"}:
+                .: {}
+                f:name: {}
+                f:value: {}
+              k:{"name":"MASTER_PORT"}:
+                .: {}
+                f:name: {}
+                f:value: {}
+              k:{"name":"PYTHONUNBUFFERED"}:
+                .: {}
+                f:name: {}
+                f:value: {}
+              k:{"name":"RANK"}:
+                .: {}
+                f:name: {}
+                f:value: {}
+              k:{"name":"WORLD_SIZE"}:
+                .: {}
+                f:name: {}
+                f:value: {}
+            f:image: {}
+            f:imagePullPolicy: {}
+            f:name: {}
+            f:ports:
+              .: {}
+              k:{"containerPort":23456,"protocol":"TCP"}:
+                .: {}
+                f:containerPort: {}
+                f:name: {}
+                f:protocol: {}
+            f:resources:
+              .: {}
+              f:limits:
+                .: {}
+                f:cpu: {}
+                f:memory: {}
+                f:nvidia.com/gpu: {}
+              f:requests:
+                .: {}
+                f:cpu: {}
+                f:memory: {}
+                f:nvidia.com/gpu: {}
+            f:terminationMessagePath: {}
+            f:terminationMessagePolicy: {}
+            f:volumeMounts:
+              .: {}
+              k:{"mountPath":"/dev/shm"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+        f:dnsPolicy: {}
+        f:enableServiceLinks: {}
+        f:imagePullSecrets:
+          .: {}
+          k:{"name":"icr-io"}: {}
+        f:priorityClassName: {}
+        f:restartPolicy: {}
+        f:schedulerName: {}
+        f:securityContext: {}
+        f:terminationGracePeriodSeconds: {}
+        f:volumes:
+          .: {}
+          k:{"name":"dshm"}:
+            .: {}
+            f:emptyDir:
+              .: {}
+              f:medium: {}
+            f:name: {}
+    manager: manager
+    operation: Update
+    time: "2023-04-12T19:45:30Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:conditions:
+          .: {}
+          k:{"type":"PodScheduled"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:message: {}
+            f:reason: {}
+            f:status: {}
+            f:type: {}
+    manager: kube-scheduler
+    operation: Update
+    subresource: status
+    time: "2023-04-12T19:45:31Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          f:k8s.v1.cni.cncf.io/network-status: {}
+          f:k8s.v1.cni.cncf.io/networks-status: {}
+    manager: multus
+    operation: Update
+    subresource: status
+    time: "2023-04-12T19:45:41Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:conditions:
+          k:{"type":"ContainersReady"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:reason: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Initialized"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:message: {}
+            f:reason: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Ready"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:reason: {}
+            f:status: {}
+            f:type: {}
+        f:containerStatuses: {}
+        f:hostIP: {}
+        f:initContainerStatuses: {}
+        f:phase: {}
+        f:podIP: {}
+        f:podIPs:
+          .: {}
+          k:{"ip":"10.128.3.205"}:
+            .: {}
+            f:ip: {}
+        f:startTime: {}
+    manager: kubelet
+    operation: Update
+    subresource: status
+    time: "2023-04-12T19:45:44Z"
+  name: reachability-pytorch-test-master-0
+  namespace: eletonia
+  ownerReferences:
+  - apiVersion: kubeflow.org/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: PyTorchJob
+    name: reachability-pytorch-test
+    uid: e8bef574-3e37-453d-8111-904ac05aaf6b
+  resourceVersion: "25818526"
+  uid: aae4bab8-3189-4616-a5a3-19450592e733
+spec:
+  containers:
+  - command:
+    - sh
+    - -c
+    - |
+      echo "Environment variables set by the kubeflow training operator:"
+      echo ${MASTER_ADDR}:${MASTER_PORT}
+      echo "PYTHONUNBUFFERED:"${PYTHONUNBUFFERED}
+      echo My global rank is ${RANK} / ${WORLD_SIZE}
+      #
+      # User commands
+      #
+      sleep inf
+    env:
+    - name: PYTHONUNBUFFERED
+      value: "0"
+    - name: MASTER_PORT
+      value: "23456"
+    - name: MASTER_ADDR
+      value: reachability-pytorch-test-master-0
+    - name: WORLD_SIZE
+      value: "2"
+    - name: RANK
+      value: "0"
+    image: nginx
+    imagePullPolicy: IfNotPresent
+    name: pytorch
+    ports:
+    - containerPort: 23456
+      name: pytorchjob-port
+      protocol: TCP
+    resources:
+      limits:
+        cpu: "5"
+        memory: 2Gi
+        nvidia.com/gpu: "1"
+      requests:
+        cpu: "1"
+        memory: 1Gi
+        nvidia.com/gpu: "1"
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      runAsNonRoot: true
+      runAsUser: 1000850000
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /dev/shm
+      name: dshm
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-rj5sg
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  imagePullSecrets:
+  - name: icr-io
+  initContainers:
+  - env:
+    - name: NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: NAMESPACE
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.namespace
+    - name: COUNT
+      value: "2"
+    - name: SELECTOR
+      value: autopilot.servicejob=reachability-pytorch-test
+    image: icr.io/eletonia/reachability:latest
+    imagePullPolicy: Always
+    name: net-reach
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      runAsNonRoot: true
+      runAsUser: 1000850000
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-rj5sg
+      readOnly: true
+  nodeName: dev-ppv5g-worker-3-with-secondary-wz2tx
+  preemptionPolicy: PreemptLowerPriority
+  priority: 5
+  priorityClassName: default-priority
+  restartPolicy: Never
+  schedulerName: scheduler-plugins-scheduler
+  securityContext:
+    fsGroup: 1000850000
+    seLinuxOptions:
+      level: s0:c29,c19
+    seccompProfile:
+      type: RuntimeDefault
+  serviceAccount: initcontainer
+  serviceAccountName: initcontainer
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  volumes:
+  - emptyDir:
+      medium: Memory
+    name: dshm
+  - name: kube-api-access-rj5sg
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+      - configMap:
+          items:
+          - key: service-ca.crt
+            path: service-ca.crt
+          name: openshift-service-ca.crt
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2023-04-12T19:45:38Z"
+    message: 'containers with incomplete status: [net-reach]'
+    reason: ContainersNotInitialized
+    status: "False"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2023-04-12T19:45:38Z"
+    reason: PodFailed
+    status: "False"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2023-04-12T19:45:38Z"
+    reason: PodFailed
+    status: "False"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2023-04-12T19:45:32Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - image: nginx
+    imageID: ""
+    lastState: {}
+    name: pytorch
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      waiting:
+        reason: PodInitializing
+  hostIP: 10.241.129.33
+  initContainerStatuses:
+  - containerID: cri-o://b76c411c1d2baea565e1427fe1f92de829ed6b4857987ec2830a1237fec6ebe4
+    image: icr.io/eletonia/reachability:latest
+    imageID: icr.io/eletonia/reachability@sha256:fbfd4920ad945a63d71aef6351419150b673573c7ee2015a52c68f4ee4327dac
+    lastState: {}
+    name: net-reach
+    ready: false
+    restartCount: 0
+    state:
+      terminated:
+        containerID: cri-o://b76c411c1d2baea565e1427fe1f92de829ed6b4857987ec2830a1237fec6ebe4
+        exitCode: 1
+        finishedAt: "2023-04-12T19:45:42Z"
+        reason: Error
+        startedAt: "2023-04-12T19:45:42Z"
+  phase: Failed
+  podIP: 10.128.3.205
+  podIPs:
+  - ip: 10.128.3.205
+  qosClass: Burstable
+  startTime: "2023-04-12T19:45:38Z"
