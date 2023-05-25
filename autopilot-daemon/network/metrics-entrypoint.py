@@ -27,6 +27,19 @@ def main():
         alert = "Node " + nodename + " is not reachable"
         print(alert)
 
+    connectable = output.split("Connectable network devices: ")[1]
+    devices = int(connectable.split("/")[0])
+    if devices == 2:
+        lastline = nodename + " 1 1"
+    elif devices == 1:
+        lastline = nodename + " 1 0"
+    elif devices == 0:
+        lastline = nodename + " 0 0"
+    else:
+        lastline = "Cannot determine connectable devices"
+    
+    print("\n" + lastline)
+
         # api = client.CustomObjectsApi()
 
         # dt = datetime.now()
