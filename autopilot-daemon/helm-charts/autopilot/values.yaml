@@ -5,7 +5,7 @@
 replicaCount: 1
 
 namespace: 
-  create: false
+  create: true
   name: autopilot
 
 image:
@@ -16,15 +16,15 @@ image:
   PCIeBW: 4
 
 pullSecrets:
-  create: false
-  imagePullSecrets: [name: "mutating-webhook-pull"]
+  create: true
+  name: autopilot-pull-secret
   imagePullSecretData: 
-
 service:
   port: 3333
 
 nodeSelector:
   nvidia.com/gpu.present: 'true'
+  nvidia.com/mig.config: 'all-disabled'
   # node-role.kubernetes.io/infra: ''
 
 resources: 
@@ -33,11 +33,11 @@ resources:
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   limits:
-    cpu: 8
+    cpu: 4
     memory: 10Gi
     nvidia.com/gpu: 0
   requests:
-    cpu: 8
+    cpu: 4
     memory: 10Gi
     nvidia.com/gpu: 0
 
@@ -56,7 +56,7 @@ logfile: "/home/autopilot/data/report.log"
 additionalVolumeClaimTemplates:
   # - name: logdir
   #   persistentVolumeClaim:
-  #     claimName: webhook-pvc
+  #     claimName: my-pvc
 additionalVolumeMounts:
   # - mountPath: /data
   #   name: logdir
