@@ -61,6 +61,7 @@ func main() {
 	hcMux.Handle("/pciebw", handlers.PCIeBWHandler("4"))
 	hcMux.Handle("/net", handlers.NetReachHandler())
 	hcMux.Handle("/gpumem", handlers.GPUMemHandler())
+	hcMux.Handle("/remapped", handlers.RemappedRowsHandler())
 
 	klog.Info("Serving Health Checks on port :", *port)
 	err := http.ListenAndServe(":"+*port, hcMux)

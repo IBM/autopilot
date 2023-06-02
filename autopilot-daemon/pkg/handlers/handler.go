@@ -43,6 +43,39 @@ func PCIeBWHandler(pciebw string) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func RemappedRowsHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Requesting Remapped Rows check on all GPUs\n"))
+		out, err := exec.Command("python3", "./gpu-remapped/entrypoint.py").Output()
+		if err != nil {
+			klog.Error(err.Error())
+		} else {
+			klog.Info("Remapped Rows check test completed:")
+			// output := string(out[:])
+			// fmt.Println(output)
+			output := strings.TrimSuffix(string(out[:]), "\n")
+
+			split := strings.Split(output, "\n")
+			rmr := split[len(split)-1]
+			final := strings.Split(rmr, " ")
+
+			for gpuid, v := range final {
+				rm, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					klog.Error(err.Error())
+				} else {
+					klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", rm)
+					utils.Hchecks.WithLabelValues("remapped", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Observe(rm)
+					utils.HchecksGauge.WithLabelValues("remapped", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(rm)
+				}
+			}
+		}
+		w.Write(out)
+
+	}
+	return http.HandlerFunc(fn)
+}
+
 func GPUMemHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Requesting HBM test "))
