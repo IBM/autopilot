@@ -62,6 +62,16 @@ func NetReachHandler() http.Handler {
 			klog.Info("Secondary NIC health check test completed:")
 			output := string(out[:])
 			fmt.Println(output)
+			split := strings.Split(output, "\n")
+			lastline := split[len(split)-1]
+			final := strings.Split(lastline, " ")
+			var nicid1, nicid2 int = 1, 2
+			if reachable1, err := strconv.ParseFloat(final[1], 32); err == nil {
+				utils.HchecksGauge.WithLabelValues("net-reach", os.Getenv("NODE_NAME"), strconv.Itoa(nicid1)).Set(reachable1)
+			}
+			if reachable2, err := strconv.ParseFloat(final[2], 32); err == nil {
+				utils.HchecksGauge.WithLabelValues("net-reach", os.Getenv("NODE_NAME"), strconv.Itoa(nicid2)).Set(reachable2)
+			}
 		}
 		w.Write(out)
 	}
