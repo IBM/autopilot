@@ -93,7 +93,7 @@ func NetReachHandler() http.Handler {
 			klog.Error(err.Error())
 		} else {
 			klog.Info("Secondary NIC health check test completed:")
-			output := string(out[:])
+			output := strings.TrimSuffix(string(out[:]), "\n")
 			fmt.Println(output)
 			split := strings.Split(output, "\n")
 			lastline := split[len(split)-1]
