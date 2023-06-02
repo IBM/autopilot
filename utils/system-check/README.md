@@ -40,5 +40,5 @@ All the health checks expose metrics that can be plotted through Grafana dashboa
 To uninstall:
 
 ```bash
-helm uninstall pcie-test
+helm uninstall system-check 
 ```
