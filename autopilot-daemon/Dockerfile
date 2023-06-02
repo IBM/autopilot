@@ -59,6 +59,12 @@ COPY network/metrics-entrypoint.py /home/autopilot/network/metrics-entrypoint.py
 # Copy Python script to read Multi-NIC Health Checker status
 RUN cd network && wget https://raw.githubusercontent.com/foundation-model-stack/multi-nic-cni/main/health-check/example-client/read_status.py
 
+
+# Remapped Rows test files
+COPY gpu-remapped/entrypoint.py /home/autopilot/gpu-remapped/entrypoint.py
+COPY gpu-remapped/briefings.sh /home/autopilot/gpu-remapped/briefings.sh
+COPY gpu-remapped/remapped-rows.sh /home/autopilot/gpu-remapped/remapped-rows.sh
+
 # Last touches
 RUN pip install --upgrade pip && pip install kubernetes
 RUN apt install -y vim && apt -y clean && apt -y autoremove
