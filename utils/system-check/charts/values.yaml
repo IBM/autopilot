@@ -1,0 +1,5 @@
+image: "us.icr.io/cil15-shared-registry/gracek/find-endpoint:2.5"
+namespace:  # namespace where to deploy the helm chart
+imagePullSecret: "all-icr-io"
+autopilotService: "autopilot-healthchecks"
+autopilotNamespace: "autopilot"
