@@ -15,30 +15,13 @@ import (
 func PCIeBWHandler(pciebw string) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Requesting pcie test with bw: " + pciebw + "\n"))
-		out, err := exec.Command("python3", "./gpubw/entrypoint.py").Output()
+
+		err, out := runPCIeBw()
 		if err != nil {
 			klog.Error(err.Error())
 		} else {
-			klog.Info("GPU PCIe BW test completed:")
-			w.Write(out)
-			output := strings.TrimSuffix(string(out[:]), "\n")
-
-			split := strings.Split(output, "\n")
-			bws := split[len(split)-1]
-			final := strings.Split(bws, " ")
-
-			for gpuid, v := range final {
-				bw, err := strconv.ParseFloat(v, 64)
-				if err != nil {
-					klog.Error(err.Error())
-				} else {
-					klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", bw)
-					utils.Hchecks.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Observe(bw)
-					utils.HchecksGauge.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(bw)
-				}
-			}
+			w.Write(*out)
 		}
-
 	}
 	return http.HandlerFunc(fn)
 }
