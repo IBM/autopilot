@@ -24,7 +24,7 @@ The Helm chart can be configured by updating the following values in `values.yam
 To deploy the Pod:
 
 ```bash
-helm install pcie-test utils/single-node-test/charts
+helm install system-check utils/system-check/charts/
 ```
 
 Logs can be streamed with
