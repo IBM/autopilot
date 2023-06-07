@@ -65,7 +65,7 @@ COPY gpu-remapped/entrypoint.py /home/autopilot/gpu-remapped/entrypoint.py
 COPY gpu-remapped/briefings.sh /home/autopilot/gpu-remapped/briefings.sh
 COPY gpu-remapped/remapped-rows.sh /home/autopilot/gpu-remapped/remapped-rows.sh
 
-COPY utils/* /home/autopilot/utils/*
+COPY utils /home/autopilot/utils
 
 # Last touches
 RUN pip install --upgrade pip && pip install kubernetes
