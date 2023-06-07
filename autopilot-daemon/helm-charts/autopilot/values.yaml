@@ -9,16 +9,18 @@ namespace:
   name: autopilot
 
 image:
-  repository: icr.io/cmisale/autopilot
+  repository: us.icr.io/cil15-shared-registry/autopilot/autopilot
   tag: dev
   pullPolicy: Always
 
-  PCIeBW: 4
+PCIeBW: 4
 
 pullSecrets:
   create: true
   name: autopilot-pull-secret
   imagePullSecretData: 
+  
+
 service:
   port: 3333
 
