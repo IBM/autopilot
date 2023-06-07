@@ -7,4 +7,4 @@ then
 	cat error.log
 	exit 1
 fi
-echo Proceed with main health check
+# echo Proceed with main health check

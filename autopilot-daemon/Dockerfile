@@ -49,9 +49,9 @@ COPY --from=gobuild /workspace/bin/autopilot /usr/local/bin/autopilot
 
 # PCIe tests files
 COPY --from=cudabuild /workspace/cuda-samples/Samples/1_Utilities/bandwidthTest/bandwidthTest /home/autopilot/gpubw/bandwidthTest
-COPY gpubw/gpuLocalBandwidthTest.sh /home/autopilot/gpubw/gpuLocalBandwidthTest.sh
-COPY gpubw/entrypoint.py /home/autopilot/gpubw/entrypoint.py
-COPY gpubw/briefings.sh /home/autopilot/gpubw/briefings.sh
+COPY gpu-bw/gpuLocalBandwidthTest.sh /home/autopilot/gpubw/gpuLocalBandwidthTest.sh
+COPY gpu-bw/entrypoint.py /home/autopilot/gpubw/entrypoint.py
+COPY gpu-bw/briefings.sh /home/autopilot/gpubw/briefings.sh
 
 # Secondary NIC tests files
 COPY network/metrics-entrypoint.py /home/autopilot/network/metrics-entrypoint.py
@@ -64,6 +64,8 @@ RUN cd network && wget https://raw.githubusercontent.com/foundation-model-stack/
 COPY gpu-remapped/entrypoint.py /home/autopilot/gpu-remapped/entrypoint.py
 COPY gpu-remapped/briefings.sh /home/autopilot/gpu-remapped/briefings.sh
 COPY gpu-remapped/remapped-rows.sh /home/autopilot/gpu-remapped/remapped-rows.sh
+
+COPY utils/* /home/autopilot/utils/*
 
 # Last touches
 RUN pip install --upgrade pip && pip install kubernetes

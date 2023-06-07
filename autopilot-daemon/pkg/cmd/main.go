@@ -16,10 +16,10 @@ import (
 
 func main() {
 	port := flag.String("port", "3333", "Port for the webhook to listen to. Defaulted to 3333")
-	InitContainerImagePCIeBW := flag.String("pciebw", "", "Init container for PCIe bandwidth test")
-	InitContainerImageMem := flag.String("gpumem", "", "Init container for gpu memory test")
-	InitContainerImageNet := flag.String("netreach", "", "Init container for secondary nic reachability test")
-	bwThreshold := flag.String("bw", "7", "Sets bandwidth threshold for the init container. Default to 7")
+	// InitContainerImagePCIeBW := flag.String("pciebw", "", "Init container for PCIe bandwidth test")
+	// InitContainerImageMem := flag.String("gpumem", "", "Init container for gpu memory test")
+	// InitContainerImageNet := flag.String("netreach", "", "Init container for secondary nic reachability test")
+	bwThreshold := flag.String("bw", "4", "Sets bandwidth threshold for the init container")
 	logFile := flag.String("logfile", "report.log", "File where requests counter and info is being stored")
 	v := flag.String("loglevel", "2", "Log level")
 	flag.Parse()
@@ -35,10 +35,10 @@ func main() {
 	}
 
 	utils.UserConfig = utils.InitConfig{
-		InitContainerImagePCIeBW: *InitContainerImagePCIeBW,
-		InitContainerImageMem:    *InitContainerImageMem,
-		InitContainerImageNet:    *InitContainerImageNet,
-		BWThreshold:              *bwThreshold,
+		// InitContainerImagePCIeBW: *InitContainerImagePCIeBW,
+		// InitContainerImageMem:    *InitContainerImageMem,
+		// InitContainerImageNet:    *InitContainerImageNet,
+		BWThreshold: *bwThreshold,
 	}
 
 	reg := prometheus.NewRegistry()
@@ -60,8 +60,9 @@ func main() {
 	hcMux := http.NewServeMux()
 	hcMux.Handle("/pciebw", handlers.PCIeBWHandler("4"))
 	hcMux.Handle("/net", handlers.NetReachHandler())
-	hcMux.Handle("/gpumem", handlers.GPUMemHandler())
+	// hcMux.Handle("/gpumem", handlers.GPUMemHandler())
 	hcMux.Handle("/remapped", handlers.RemappedRowsHandler())
+	hcMux.Handle("/status", handlers.SystemStatusHandler())
 
 	klog.Info("Serving Health Checks on port :", *port)
 	err := http.ListenAndServe(":"+*port, hcMux)

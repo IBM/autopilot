@@ -25,9 +25,15 @@ else
   exit 0
 fi
 RESULT=""
+FAIL=0
 for i in $(seq 0 1 $((D-1))) ; do
   OUT=$(nvidia-smi -q -i $i| grep -A 10 "Remapped Rows")
   REMAPPED=$(echo $OUT | egrep "Pending\s*:\s+Yes")
-  [[ -z "$REMAPPED" ]] && RESULT+="0 " || RESULT+="1 "
+  [[ -z "$REMAPPED" ]] && RESULT+="0 " || RESULT+="1 "; FAIL=1
 done
+if [[ $FAIL -eq 0 ]]; then
+  echo FAIL
+else
+  echo SUCCESS
+fi
 echo $RESULT
