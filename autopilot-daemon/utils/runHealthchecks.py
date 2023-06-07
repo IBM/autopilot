@@ -1,30 +1,23 @@
-import os, sys, argparse
+import argparse
 from kubernetes import client, config
 import requests
 import time
-from multiprocessing import Process
+# from multiprocessing import Process
 
 
 config.load_incluster_config()
 v1 = client.CoreV1Api()
 node_list = [] # global incase of future implementation of parallelism
 
-# parser = argparse.ArgumentParser()
-# parser.add_argument('--service', type=str, help='Autopilot healthchecks service name')
-# parser.add_argument('--namespace', type=str, help='Autopilot healthchecks namespace')
-# parser.add_argument('--node', type=str, help='Node that will run a healthcheck')
-
-args = sys.argv
-service = ''
-namespace = ''
-node = ''
-for arg in args:
-    if "service" in arg:
-        service = arg.split('=')[1]
-    elif 'namespace' in arg:
-        namespace = arg.split('=')[1]
-    elif 'node' in arg:
-        node = arg.split('=')[1]
+# get arguments for service, namespace, and node(s)
+parser = argparse.ArgumentParser()
+parser.add_argument('--service', type=str, help='Autopilot healthchecks service name')
+parser.add_argument('--namespace', type=str, help='Autopilot healthchecks namespace')
+parser.add_argument('--node', type=str, help='Node that will run a healthcheck')
+args = vars(parser.parse_args())
+service = args['service']
+namespace = args['namespace']
+node = args['node']
 
 
 # get addresses in desired endpointslice (autopilot-healthchecks endpoints) based on which node(s) the user chooses
@@ -46,7 +39,7 @@ def get_addresses():
                         address_list.append(address)
                         # print('ADDRESSES: ' + str(address_list)) # debug
                         return address_list
-                print('Error: Issue with node choice. Choices include: \"all\", and the node name of a specific node.')
+                print('Error: Issue with node choice. Choices include: \"all\", and a specific node that is running.')
                 raise SystemExit(2)
 
 
@@ -58,13 +51,15 @@ def run_tests(addresses):
         print("\nNode: ", daemon_node) # debug
         node_list.append(daemon_node)
         
-        # create url for pciebw, network, and remapped tests
+        # create url for status test
         # ex: curl http://10.128.11.100:3333/status?host=dev-ppv5g-worker-3-with-secondary-thlkf
         status_test = 'http://' + str(address.ip) + ':3333/status?host=' + str(daemon_node)
         
         # run status test
         print('\nStatus test: ' + status_test)
-        print('\nStatus test response: ', get_requests(status_test))
+        response = get_requests(status_test)
+        print('\nStatus test response: \n', response)
+        print('\n', get_node_status(response))
         print("\n-------------------------------------\n") # separator
             
     print('Node list: ')
@@ -85,6 +80,16 @@ def get_requests(url):
             time.sleep(5)
             continue
     return page.text
+
+
+# check and print status of each node
+def get_node_status(response):
+    response_list = response.split('\n')
+    for line in response_list:
+        if 'FAIL' in line:
+            return 'Node Status: Not Ok'
+    return 'Node Status: Ok'
+
 
 
 if __name__ == "__main__":
