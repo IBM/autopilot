@@ -35,18 +35,13 @@ func runAllTestsLocal() (error, *[]byte) {
 }
 
 func runAllTestsRemote(host string) (error, *[]byte) {
-	out := []byte("NOT IMPLEMENTED YET")
-	if host == "" {
-		klog.Info("Checking status on all nodes. Not implemented yet")
-		// out, err := exec.Command("python3", "./utils/entrypoint.py").Output()
-	} else {
-		klog.Info("Checking system status of host " + host)
-		// out, err := exec.Command("python3", "./utils/entrypoint.py", "--host", host).Output()
+
+	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "service=autopilot-healthchecks", "namespace=autopilot", "node="+host).Output()
+	if err != nil {
+		klog.Error(err.Error())
+		return err, nil
 	}
-	// if err != nil {
-	// 	klog.Error(err.Error())
-	// 	return err, nil
-	// }
+
 	return nil, &out
 }
 
@@ -59,7 +54,7 @@ func netReachability() (error, *[]byte) {
 		klog.Info("Secondary NIC health check test completed:")
 
 		if strings.Contains(string(out[:]), "FAIL") {
-			klog.Info("Multi-nic CNI reachability test failed.", &out)
+			klog.Info("Multi-nic CNI reachability test failed.", string(out[:]))
 		}
 
 		output := strings.TrimSuffix(string(out[:]), "\n")
@@ -68,9 +63,11 @@ func netReachability() (error, *[]byte) {
 		final := strings.Split(lastline, " ")
 		var nicid1, nicid2 int = 1, 2
 		if reachable1, err := strconv.ParseFloat(final[1], 32); err == nil {
+			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(nicid1), " ", reachable1)
 			utils.HchecksGauge.WithLabelValues("net-reach", os.Getenv("NODE_NAME"), strconv.Itoa(nicid1)).Set(reachable1)
 		}
 		if reachable2, err := strconv.ParseFloat(final[2], 32); err == nil {
+			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(nicid2), " ", reachable2)
 			utils.HchecksGauge.WithLabelValues("net-reach", os.Getenv("NODE_NAME"), strconv.Itoa(nicid2)).Set(reachable2)
 		}
 	}
@@ -86,7 +83,7 @@ func runRemappedRows() (error, *[]byte) {
 		klog.Info("Remapped Rows check test completed:")
 
 		if strings.Contains(string(out[:]), "FAIL") {
-			klog.Info("Remapped Rows test failed.", &out)
+			klog.Info("Remapped Rows test failed.", string(out[:]))
 		}
 		output := strings.TrimSuffix(string(out[:]), "\n")
 
@@ -118,7 +115,7 @@ func runPCIeBw() (error, *[]byte) {
 		klog.Info("GPU PCIe BW test completed:")
 
 		if strings.Contains(string(out[:]), "FAIL") {
-			klog.Info("PCIe BW test failed.", &out)
+			klog.Info("PCIe BW test failed.", string(out[:]))
 		}
 
 		output := strings.TrimSuffix(string(out[:]), "\n")
