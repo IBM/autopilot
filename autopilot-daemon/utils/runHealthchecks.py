@@ -72,7 +72,7 @@ def run_tests(addresses):
 def create_url(address, daemon_node):
     if (check == 'all' or check == None):
         return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node
-    elif (check == 'net' or check == 'nic'):
+    elif check == 'nic':
         return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=nic'
     elif check == 'remapped':
         return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=remapped'
@@ -105,9 +105,9 @@ def get_node_status(response, daemon_node):
         if ('FAIL' in line):
             if ('PCIE' in line):
                 node_status[daemon_node].append('PCIE Failed')
-            if ('NETWORK' in line):
+            elif ('NETWORK' in line):
                 node_status[daemon_node].append('MULTI-NIC CNI Failed')
-            if('REMAPPED ROWS' in line):
+            elif('REMAPPED ROWS' in line):
                 node_status[daemon_node].append('REMAPPED ROWS Failed')
     if len(node_status[daemon_node]) < 1:
         node_status[daemon_node].append('Ok')
