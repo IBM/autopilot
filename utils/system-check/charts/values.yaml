@@ -3,4 +3,4 @@ namespace:   # namespace where to deploy the helm chart
 imagePullSecret: "all-icr-io"
 autopilotService: "autopilot-healthchecks"
 autopilotNamespace: "autopilot"
-autopilotNode:  # node where to run the health check
+targetNode:  # node where to run the health check
