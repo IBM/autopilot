@@ -10,33 +10,69 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func runAllTestsLocal() (error, *[]byte) {
+func runAllTestsLocal(check string) (error, *[]byte) {
 	out := []byte("")
-	err, tmp := runPCIeBw()
-	if err != nil {
-		klog.Error(err.Error())
-		return err, tmp
+	var tmp *[]byte
+	var err error
+	switch check {
+	case "pciebw":
+		klog.Info("Running health check: ", check)
+		err, tmp = runPCIeBw()
+		if err != nil {
+			klog.Error(err.Error())
+			return err, tmp
+		}
+		out = append(out, *tmp...)
+
+	case "remapped":
+		klog.Info("Running health check: ", check)
+		err, tmp = runRemappedRows()
+		if err != nil {
+			klog.Error(err.Error())
+			return err, nil
+		}
+		out = append(out, *tmp...)
+
+	case "nic":
+		klog.Info("Running health check: ", check)
+		err, tmp = netReachability()
+		if err != nil {
+			klog.Error(err.Error())
+			return err, nil
+		}
+		out = append(out, *tmp...)
+
+	default:
+		klog.Info("Run all health checks\n")
+		err, tmp := runPCIeBw()
+		if err != nil {
+			klog.Error(err.Error())
+			return err, tmp
+		}
+		out = append(out, *tmp...)
+		err, tmp = runRemappedRows()
+		if err != nil {
+			klog.Error(err.Error())
+			return err, nil
+		}
+		out = append(out, *tmp...)
+		err, tmp = netReachability()
+		if err != nil {
+			klog.Error(err.Error())
+			return err, nil
+		}
+		out = append(out, *tmp...)
+
 	}
-	out = *tmp
-	err, tmp = runRemappedRows()
-	if err != nil {
-		klog.Error(err.Error())
-		return err, nil
-	}
-	out = append(out, *tmp...)
-	err, tmp = netReachability()
-	if err != nil {
-		klog.Error(err.Error())
-		return err, nil
-	}
-	out = append(out, *tmp...)
 
 	return nil, &out
 }
 
-func runAllTestsRemote(host string) (error, *[]byte) {
-
-	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "service=autopilot-healthchecks", "namespace=autopilot", "node="+host).Output()
+func runAllTestsRemote(host string, check string) (error, *[]byte) {
+	if check == "" {
+		check = "all"
+	}
+	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--node="+host, "--check="+check).Output()
 	if err != nil {
 		klog.Error(err.Error())
 		return err, nil
