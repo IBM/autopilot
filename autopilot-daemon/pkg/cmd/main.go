@@ -59,7 +59,7 @@ func main() {
 
 	hcMux := http.NewServeMux()
 	hcMux.Handle("/pciebw", handlers.PCIeBWHandler("4"))
-	hcMux.Handle("/net", handlers.NetReachHandler())
+	hcMux.Handle("/nic", handlers.NetReachHandler())
 	// hcMux.Handle("/gpumem", handlers.GPUMemHandler())
 	hcMux.Handle("/remapped", handlers.RemappedRowsHandler())
 	hcMux.Handle("/status", handlers.SystemStatusHandler())

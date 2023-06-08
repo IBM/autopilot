@@ -19,7 +19,9 @@ The Helm chart can be configured by updating the following values in `values.yam
 - `namespace` where to run the Pod. The namespace needs to have a valid `ImagePullSecret` to get images from `us.icr.io` or `icr.io`
 - `imagePullSecret` defaulted to `all-icr-io`
 - `autopilotService` is the name of the Service that exposes the health checks endpoints. It is defaulted to `autopilot-healthchecks`
-- `autopilotNamespace` is the namespace where the Autopilot daemons are running. It is defaulted to `autopilot`.
+- `autopilotNamespace` is the namespace where the Autopilot daemons are running. It is defaulted to `autopilot`
+- `targetNode` to run the test(s) on a specific node only, rather than on the entire system
+- `testType` is the type of test that will run i.e. pciebw, nic, remapped, or all
 
 To deploy the Pod:
 
