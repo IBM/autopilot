@@ -1,3 +1,7 @@
+########################################################################
+# Python program that uses the Python Client Library for Kubernetes to
+# run the autopilot health checks on all nodes or a specific node. 
+########################################################################
 import argparse
 from kubernetes import client, config
 import requests
@@ -7,7 +11,7 @@ import time
 
 config.load_incluster_config()
 v1 = client.CoreV1Api()
-node_list = [] # global incase of future implementation of parallelism
+node_list = []
 
 # get arguments for service, namespace, and node(s)
 parser = argparse.ArgumentParser()
@@ -20,13 +24,12 @@ namespace = args['namespace']
 node = args['node']
 
 
-# get addresses in desired endpointslice (autopilot-healthchecks endpoints) based on which node(s) the user chooses
+# get addresses in desired endpointslice (autopilot-healthchecks) based on which node(s) the user chooses
 def get_addresses():
     endpoints = v1.list_namespaced_endpoints(namespace=namespace).items
     for endpointslice in endpoints:
         if endpointslice.metadata.name == service:
             print("EndpointSlice: " + str(endpointslice.metadata.name)) 
-
             # print('SUBSETS: ' + str(endpointslice.subsets)) # debug
             addresses = endpointslice.subsets[0].addresses
             if node == 'all':
@@ -39,7 +42,7 @@ def get_addresses():
                         address_list.append(address)
                         # print('ADDRESSES: ' + str(address_list)) # debug
                         return address_list
-                print('Error: Issue with node choice. Choices include: \"all\", and a specific node that is running.')
+                print('Error: Issue with node choice. Choices include: \"all\" OR a specific node.')
                 raise SystemExit(2)
 
 
@@ -50,18 +53,16 @@ def run_tests(addresses):
         daemon_node = str(address.node_name)
         print("\nNode: ", daemon_node) # debug
         node_list.append(daemon_node)
-        
         # create url for status test
         # ex: curl http://10.128.11.100:3333/status?host=dev-ppv5g-worker-3-with-secondary-thlkf
         status_test = 'http://' + str(address.ip) + ':3333/status?host=' + str(daemon_node)
-        
         # run status test
         print('\nStatus test: ' + status_test)
         response = get_requests(status_test)
         print('\nStatus test response: \n', response)
         print('\n', get_node_status(response))
         print("\n-------------------------------------\n") # separator
-            
+    # print list of nodes that were tested 
     print('Node list: ')
     for node in node_list: 
         print('\n', node)

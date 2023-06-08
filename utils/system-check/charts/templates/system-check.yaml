@@ -40,7 +40,7 @@ spec:
   containers:
   - image: {{ .Values.image }}
     name: system-check
-    args: ['service={{ .Values.autopilotService }}', 'namespace={{ .Values.autopilotNamespace }}']
+    args: ['--service={{ .Values.autopilotService }}', '--namespace={{ .Values.autopilotNamespace }}', '--node={{ .Values.autopilotNode }}']
     env:
     - name: MY_NODE_NAME
       valueFrom:
