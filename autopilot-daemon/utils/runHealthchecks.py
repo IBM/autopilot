@@ -13,7 +13,7 @@ import time
 config.load_incluster_config()
 v1 = client.CoreV1Api()
 
-# get arguments for service, namespace, and node(s)
+# get arguments for service, namespace, node(s), and check (test type)
 parser = argparse.ArgumentParser()
 parser.add_argument('--service', type=str, help='Autopilot healthchecks service name')
 parser.add_argument('--namespace', type=str, help='Autopilot healthchecks namespace')
@@ -24,6 +24,8 @@ service = args['service']
 namespace = args['namespace']
 node = args['node']
 check = args['check']
+if check == None:
+    check = 'all'
 
 node_status = {} # updates after each node is tested
 
@@ -70,7 +72,7 @@ def run_tests(addresses):
 
 # create url for test
 def create_url(address, daemon_node):
-    if (check == 'all' or check == None):
+    if check == 'all':
         return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node
     elif check == 'nic':
         return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=nic'
@@ -111,7 +113,6 @@ def get_node_status(response, daemon_node):
                 node_status[daemon_node].append('REMAPPED ROWS Failed')
     if len(node_status[daemon_node]) < 1:
         node_status[daemon_node].append('Ok')
-    # return node_status
 
 
 # start program
