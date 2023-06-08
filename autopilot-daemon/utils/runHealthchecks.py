@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--service', type=str, help='Autopilot healthchecks service name')
 parser.add_argument('--namespace', type=str, help='Autopilot healthchecks namespace')
 parser.add_argument('--node', type=str, help='Node that will run a healthcheck')
-parser.add_argument('--check', type=str, help='The specific test that will run: \"pciebw\", \"net\", or \"remapped\".')
+parser.add_argument('--check', type=str, help='The specific test that will run: \"all\", \"pciebw\", \"nic\", or \"remapped\".')
 args = vars(parser.parse_args())
 service = args['service']
 namespace = args['namespace']
