@@ -1,6 +1,7 @@
-image: "us.icr.io/cil15-shared-registry/gracek/run-healthchecks:1.3"
+image: "us.icr.io/cil15-shared-registry/gracek/run-healthchecks:1.5"
 namespace:   # namespace where to deploy the helm chart
 imagePullSecret: "all-icr-io"
 autopilotService: "autopilot-healthchecks"
 autopilotNamespace: "autopilot"
 targetNode:  # node where to run the health check
+testType: # type of test that will run i.e. pciebw, nic, remapped, or all
