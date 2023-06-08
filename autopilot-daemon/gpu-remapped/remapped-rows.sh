@@ -33,7 +33,5 @@ for i in $(seq 0 1 $((D-1))) ; do
 done
 if [[ $FAIL -eq 0 ]]; then
   echo FAIL
-else
-  echo SUCCESS
 fi
 echo $RESULT
