@@ -35,9 +35,7 @@ The toolkit will provide pre-flight, in-flight and post-flight checks. In more d
 ### Health Checks
 The current status of the Autopilot includes:
 
-<!-- - A Mutating Webhook to inject a pre-flight container to jobs before they are executed -->
 - The PCIe NVIDIA bandwidth test to check host-to-device connection on each node
-<!-- - The memory test is a cuda program performing `daxpy` and `cuda_dgemm` reporting host to device and device to host memory bandwidth measurements, HBM bandwidth, along with other information about temperature, power usage and clock speed -->
 - A check on GPUs remapped rows
 - A check on the multi-nic CNI availability
 <!-- - A HealthCheckReport Custom Resource Definition (CRD) and a controller that takes action based on the bandwidth test result -->
@@ -56,36 +54,15 @@ At a high level, the flow is the following (omitting the MCAD part for simplific
 - At execution time, each pod will first run the health check container. If the test will succeed, then the pod will keep running normally.
 <!-- - If the test fails, the init container will create a HealthCheckReport CRD indicating the result of the test and the node involved. Also, the pod will label itself with `deschedule` so that it can be removed from the faulty node. -->
 
-
-<!-- ### RBAC, Roles and Service Accounts
-
-For the init containers to run correctly, the Webhook will create a service account along with some RBAC, and the service account will be attached to the workload. 
-This is needed because the init container might need to create an HealthCheckReport object (`"create", "get", "list"` verbs)
-
-Those operations are namespaced, that is, the webhook creates a Role, a RoleBinding and a Service Account that are local to the namespace where the workload is running.
-
-These objects will remain in the namespace unless manually deleted or if automation is implemented to delete such objects.
-
-### Health check report objects
-
-In the event that a report is issued, it will be in the namespace where the workload is running because the `create` verb is namespaced. Users cannot delete those objects unless the admin gives them permission to. Also, the relevant node is cordoned and no new workloads will run on it. The node is not flushed, so existing workloads will still be there.
-
-The admin is the only subject that should delete the report object and take actions.
-Each object is named after the node and the name is not unique. This means that, if an object exists for `nodeA`, another object for the same node will not be created. This is to avoid generating an unreasonable and not needed amount of API objects. 
-Once actions are taken on the relevant node, the admin can proceed with the deletion of the corresponding health check report object.
-
- -->
 ## Install autopilot (Admin)
 **Installation**: Both projects can be installed through Helm and need admin privileges to create objects like services, serviceaccounts, namespaces and RBAC.
 
 A basic system requirement is that an image pull secret to `icr.io` or `us.icr.io` is available. An image for each component is pushed in each region. 
 
-<!-- Webhook options are in [this page](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot-mutating-webhook#customization-available-to-the-admins). 
-CRD options are in [this page](https://github.ibm.com/hybrid-cloud-infrastructure-research/healthcheckoperator#customization).
- -->
+
 Helm charts values can be found [here](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/autopilot-daemon/helm-charts/autopilot).
 
-By default, it will create a namespace named `autopilot` where to run the components. Users workloads do not run in the autopilot namespace. The creation of the namespace can be disabled in the `autopilot-mutating-webhook/helm-charts/mutating-webhook/values.yaml` file by setting `create` to false  in the namespace block.
+By default, it will create a namespace named `autopilot` where to run the components. Users workloads do not run in the autopilot namespace. The creation of the namespace can be disabled by setting `create` to false in the namespace block of the `Values.yaml` file.
 
 ```yaml
 namespace: 
@@ -141,12 +118,12 @@ make uninstall
 
 Health checks can be executed through a utility tool provided with a Helm chart, or by querying the Autopilot service.
 Results can be visualized by either checking the logs of the utility tool/service query, or by looking at the data in a Grafana dashboard.
-The relevant `json` file can be found [here](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/blob/main/utils/Autopilot-Grafana-Dashboard.json)
+The relevant `json` file can be found [here](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/blob/main/utility-tools/Autopilot-Grafana-Dashboard.json)
 
 ### Helm Chart
 
 Users and admins can create a single pod that can run the desired health checks.
-Please refer to the [dedicated page](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/utils/system-check) for more details and customization.
+Please refer to the [dedicated page](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/utility-tools/system-check) for more details and customization.
 
 ### Query the Autopilot Service
 
