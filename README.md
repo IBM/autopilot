@@ -152,10 +152,11 @@ Tests can be tailored by a combination of:
 - `host=<hostname>`, to run all tests on a specific node
 - `check=<healthcheck>`, to run a single test (`pciebw`, `nic` and `remapped`)
 
-For example:
+#### Query from a pod
 
 ```bash
-curl "http://autopilot-healthchecks.autopilot.svc:3333/status?host=dev-ppv5g-worker-3-with-secondary-jdf7b&check=nic"
+$ kubectl create job curl-pod --image=nginx -- sleep inf
+$ kubectl exec jobs/curl-pod -- curl "http://autopilot-healthchecks.autopilot.svc:3333/status?host=dev-ppv5g-worker-3-with-secondary-jdf7b&check=nic"
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
@@ -190,4 +191,33 @@ Node Summary:
 
  dev-ppv5g-worker-3-with-secondary-jdf7b :  Ok
 ```
-###
+
+#### Query with Port-Forward
+
+Alternatively, it is possible to port-forward the autopilot healthchecks Service and `curl` from localhost. 
+
+```bash
+$ kubectl port-forward service/autopilot-healthchecks 3333:3333
+Forwarding from 127.0.0.1:3333 -> 3333
+Forwarding from [::1]:3333 -> 3333
+```
+
+Then on another terminal, run the desired curl command
+
+```bash
+$ curl "http://127.0.0.1:3333/status?host=dev-ppv5g-worker-3-with-secondary-h5vb6&check=nic"
+Checking system status of host dev-ppv5g-worker-3-with-secondary-h5vb6 (localhost) 
+
+[[ NETWORK ]] Evaluating reachability of Multi-NIC CNI.
+===== Health Status of dev-ppv5g-worker-3-with-secondary-h5vb6 =====
+Allocatable network devices: 2/2
+Connectable network devices: 2/2
+Host is OK (all functional and connected).
+Reported by multi-nic-cni-health-checker-5cfb794496-57vtw at 2023-06-09T01:43:15Z
+
+[[ NETWORK ]] SUCCESS
+
+dev-ppv5g-worker-3-with-secondary-h5vb6 1 1
+
+$ kubectl delete job curl-pod
+```
