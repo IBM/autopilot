@@ -7,7 +7,12 @@ From operation perspective, infrastucture stability is always important. We actu
 
 We provide a collection of tools (named Autopilot) to steer and address these infrastructure issues automatically by pre-flight checks, in-flight checks, and also post-flight to learn or improve the issue detection logic. 
 
-Autopilot runs as a DaemonSet on all worker nodes that have GPUs.
+Autopilot runs as a DaemonSet on all worker nodes that have GPUs. All results from health checks are exposed through Prometheus and a Grafana dashboard is available in the `utility-tools` folder.
+
+
+
+![autopilot-pod](https://media.github.ibm.com/user/96687/files/3f513944-2b23-4ce1-92ce-5cbbf5a40f10)
+
 
 The toolkit will provide pre-flight, in-flight and post-flight checks. In more details (list subject to changes):
 
