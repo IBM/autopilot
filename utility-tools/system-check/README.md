@@ -26,7 +26,7 @@ The Helm chart can be configured by updating the following values in `values.yam
 To deploy the Pod:
 
 ```bash
-helm install system-check utils/system-check/charts/
+helm install system-check utility-tools/system-check/charts/
 ```
 
 Logs can be streamed with
@@ -35,7 +35,7 @@ Logs can be streamed with
 kubectl logs -f system-check 
 ```
 
-All the health checks expose metrics that can be plotted through Grafana dashboards. A `json` file for a set of predefined dashboards in Autopilot, can be found in the `utils` directory in this repository.
+All the health checks expose metrics that can be plotted through Grafana dashboards. A `json` file for a set of predefined dashboards in Autopilot, can be found in the `utiliy-tools` directory in this repository.
 
 ## Uninstall
 
