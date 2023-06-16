@@ -1,12 +1,12 @@
 ########################################################################
 # Python program that uses the Python Client Library for Kubernetes to
-# run the autopilot health checks on all nodes or a specific node. 
+# run autopilot health checks on all nodes or a specific node(s). 
 ########################################################################
 import argparse
 from kubernetes import client, config
 import requests
 import time
-from multiprocessing import Process, Pool
+from multiprocessing import Pool
 
 
 # load in cluster kubernetes config for access to cluster
@@ -37,7 +37,7 @@ def get_addresses():
         if endpointslice.metadata.name == service:
             print("EndpointSlice: " + str(endpointslice.metadata.name)) 
             addresses = endpointslice.subsets[0].addresses
-            if 'all' in node: #if node == 'all':
+            if 'all' in node:
                 return addresses
             else:
                 address_list = []
@@ -46,29 +46,20 @@ def get_addresses():
                         address_list.append(address)
                 if len(address_list) > 0:
                     return address_list
-                raise Exception('Error: Issue with --node parameter. Choices include: \"all\" OR a specific node name.')
+                raise Exception('Error: Issue with --node parameter. Choices include: \"all\", a specific node name, or a comma separated list of node names.')
     raise Exception('Error: Issue with --service or --namespace parameter. Check that they are correct.')
 
 
 # runs healthchecks at each endpoint (there is one endpoint in each node)
 def run_tests(address):
-    # for address in addresses:
-    print("\nEndpoint: " + str(address.ip)) # debug
     daemon_node = str(address.node_name)
-    print("\nNode: ", daemon_node) # debug
-    # create url for test. ex: http://10.128.11.100:3333/status?host=dev-ppv5g-worker-3-with-secondary-thlkf&check=nic
     url = create_url(address, daemon_node)
-    print('\nurl: ', url) #debug
-    # run test
     response = get_requests(url)
-    print('\nResponse: \n', response)
     get_node_status(response, daemon_node)
-    print('\nNode Status: ', ', '.join(node_status[daemon_node]))
-    print("\n-------------------------------------\n") # separator
-    # print list of nodes that were tested and their status
-    # print('Node Summary: ')
-    # for node in node_status: 
-    #     print('\n', node, ': ', ', '.join(node_status[node]))
+    output = '\nEndpoint: {ip}\nNode: {daemon_node}\nurl: {url}\nResponse:\n{response}\nNode Status: {status}'.format(ip=address.ip, daemon_node=daemon_node, url=url, response=response, status=', '.join(node_status[daemon_node]))
+    output += "\n-------------------------------------\n" # separator
+    return output
+
 
 
 # create url for test
@@ -77,10 +68,6 @@ def create_url(address, daemon_node):
         return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node
     elif (check == 'nic' or check == 'remapped' or check == 'pciebw'):
         return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + check
-    # elif check == 'remapped':
-    #     return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=remapped'
-    # elif check == 'pciebw':
-    #     return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=pciebw'
     else:
         raise Exception('Error: Issue with --check parameter. Options are \"all\", \"pciebw\", \"nic\", or \"remapped\"')
 
@@ -120,22 +107,16 @@ def get_node_status(response, daemon_node):
 if __name__ == "__main__":
     # run_tests(get_addresses())
     addresses = get_addresses()
+    total_nodes = len(addresses)
+
+    # set max number of processes
+    if (total_nodes < 4):
+        max_processes = total_nodes
+    else:
+        max_processes = 4
 
     # multiprocessing for parallelism in batches
-    pool = Pool(processes=batch_size)
-    result = pool.map_async(run_tests, (addresses[i] for i in range(len(addresses))))
-    print(result.get())
-    # time.sleep(0.5) # time to print results before Node Summary
+    with Pool(processes=max_processes) as pool:
+        for result in pool.map(run_tests, addresses, chunksize=batch_size):
+            print(result)
 
-    # processes = [Process(target=run_tests, args=(address,)) for address in addresses]
-    # processes = [Process(target=run_tests, args=(addresses[i],)) for i in range(0, len(addresses), batch_size)]
-    # # start all processes
-    # for process in processes:
-    #     process.start()
-    # # wait for all processes to complete
-    # for process in processes:
-    #     process.join()
-
-    print('Node Summary: ')
-    for key in node_status: # key is the node and value is the status in node_status
-        print('\n', key, ': ', ', '.join(node_status[node]))

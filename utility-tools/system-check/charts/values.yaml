@@ -1,8 +1,8 @@
-image: "us.icr.io/cil15-shared-registry/gracek/run-healthchecks:1.8" # last version: "us.icr.io/cil15-shared-registry/autopilot/run-healthchecks:v0"
-namespace:  # namespace where to deploy the helm chart
+image: "us.icr.io/cil15-shared-registry/gracek/run-healthchecks:1.9.1" # last version: "us.icr.io/cil15-shared-registry/autopilot/run-healthchecks:v0"
+namespace:  # namespace where to deploy the helm chart.
 imagePullSecret: "all-icr-io"
-autopilotService: "autopilot-healthchecks"
-autopilotNamespace: "autopilot"
-targetNode:  # node where to run the health check i.e. all, a specific node name, or list of node names
-testType: # type of test that will run i.e. pciebw, nic, remapped, or all
-batchSize:  # number of nodes that will run parallel health checks at a time
+autopilotService: "autopilot-healthchecks" # default=autopilot-healthchecks.
+autopilotNamespace: "autopilot" # default=autopilot.
+targetNode:  # node where to run the health check i.e. all, a specific node name, or list of node names. default=all
+testType:  # type of test that will run i.e. pciebw, nic, remapped, or all. default=all
+batchSize:  # number of nodes running a health check per processor. default=1
