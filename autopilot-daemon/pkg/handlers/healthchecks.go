@@ -10,7 +10,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func runAllTestsLocal(check string) (error, *[]byte) {
+func runAllTestsLocal(check string, batch string) (error, *[]byte) {
 	out := []byte("")
 	var tmp *[]byte
 	var err error
@@ -68,11 +68,8 @@ func runAllTestsLocal(check string) (error, *[]byte) {
 	return nil, &out
 }
 
-func runAllTestsRemote(host string, check string) (error, *[]byte) {
-	if check == "" {
-		check = "all"
-	}
-	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--node="+host, "--check="+check).Output()
+func runAllTestsRemote(host string, check string, batch string) (error, *[]byte) {
+	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--node="+host, "--check="+check, "--batchSize="+batch).Output()
 	if err != nil {
 		klog.Error(err.Error())
 		return err, nil
