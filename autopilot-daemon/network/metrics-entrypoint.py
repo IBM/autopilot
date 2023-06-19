@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 
 
 
@@ -10,7 +11,8 @@ def main():
     result = subprocess.run(command, capture_output=True, text=True)
 
     if result.stderr:
-        raise SystemExit("Multi-NIC CNI health checker is not reachable - network reachability test cannot run")
+        print("Multi-NIC CNI health checker is not reachable - network reachability test cannot run")
+        sys.exit(0)
     else:
         output = result.stdout
         print(output)
