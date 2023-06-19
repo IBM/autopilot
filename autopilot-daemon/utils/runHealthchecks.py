@@ -1,12 +1,12 @@
 ########################################################################
 # Python program that uses the Python Client Library for Kubernetes to
-# run the autopilot health checks on all nodes or a specific node. 
+# run autopilot health checks on all nodes or a specific node(s). 
 ########################################################################
 import argparse
 from kubernetes import client, config
 import requests
 import time
-# from multiprocessing import Process
+from multiprocessing import Pool
 
 
 # load in cluster kubernetes config for access to cluster
@@ -15,17 +15,17 @@ v1 = client.CoreV1Api()
 
 # get arguments for service, namespace, node(s), and check (test type)
 parser = argparse.ArgumentParser()
-parser.add_argument('--service', type=str, help='Autopilot healthchecks service name')
-parser.add_argument('--namespace', type=str, help='Autopilot healthchecks namespace')
-parser.add_argument('--node', type=str, help='Node that will run a healthcheck')
-parser.add_argument('--check', type=str, help='The specific test that will run: \"all\", \"pciebw\", \"nic\", or \"remapped\".')
+parser.add_argument('--service', type=str, default='autopilot-healthchecks', help='Autopilot healthchecks service name. Default is \"autopilot-healthchecks\".')
+parser.add_argument('--namespace', type=str, default='autopilot', help='Autopilot healthchecks namespace. Default is \"autopilot\".')
+parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Default is \"all\".')
+parser.add_argument('--check', type=str, default='all', help='The specific test that will run: \"all\", \"pciebw\", \"nic\", or \"remapped\". Default is \"all\".')
+parser.add_argument('--batchSize', type=int, default=1, help='Number of nodes running in parallel at a time. Default is \"1\".')
 args = vars(parser.parse_args())
 service = args['service']
 namespace = args['namespace']
-node = args['node']
+node = args['nodes'].replace(' ', '').split(',') # list of nodes
 check = args['check']
-if check == None:
-    check = 'all'
+batch_size = args['batchSize']
 
 node_status = {} # updates after each node is tested
 
@@ -37,49 +37,37 @@ def get_addresses():
         if endpointslice.metadata.name == service:
             print("EndpointSlice: " + str(endpointslice.metadata.name)) 
             addresses = endpointslice.subsets[0].addresses
-            if node == 'all':
+            if 'all' in node:
                 return addresses
             else:
                 address_list = []
                 for address in addresses:
-                    if address.node_name == node:
+                    if address.node_name in node:
                         address_list.append(address)
-                        return address_list
-                raise Exception('Error: Issue with --node parameter. Choices include: \"all\" OR a specific node name.')
+                if len(address_list) > 0:
+                    return address_list
+                raise Exception('Error: Issue with --node parameter. Choices include: \"all\", a specific node name, or a comma separated list of node names.')
     raise Exception('Error: Issue with --service or --namespace parameter. Check that they are correct.')
 
 
 # runs healthchecks at each endpoint (there is one endpoint in each node)
-def run_tests(addresses):
-    for address in addresses:
-        print("\nEndpoint: " + str(address.ip)) # debug
-        daemon_node = str(address.node_name)
-        print("\nNode: ", daemon_node) # debug
-        # create url for test. ex: http://10.128.11.100:3333/status?host=dev-ppv5g-worker-3-with-secondary-thlkf&check=nic
-        url = create_url(address, daemon_node)
-        print('\nurl: ', url) #debug
-        # run test
-        response = get_requests(url)
-        print('\nResponse: \n', response)
-        get_node_status(response, daemon_node)
-        print('\nNode Status: ', ', '.join(node_status[daemon_node]))
-        print("\n-------------------------------------\n") # separator
-    # print list of nodes that were tested and their status
-    print('Node Summary: ')
-    for node in node_status: 
-        print('\n', node, ': ', ', '.join(node_status[node]))
+def run_tests(address):
+    daemon_node = str(address.node_name)
+    url = create_url(address, daemon_node)
+    response = get_requests(url)
+    get_node_status(response, daemon_node)
+    output = '\nEndpoint: {ip}\nNode: {daemon_node}\nurl: {url}\nResponse:\n{response}\nNode Status: {status}'.format(ip=address.ip, daemon_node=daemon_node, url=url, response=response, status=', '.join(node_status[daemon_node]))
+    output += "\n-------------------------------------\n" # separator
+    return output
+
 
 
 # create url for test
 def create_url(address, daemon_node):
     if check == 'all':
         return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node
-    elif check == 'nic':
-        return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=nic'
-    elif check == 'remapped':
-        return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=remapped'
-    elif check == 'pciebw':
-        return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=pciebw'
+    elif (check == 'nic' or check == 'remapped' or check == 'pciebw'):
+        return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + check
     else:
         raise Exception('Error: Issue with --check parameter. Options are \"all\", \"pciebw\", \"nic\", or \"remapped\"')
 
@@ -117,4 +105,18 @@ def get_node_status(response, daemon_node):
 
 # start program
 if __name__ == "__main__":
-    run_tests(get_addresses())
+    # run_tests(get_addresses())
+    addresses = get_addresses()
+    total_nodes = len(addresses)
+
+    # set max number of processes
+    if (total_nodes < 4):
+        max_processes = total_nodes
+    else:
+        max_processes = 4
+
+    # multiprocessing for parallelism in batches
+    with Pool(processes=max_processes) as pool:
+        for result in pool.map(run_tests, addresses, chunksize=batch_size):
+            print(result)
+
