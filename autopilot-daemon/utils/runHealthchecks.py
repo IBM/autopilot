@@ -19,13 +19,13 @@ parser.add_argument('--service', type=str, default='autopilot-healthchecks', hel
 parser.add_argument('--namespace', type=str, default='autopilot', help='Autopilot healthchecks namespace. Default is \"autopilot\".')
 parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Default is \"all\".')
 parser.add_argument('--check', type=str, default='all', help='The specific test that will run: \"all\", \"pciebw\", \"nic\", or \"remapped\". Default is \"all\".')
-parser.add_argument('--batchSize', type=int, default=1, help='Number of nodes running in parallel at a time. Default is \"1\".')
+parser.add_argument('--batchSize', type=str, default=1, help='Number of nodes running in parallel at a time. Default is \"1\".')
 args = vars(parser.parse_args())
 service = args['service']
 namespace = args['namespace']
 node = args['nodes'].replace(' ', '').split(',') # list of nodes
 check = args['check']
-batch_size = args['batchSize']
+batch_size = int(args['batchSize'])
 
 node_status = {} # updates after each node is tested
 
