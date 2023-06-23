@@ -5,10 +5,7 @@ import (
 )
 
 type InitConfig struct {
-	InitContainerImagePCIeBW string
-	InitContainerImageMem    string
-	InitContainerImageNet    string
-	BWThreshold              string
+	BWThreshold string
 }
 
 var UserConfig InitConfig

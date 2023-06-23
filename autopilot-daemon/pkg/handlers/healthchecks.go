@@ -10,6 +10,11 @@ import (
 	"k8s.io/klog/v2"
 )
 
+func TimerRun() {
+	klog.Info("Running a periodic check")
+	runAllTestsLocal("")
+}
+
 func runAllTestsLocal(check string) (error, *[]byte) {
 	out := []byte("")
 	var tmp *[]byte
@@ -68,11 +73,8 @@ func runAllTestsLocal(check string) (error, *[]byte) {
 	return nil, &out
 }
 
-func runAllTestsRemote(host string, check string) (error, *[]byte) {
-	if check == "" {
-		check = "all"
-	}
-	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--node="+host, "--check="+check).Output()
+func runAllTestsRemote(host string, check string, batch string) (error, *[]byte) {
+	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--node="+host, "--check="+check, "--batchSize="+batch).Output()
 	if err != nil {
 		klog.Error(err.Error())
 		return err, nil
@@ -90,22 +92,25 @@ func netReachability() (error, *[]byte) {
 		klog.Info("Secondary NIC health check test completed:")
 
 		if strings.Contains(string(out[:]), "FAIL") {
-			klog.Info("Multi-nic CNI reachability test failed.", string(out[:]))
+			klog.Info("Multi-NIC CNI reachability test failed.", string(out[:]))
+		} else if strings.Contains(string(out[:]), "cannot") {
+			klog.Info("Unable to determine the reachability of the node.", string(out[:]))
+		} else {
+			output := strings.TrimSuffix(string(out[:]), "\n")
+			split := strings.Split(output, "\n")
+			lastline := split[len(split)-1]
+			final := strings.Split(lastline, " ")
+			var nicid1, nicid2 int = 1, 2
+			if reachable1, err := strconv.ParseFloat(final[1], 32); err == nil {
+				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(nicid1), " ", reachable1)
+				utils.HchecksGauge.WithLabelValues("net-reach", os.Getenv("NODE_NAME"), strconv.Itoa(nicid1)).Set(reachable1)
+			}
+			if reachable2, err := strconv.ParseFloat(final[2], 32); err == nil {
+				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(nicid2), " ", reachable2)
+				utils.HchecksGauge.WithLabelValues("net-reach", os.Getenv("NODE_NAME"), strconv.Itoa(nicid2)).Set(reachable2)
+			}
 		}
 
-		output := strings.TrimSuffix(string(out[:]), "\n")
-		split := strings.Split(output, "\n")
-		lastline := split[len(split)-1]
-		final := strings.Split(lastline, " ")
-		var nicid1, nicid2 int = 1, 2
-		if reachable1, err := strconv.ParseFloat(final[1], 32); err == nil {
-			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(nicid1), " ", reachable1)
-			utils.HchecksGauge.WithLabelValues("net-reach", os.Getenv("NODE_NAME"), strconv.Itoa(nicid1)).Set(reachable1)
-		}
-		if reachable2, err := strconv.ParseFloat(final[2], 32); err == nil {
-			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(nicid2), " ", reachable2)
-			utils.HchecksGauge.WithLabelValues("net-reach", os.Getenv("NODE_NAME"), strconv.Itoa(nicid2)).Set(reachable2)
-		}
 	}
 	return nil, &out
 }

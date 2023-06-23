@@ -9,30 +9,40 @@ import (
 
 func SystemStatusHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		host := r.URL.Query().Get("host")
+		hosts := r.URL.Query().Get("host")
+		if hosts == "" {
+			hosts = "all"
+		}
 		check := r.URL.Query().Get("check")
-
-		if host == "" {
+		if check == "" {
+			check = "all"
+		}
+		batch := r.URL.Query().Get("batch")
+		if batch == "" {
+			batch = "1"
+		}
+		klog.Info("Batch size ", batch)
+		if hosts == "all" {
 			klog.Info("Checking status on all nodes")
-			w.Write([]byte("Checking status on all nodes"))
-			err, out := runAllTestsRemote("all", check)
+			w.Write([]byte("Checking status on all nodes\n\n"))
+			err, out := runAllTestsRemote("all", check, batch)
 			if err != nil {
 				klog.Error(err.Error())
 			}
 			w.Write(*out)
 		} else {
-			if host == os.Getenv("NODE_NAME") {
-				klog.Info("Checking system status of host " + host + " (localhost)")
-				w.Write([]byte("Checking system status of host " + host + " (localhost) \n\n"))
+			if hosts == os.Getenv("NODE_NAME") {
+				klog.Info("Checking system status of host " + hosts + " (localhost)")
+				w.Write([]byte("Checking system status of host " + hosts + " (localhost) \n\n"))
 				err, out := runAllTestsLocal(check)
 				if err != nil {
 					klog.Error(err.Error())
 				}
 				w.Write(*out)
 			} else {
-				klog.Info("Asking to run on remote node ", host)
-				w.Write([]byte("Asking to run on remote node " + host))
-				err, out := runAllTestsRemote(host, check)
+				klog.Info("Asking to run on remote node(s) ", hosts)
+				w.Write([]byte("Asking to run on remote node(s) " + hosts + "\n\n"))
+				err, out := runAllTestsRemote(hosts, check, batch)
 				if err != nil {
 					klog.Error(err.Error())
 				}
