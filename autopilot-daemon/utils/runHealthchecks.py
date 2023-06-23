@@ -35,7 +35,7 @@ def get_addresses():
     endpoints = v1.list_namespaced_endpoints(namespace=namespace).items
     for endpointslice in endpoints:
         if endpointslice.metadata.name == service:
-            print("EndpointSlice: " + str(endpointslice.metadata.name)) 
+            # print("EndpointSlice: " + str(endpointslice.metadata.name)) 
             addresses = endpointslice.subsets[0].addresses
             if 'all' in node:
                 return addresses

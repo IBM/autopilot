@@ -10,7 +10,12 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func runAllTestsLocal(check string, batch string) (error, *[]byte) {
+func TimerRun() {
+	klog.Info("Running a periodic check")
+	runAllTestsLocal("")
+}
+
+func runAllTestsLocal(check string) (error, *[]byte) {
 	out := []byte("")
 	var tmp *[]byte
 	var err error
