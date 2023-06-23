@@ -25,7 +25,7 @@ spec:
            - sh
            - -c
            - |
-             /usr/local/bin/autopilot --port {{ .Values.service.port }} -loglevel={{ .Values.loglevel }} -bw {{ .Values.PCIeBW }}
+             /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }}
           imagePullPolicy: {{ .Values.image.pullPolicy }} 
           name: autopilot
           env:

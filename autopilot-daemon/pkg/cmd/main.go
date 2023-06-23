@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.ibm.com/hybrid-cloud-infrastructure-research/autopilot-daemon/pkg/handlers"
 	"github.ibm.com/hybrid-cloud-infrastructure-research/autopilot-daemon/pkg/utils"
@@ -16,12 +17,11 @@ import (
 
 func main() {
 	port := flag.String("port", "3333", "Port for the webhook to listen to. Defaulted to 3333")
-	// InitContainerImagePCIeBW := flag.String("pciebw", "", "Init container for PCIe bandwidth test")
-	// InitContainerImageMem := flag.String("gpumem", "", "Init container for gpu memory test")
-	// InitContainerImageNet := flag.String("netreach", "", "Init container for secondary nic reachability test")
 	bwThreshold := flag.String("bw", "4", "Sets bandwidth threshold for the init container")
 	logFile := flag.String("logfile", "report.log", "File where requests counter and info is being stored")
 	v := flag.String("loglevel", "2", "Log level")
+	repeat := flag.Int("w", 60, "Run all tests periodically on each node. Time set in minutes")
+
 	flag.Parse()
 
 	// var fs flag.FlagSet
@@ -35,9 +35,6 @@ func main() {
 	}
 
 	utils.UserConfig = utils.InitConfig{
-		// InitContainerImagePCIeBW: *InitContainerImagePCIeBW,
-		// InitContainerImageMem:    *InitContainerImageMem,
-		// InitContainerImageNet:    *InitContainerImageNet,
 		BWThreshold: *bwThreshold,
 	}
 
@@ -58,17 +55,28 @@ func main() {
 	}()
 
 	hcMux := http.NewServeMux()
-	hcMux.Handle("/pciebw", handlers.PCIeBWHandler("4"))
+	hcMux.Handle("/pciebw", handlers.PCIeBWHandler(utils.UserConfig.BWThreshold))
 	hcMux.Handle("/nic", handlers.NetReachHandler())
 	// hcMux.Handle("/gpumem", handlers.GPUMemHandler())
 	hcMux.Handle("/remapped", handlers.RemappedRowsHandler())
 	hcMux.Handle("/status", handlers.SystemStatusHandler())
 
-	klog.Info("Serving Health Checks on port :", *port)
-	err := http.ListenAndServe(":"+*port, hcMux)
-	if err != nil {
-		klog.Error(err.Error())
-		os.Exit(1)
+	go func() {
+		klog.Info("Serving Health Checks on port :", *port)
+		err := http.ListenAndServe(":"+*port, hcMux)
+		if err != nil {
+			klog.Error(err.Error())
+			os.Exit(1)
+		}
+	}()
+
+	testsTicker := time.NewTicker(time.Duration(*repeat) * time.Minute)
+	defer testsTicker.Stop()
+	for {
+		select {
+		case <-testsTicker.C:
+			handlers.TimerRun()
+		}
 	}
 
 	// cert := "/etc/admission-webhook/tls/tls.crt"

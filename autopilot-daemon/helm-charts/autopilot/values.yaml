@@ -15,18 +15,20 @@ image:
 
 PCIeBW: 4
 
+# Interval in minutes for automatic checks
+repeat: 60
+
 pullSecrets:
   create: true
   name: autopilot-pull-secret
   imagePullSecretData: 
-  
 
 service:
   port: 3333
 
 nodeSelector:
   nvidia.com/gpu.present: 'true'
-  nvidia.com/mig.config: 'all-disabled'
+  # nvidia.com/mig.config: 'all-disabled'
   # node-role.kubernetes.io/infra: ''
 
 resources: 
@@ -35,12 +37,12 @@ resources:
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   limits:
-    cpu: 4
-    memory: 10Gi
+    cpu: 2
+    memory: 1Gi
     nvidia.com/gpu: 0
   requests:
-    cpu: 4
-    memory: 10Gi
+    cpu: 500m
+    memory: 500Mi
     nvidia.com/gpu: 0
 
 # serviceAnnotations:
