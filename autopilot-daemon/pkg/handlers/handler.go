@@ -34,7 +34,7 @@ func SystemStatusHandler() http.Handler {
 			if hosts == os.Getenv("NODE_NAME") {
 				klog.Info("Checking system status of host " + hosts + " (localhost)")
 				w.Write([]byte("Checking system status of host " + hosts + " (localhost) \n\n"))
-				err, out := runAllTestsLocal(check, batch)
+				err, out := runAllTestsLocal(check)
 				if err != nil {
 					klog.Error(err.Error())
 				}

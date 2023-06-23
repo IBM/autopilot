@@ -15,11 +15,13 @@ image:
 
 PCIeBW: 4
 
+# Interval in minutes for automatic checks
+repeat: 60
+
 pullSecrets:
   create: true
   name: autopilot-pull-secret
-  imagePullSecretData:
-  
+  imagePullSecretData: 
 
 service:
   port: 3333
