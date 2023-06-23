@@ -3,9 +3,11 @@
 # run autopilot health checks on all nodes or a specific node(s). 
 ########################################################################
 import argparse
-from kubernetes import client, config
+import os
 import requests
 import time
+import pprint
+from kubernetes import client, config
 from multiprocessing import Pool
 
 
@@ -19,7 +21,7 @@ parser.add_argument('--service', type=str, default='autopilot-healthchecks', hel
 parser.add_argument('--namespace', type=str, default='autopilot', help='Autopilot healthchecks namespace. Default is \"autopilot\".')
 parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Default is \"all\".')
 parser.add_argument('--check', type=str, default='all', help='The specific test that will run: \"all\", \"pciebw\", \"nic\", or \"remapped\". Default is \"all\".')
-parser.add_argument('--batchSize', type=str, default=1, help='Number of nodes running in parallel at a time. Default is \"1\".')
+parser.add_argument('--batchSize', type=str, default='1', help='Number of nodes running in parallel at a time. Default is \"1\".')
 args = vars(parser.parse_args())
 service = args['service']
 namespace = args['namespace']
@@ -29,6 +31,7 @@ batch_size = int(args['batchSize'])
 
 node_status = {} # updates after each node is tested
 
+start_time = time.time()
 
 # get addresses in desired endpointslice (autopilot-healthchecks) based on which node(s) the user chooses
 def get_addresses():
@@ -47,18 +50,19 @@ def get_addresses():
                 if len(address_list) > 0:
                     return address_list
                 raise Exception('Error: Issue with --node parameter. Choices include: \"all\", a specific node name, or a comma separated list of node names.')
-    raise Exception('Error: Issue with --service or --namespace parameter. Check that they are correct.')
+    raise Exception('Error: Issue with --service and/or --namespace parameter(s). Check that they are correct.')
 
 
 # runs healthchecks at each endpoint (there is one endpoint in each node)
 def run_tests(address):
     daemon_node = str(address.node_name)
+    pid = os.getpid()
     url = create_url(address, daemon_node)
     response = get_requests(url)
     get_node_status(response, daemon_node)
     output = '\nEndpoint: {ip}\nNode: {daemon_node}\nurl: {url}\nResponse:\n{response}\nNode Status: {status}'.format(ip=address.ip, daemon_node=daemon_node, url=url, response=response, status=', '.join(node_status[daemon_node]))
     output += "\n-------------------------------------\n" # separator
-    return output
+    return output, pid, daemon_node
 
 
 
@@ -105,11 +109,13 @@ def get_node_status(response, daemon_node):
 
 # start program
 if __name__ == "__main__":
-    # run_tests(get_addresses())
+    # initializing some variables
     addresses = get_addresses()
     total_nodes = len(addresses)
+    pids_tups = []
+    pids_dict = {}
 
-    # set max number of processes
+    # set max number of processes (max is set to 4 for development)
     if (total_nodes < 4):
         max_processes = total_nodes
     else:
@@ -117,6 +123,15 @@ if __name__ == "__main__":
 
     # multiprocessing for parallelism in batches
     with Pool(processes=max_processes) as pool:
-        for result in pool.map(run_tests, addresses, chunksize=batch_size):
+        for result, pid, daemon_node in pool.map(run_tests, addresses, chunksize=batch_size):
+            pids_tups.append((pid, daemon_node))
             print(result)
 
+    # print each process with the nodes they ran
+    for p, n in pids_tups:
+        pids_dict.setdefault(p, []).append(n)
+    print("~~~DEBUGGING BELOW~~~\nProcesses (randomly numbered) and the nodes they ran (process:[nodes]):")
+    pprint.pprint(pids_dict, width=1)
+
+    # print runtime
+    print('\nruntime:', str(time.time() - start_time), 'sec')
