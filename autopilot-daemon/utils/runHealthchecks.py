@@ -133,11 +133,10 @@ if __name__ == "__main__":
     print("Node Summary:\n")
     pprint.pprint(node_status)
     
-    
     # debug: print each process with the nodes they ran
     for p, n in pids_tups:
         pids_dict.setdefault(p, []).append(n)
-    print("\n~~~DEBUGGING BELOW~~~\nProcesses (randomly numbered) and the nodes they ran (process:[nodes]):")
+    print("\n~~~DEBUGGING BELOW~~~\nProcesses (randomly ordered) and the nodes they ran (process:[nodes]):")
     pprint.pprint(pids_dict, width=1)
 
     # print runtime
