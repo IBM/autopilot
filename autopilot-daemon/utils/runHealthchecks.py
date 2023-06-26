@@ -29,8 +29,7 @@ node = args['nodes'].replace(' ', '').split(',') # list of nodes
 check = args['check']
 batch_size = int(args['batchSize'])
 
-node_status = {} # updates after each node is tested
-
+# debug: runtime
 start_time = time.time()
 
 # get addresses in desired endpointslice (autopilot-healthchecks) based on which node(s) the user chooses
@@ -59,10 +58,10 @@ def run_tests(address):
     pid = os.getpid()
     url = create_url(address, daemon_node)
     response = get_requests(url)
-    get_node_status(response, daemon_node)
-    output = '\nEndpoint: {ip}\nNode: {daemon_node}\nurl: {url}\nResponse:\n{response}\nNode Status: {status}'.format(ip=address.ip, daemon_node=daemon_node, url=url, response=response, status=', '.join(node_status[daemon_node]))
+    node_status_list = get_node_status(response)
+    output = '\nEndpoint: {ip}\nNode: {daemon_node}\nurl: {url}\nResponse:\n{response}\nNode Status: {status}'.format(ip=address.ip, daemon_node=daemon_node, url=url, response=response, status=', '.join(node_status_list))
     output += "\n-------------------------------------\n" # separator
-    return output, pid, daemon_node
+    return output, pid, daemon_node, node_status_list
 
 
 
@@ -92,19 +91,20 @@ def get_requests(url):
 
 
 # check and print status of each node
-def get_node_status(response, daemon_node):
-    node_status[daemon_node] = []
+def get_node_status(response):
+    node_status_list = []
     response_list = response.split('\n')
     for line in response_list:
         if ('FAIL' in line):
             if ('PCIE' in line):
-                node_status[daemon_node].append('PCIE Failed')
+                node_status_list.append('PCIE Failed')
             elif ('NETWORK' in line):
-                node_status[daemon_node].append('MULTI-NIC CNI Failed')
+                node_status_list.append('MULTI-NIC CNI Failed')
             elif('REMAPPED ROWS' in line):
-                node_status[daemon_node].append('REMAPPED ROWS Failed')
-    if len(node_status[daemon_node]) < 1:
-        node_status[daemon_node].append('Ok')
+                node_status_list.append('REMAPPED ROWS Failed')
+    if len(node_status_list) < 1:
+        node_status_list.append('Ok')
+    return node_status_list
 
 
 # start program
@@ -112,8 +112,9 @@ if __name__ == "__main__":
     # initializing some variables
     addresses = get_addresses()
     total_nodes = len(addresses)
-    pids_tups = []
-    pids_dict = {}
+    node_status = {} # updates after each node is tested
+    pids_tups = [] # debug: process list
+    pids_dict = {} # debug: process list
 
     # set max number of processes (max is set to 4 for development)
     if (total_nodes < 4):
@@ -123,14 +124,19 @@ if __name__ == "__main__":
 
     # multiprocessing for parallelism in batches
     with Pool(processes=max_processes) as pool:
-        for result, pid, daemon_node in pool.map(run_tests, addresses, chunksize=batch_size):
+        for result, pid, daemon_node, node_status_list in pool.map(run_tests, addresses, chunksize=batch_size):
             pids_tups.append((pid, daemon_node))
+            node_status[daemon_node] = node_status_list
             print(result)
 
-    # print each process with the nodes they ran
+    # print node summary at end of program
+    print("Node Summary:\n")
+    pprint.pprint(node_status)
+    
+    # debug: print each process with the nodes they ran
     for p, n in pids_tups:
         pids_dict.setdefault(p, []).append(n)
-    print("~~~DEBUGGING BELOW~~~\nProcesses (randomly numbered) and the nodes they ran (process:[nodes]):")
+    print("\n~~~DEBUGGING BELOW~~~\nProcesses (randomly ordered) and the nodes they ran (process:[nodes]):")
     pprint.pprint(pids_dict, width=1)
 
     # print runtime
