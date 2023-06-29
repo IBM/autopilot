@@ -25,7 +25,8 @@ spec:
             - sh
             - -c
             - |
-              python metrics-entrypoint.py
+              python3 metrics-entrypoint.py
+            #- sleep inf
           env:
             - name: NODE_NAME
               valueFrom:
