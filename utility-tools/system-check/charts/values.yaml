@@ -1,4 +1,4 @@
-image: "us.icr.io/cil15-shared-registry/gracek/run-healthchecks:1.9.1" # last version: "us.icr.io/cil15-shared-registry/autopilot/run-healthchecks:v0"
+image: "us.icr.io/cil15-shared-registry/autopilot/run-healthchecks:v1"
 namespace:  # namespace where to deploy the helm chart.
 imagePullSecret: "all-icr-io"
 autopilotService: "autopilot-healthchecks" # default=autopilot-healthchecks.
