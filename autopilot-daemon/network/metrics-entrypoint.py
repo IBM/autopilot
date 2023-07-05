@@ -10,7 +10,7 @@ def main():
     command = ['python3', './network/read_status.py', nodename]
     timeout_s = 30
     try:
-        result = subprocess.run(command, text=True, timeout=timeout_s)
+        result = subprocess.run(command, text=True, capture_output=True, timeout=timeout_s)
     except subprocess.TimeoutExpired:
         print("Multi-NIC CNI health checker is not reachable - network reachability test cannot run")
         sys.exit(0)
@@ -22,24 +22,22 @@ def main():
     else:
         output = result.stdout
         print(output)
-   
-    if "OK" in output:
-        print("[[ NETWORK ]] SUCCESS")
-    else:
-        print("[[ NETWORK ]] FAIL")
-        print("Host ", os.getenv("NODE_NAME"))
-        sys.exit(0)
+        if "OK" in output:
+            print("[[ NETWORK ]] SUCCESS")
+        else:
+            print("[[ NETWORK ]] FAIL")
+            print("Host ", os.getenv("NODE_NAME"))
 
-    connectable = output.split("Connectable network devices: ")[1]
-    devices = int(connectable.split("/")[0])
-    if devices == 2:
-        lastline = nodename + " 1 1"
-    elif devices == 1:
-        lastline = nodename + " 1 0"
-    elif devices == 0:
-        lastline = nodename + " 0 0"
-    else:
-        lastline = "Cannot determine connectable devices"
+        connectable = output.split("Connectable network devices: ")[1]
+        devices = int(connectable.split("/")[0])
+        if devices == 2:
+            lastline = nodename + " 1 1"
+        elif devices == 1:
+            lastline = nodename + " 1 0"
+        elif devices == 0:
+            lastline = nodename + " 0 0"
+        else:
+            lastline = "Cannot determine connectable devices"
     
     print("\n" + lastline)
 
