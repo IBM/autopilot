@@ -15,9 +15,203 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 6,
+  "id": 11,
   "links": [],
   "panels": [
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "hiddenSeries": false,
+      "id": 12,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.17",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum_over_time(scrape_series_added{job=\"autopilot-metrics-service\"}[1h]) ",
+          "interval": "",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeRegions": [],
+      "title": "Approximate number of new series in this scrape",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "hiddenSeries": false,
+      "id": 10,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.17",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "topk(10, sum without(instance)(sum_over_time(scrape_series_added[1h])))",
+          "hide": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum_over_time(scrape_samples_scraped{job=\"autopilot-metrics-service\"}[1h])",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{pod}}",
+          "refId": "C"
+        }
+      ],
+      "thresholds": [],
+      "timeRegions": [],
+      "title": "Number of samples exposed",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
     {
       "aliasColors": {},
       "bars": false,
@@ -36,7 +230,7 @@
         "h": 10,
         "w": 21,
         "x": 0,
-        "y": 0
+        "y": 8
       },
       "hiddenSeries": false,
       "id": 8,
@@ -135,7 +329,7 @@
         "h": 8,
         "w": 22,
         "x": 0,
-        "y": 10
+        "y": 18
       },
       "hiddenSeries": false,
       "id": 6,
@@ -241,7 +435,7 @@
         "h": 7,
         "w": 22,
         "x": 0,
-        "y": 18
+        "y": 26
       },
       "hiddenSeries": false,
       "id": 4,
@@ -340,139 +534,6 @@
         "align": false,
         "alignLevel": null
       }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "fill": 6,
-      "fillGradient": 3,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 25
-      },
-      "hiddenSeries": false,
-      "id": 2,
-      "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 2,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.5.17",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum(autopilot_health_report_total{health=\"pciebw\"}) by (node)",
-          "hide": true,
-          "interval": "",
-          "legendFormat": "Node {{ node }}",
-          "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "autopilot_health_report_total{health=\"pciebw\"}",
-          "format": "time_series",
-          "hide": true,
-          "instant": false,
-          "interval": "",
-          "legendFormat": "GPU {{ deviceid }}  {{ node }}",
-          "refId": "B"
-        },
-        {
-          "exemplar": true,
-          "expr": "autopilot_health_report_total{health=\"pciebw\", quantile=\"0.99\"}",
-          "hide": true,
-          "interval": "",
-          "legendFormat": "P99 GPU {{ deviceid }}  {{ node }}",
-          "refId": "C"
-        },
-        {
-          "exemplar": true,
-          "expr": "autopilot_health_report_total{health=\"pciebw\", quantile=\"0.9\"}",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "P90 GPU {{ deviceid }}  {{ node }}",
-          "refId": "D"
-        },
-        {
-          "exemplar": true,
-          "expr": "autopilot_health_report_total{health=\"pciebw\", quantile=\"0.5\"}",
-          "hide": true,
-          "interval": "",
-          "legendFormat": "P50 GPU {{ deviceid }}  {{ node }}",
-          "refId": "E"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "GPU PCIe BW (Summary)",
-      "tooltip": {
-        "shared": false,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:111",
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:112",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
     }
   ],
   "refresh": "1m",
@@ -490,5 +551,5 @@
   "timezone": "",
   "title": "Autopilot",
   "uid": "Ny3de_UVz",
-  "version": 26
+  "version": 5
 }
