@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 11,
+  "id": 4,
   "links": [],
   "panels": [
     {
@@ -73,7 +73,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Approximate number of new series in this scrape",
       "tooltip": {
         "shared": true,
@@ -174,7 +176,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Number of samples exposed",
       "tooltip": {
         "shared": true,
@@ -327,7 +331,7 @@
       "fillGradient": 3,
       "gridPos": {
         "h": 8,
-        "w": 22,
+        "w": 12,
         "x": 0,
         "y": 18
       },
@@ -418,6 +422,65 @@
         "align": false,
         "alignLevel": null
       }
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": ""
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 11,
+        "x": 12,
+        "y": 18
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.5.17",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "autopilot_health_checks{health=\"pciebw\"} < 4",
+          "interval": "",
+          "legendFormat": "GPU {{deviceid}} - {{node}}",
+          "refId": "A"
+        }
+      ],
+      "title": "GPUs with low PCIeBW (less than 4 GB/s)",
+      "type": "stat"
     },
     {
       "aliasColors": {},
@@ -544,7 +607,7 @@
     "list": []
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {},
