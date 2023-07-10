@@ -22,6 +22,7 @@ The Helm chart can be configured by updating the following values in `values.yam
 - `autopilotNamespace` is the namespace where the Autopilot daemons are running. It is defaulted to `autopilot`
 - `targetNode` to run the test(s) on a specific node only, rather than on the entire system
 - `testType` is the type of test that will run i.e. pciebw, nic, remapped, or all
+- `batchSize` is the number of nodes running a health check per processor. It is defaulted to `1` node per processor
 
 To deploy the Pod:
 
