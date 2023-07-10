@@ -202,5 +202,4 @@ Reported by multi-nic-cni-health-checker-5cfb794496-57vtw at 2023-06-09T01:43:15
 
 dev-ppv5g-worker-3-with-secondary-h5vb6 1 1
 
-$ kubectl delete job curl-pod
 ```

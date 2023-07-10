@@ -15,17 +15,30 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 6,
+  "id": 4,
+  "iteration": 1689009742892,
   "links": [],
   "panels": [
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 22,
+      "panels": [],
+      "title": "Single Node Stats",
+      "type": "row"
+    },
     {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
-      "decimals": null,
-      "description": "Checks remapped rows on GPUs. If no remapped rows, then value is 0. 1 otherwise.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -33,26 +46,24 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 10,
-        "w": 21,
+        "h": 8,
+        "w": 12,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "hiddenSeries": false,
-      "id": 8,
+      "id": 20,
       "legend": {
-        "alignAsTable": true,
         "avg": false,
         "current": false,
         "max": false,
         "min": false,
-        "rightSide": true,
         "show": true,
         "total": false,
         "values": false
       },
       "lines": true,
-      "linewidth": 3,
+      "linewidth": 1,
       "nullPointMode": "null",
       "options": {
         "alertThreshold": true
@@ -69,18 +80,17 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "autopilot_health_checks{health=\"remapped\"}",
-          "hide": false,
+          "expr": "autopilot_health_checks{node=\"$node\",health=\"$health\",deviceid=\"$deviceid\"}",
           "interval": "",
-          "legendFormat": "GPU {{ deviceid }} Node {{ node }}",
-          "refId": "B"
+          "legendFormat": "{{ health }} for device {{ deviceid }} on {{ node }}",
+          "refId": "A"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Remapped Rows (Gauge)",
+      "title": "Single Node Metrics",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -96,7 +106,7 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:384",
+          "$$hashKey": "object:201",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -105,7 +115,7 @@
           "show": true
         },
         {
-          "$$hashKey": "object:385",
+          "$$hashKey": "object:202",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -118,6 +128,20 @@
         "align": false,
         "alignLevel": null
       }
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 24,
+      "panels": [],
+      "title": "All Nodes",
+      "type": "row"
     },
     {
       "aliasColors": {},
@@ -133,7 +157,7 @@
       "fillGradient": 3,
       "gridPos": {
         "h": 8,
-        "w": 22,
+        "w": 12,
         "x": 0,
         "y": 10
       },
@@ -171,16 +195,16 @@
           "expr": "autopilot_health_checks{health=\"pciebw\"}",
           "hide": false,
           "interval": "",
-          "legendFormat": "GPU {{ deviceid }} Node {{ node }}",
+          "legendFormat": "GPU {{ deviceid }} - {{ node }}",
           "refId": "A"
         },
         {
           "exemplar": true,
-          "expr": "autopilot_health_checks{health=\"pciebw\", node=\"dev-ppv5g-worker-3-with-secondary-jdf7b\"}",
+          "expr": "autopilot_health_checks{health=\"pciebw\",node=\"$node\"}",
           "hide": true,
           "instant": true,
           "interval": "",
-          "legendFormat": "GPU {{ deviceid }} Node {{ node }}",
+          "legendFormat": "GPU {{ deviceid }} - {{ node }}",
           "refId": "B"
         }
       ],
@@ -204,6 +228,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:690",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -212,6 +237,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:691",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -226,51 +252,118 @@
       }
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": null,
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": ""
+              }
+            ]
+          }
+        },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
-        "h": 7,
-        "w": 22,
+        "h": 8,
+        "w": 11,
+        "x": 12,
+        "y": 10
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.5.17",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "autopilot_health_checks{health=\"pciebw\"} < 4",
+          "interval": "",
+          "legendFormat": "GPU {{deviceid}} - {{node}}",
+          "refId": "A"
+        }
+      ],
+      "title": "GPUs with low PCIeBW (less than 4 GB/s)",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "green",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "string"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
         "x": 0,
         "y": 18
       },
-      "hiddenSeries": false,
       "id": 4,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "percentage": false,
       "pluginVersion": "7.5.17",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
       "targets": [
         {
           "exemplar": true,
@@ -291,188 +384,290 @@
         },
         {
           "exemplar": true,
-          "expr": "autopilot_health_checks{health=\"net-reach\"}",
+          "expr": "sum(autopilot_health_checks{health=\"net-reach\"})by(node)",
           "hide": false,
           "interval": "",
-          "legendFormat": "NIC {{ deviceid }} Node {{ node }}",
+          "legendFormat": "{{ node }}",
           "refId": "C"
         }
       ],
-      "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
-      "title": "Secondary NIC (Gauge)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:172",
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:173",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Secondary NIC by Node",
+      "type": "gauge"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": null,
+      "description": "Checks remapped rows on GPUs. If no remapped rows, then value is 0. 1 otherwise.",
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
         "overrides": []
       },
-      "fill": 6,
-      "fillGradient": 3,
       "gridPos": {
-        "h": 9,
+        "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 25
+        "x": 12,
+        "y": 18
       },
-      "hiddenSeries": false,
-      "id": 2,
-      "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 2,
-      "nullPointMode": "null",
+      "id": 8,
       "options": {
-        "alertThreshold": true
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "percentage": false,
       "pluginVersion": "7.5.17",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(autopilot_health_report_total{health=\"pciebw\"}) by (node)",
-          "hide": true,
-          "interval": "",
-          "legendFormat": "Node {{ node }}",
-          "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "autopilot_health_report_total{health=\"pciebw\"}",
-          "format": "time_series",
-          "hide": true,
-          "instant": false,
-          "interval": "",
-          "legendFormat": "GPU {{ deviceid }}  {{ node }}",
-          "refId": "B"
-        },
-        {
-          "exemplar": true,
-          "expr": "autopilot_health_report_total{health=\"pciebw\", quantile=\"0.99\"}",
-          "hide": true,
-          "interval": "",
-          "legendFormat": "P99 GPU {{ deviceid }}  {{ node }}",
-          "refId": "C"
-        },
-        {
-          "exemplar": true,
-          "expr": "autopilot_health_report_total{health=\"pciebw\", quantile=\"0.9\"}",
+          "expr": "sum(autopilot_health_checks{health=\"remapped\"})by(node)",
           "hide": false,
           "interval": "",
-          "legendFormat": "P90 GPU {{ deviceid }}  {{ node }}",
-          "refId": "D"
-        },
-        {
-          "exemplar": true,
-          "expr": "autopilot_health_report_total{health=\"pciebw\", quantile=\"0.5\"}",
-          "hide": true,
-          "interval": "",
-          "legendFormat": "P50 GPU {{ deviceid }}  {{ node }}",
-          "refId": "E"
+          "legendFormat": " {{ node }}",
+          "refId": "B"
         }
       ],
-      "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
-      "title": "GPU PCIe BW (Summary)",
-      "tooltip": {
-        "shared": false,
-        "sort": 0,
-        "value_type": "individual"
+      "title": "Remapped Rows by Node",
+      "type": "gauge"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
       },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
+      "id": 26,
+      "panels": [
         {
-          "$$hashKey": "object:111",
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "description": "",
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 11,
+            "x": 0,
+            "y": 11
+          },
+          "hiddenSeries": false,
+          "id": 12,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.17",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum_over_time(scrape_series_added{job=\"autopilot-metrics-service\"}[1h]) ",
+              "interval": "",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Approximate number of new series in this scrape",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
-          "$$hashKey": "object:112",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 11
+          },
+          "hiddenSeries": false,
+          "id": 10,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.17",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "topk(10, sum without(instance)(sum_over_time(scrape_series_added[1h])))",
+              "hide": true,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum_over_time(scrape_samples_scraped{job=\"autopilot-metrics-service\"}[1h])",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{pod}}",
+              "refId": "C"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Number of samples exposed",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Timeseries Stats",
+      "type": "row"
     }
   ],
   "refresh": "1m",
@@ -480,7 +675,169 @@
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": "dev-ppv5g-worker-3-with-secondary-t9kxw",
+          "value": "dev-ppv5g-worker-3-with-secondary-t9kxw"
+        },
+        "datasource": null,
+        "definition": "label_values(nodename)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Node",
+        "multi": false,
+        "name": "node",
+        "options": [
+          {
+            "selected": false,
+            "text": "dev-ppv5g-worker-3-with-secondary-5fqgt",
+            "value": "dev-ppv5g-worker-3-with-secondary-5fqgt"
+          },
+          {
+            "selected": true,
+            "text": "dev-ppv5g-worker-3-with-secondary-t9kxw",
+            "value": "dev-ppv5g-worker-3-with-secondary-t9kxw"
+          }
+        ],
+        "query": {
+          "query": "label_values(nodename)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 0,
+        "regex": "/.*-worker-*/",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": "pciebw",
+          "value": "pciebw"
+        },
+        "datasource": null,
+        "definition": "label_values(health)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Health Check",
+        "multi": false,
+        "name": "health",
+        "options": [
+          {
+            "selected": false,
+            "text": "net-reach",
+            "value": "net-reach"
+          },
+          {
+            "selected": true,
+            "text": "pciebw",
+            "value": "pciebw"
+          },
+          {
+            "selected": false,
+            "text": "remapped",
+            "value": "remapped"
+          }
+        ],
+        "query": {
+          "query": "label_values(health)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "3",
+          "value": "3"
+        },
+        "datasource": null,
+        "definition": "label_values(deviceid)",
+        "description": "GPU (0-7), NIC (1-2)",
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Device ID",
+        "multi": false,
+        "name": "deviceid",
+        "options": [
+          {
+            "selected": false,
+            "text": "0",
+            "value": "0"
+          },
+          {
+            "selected": false,
+            "text": "1",
+            "value": "1"
+          },
+          {
+            "selected": false,
+            "text": "2",
+            "value": "2"
+          },
+          {
+            "selected": true,
+            "text": "3",
+            "value": "3"
+          },
+          {
+            "selected": false,
+            "text": "4",
+            "value": "4"
+          },
+          {
+            "selected": false,
+            "text": "5",
+            "value": "5"
+          },
+          {
+            "selected": false,
+            "text": "6",
+            "value": "6"
+          },
+          {
+            "selected": false,
+            "text": "7",
+            "value": "7"
+          }
+        ],
+        "query": {
+          "query": "label_values(deviceid)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 3,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
   },
   "time": {
     "from": "now-30m",
@@ -490,5 +847,5 @@
   "timezone": "",
   "title": "Autopilot",
   "uid": "Ny3de_UVz",
-  "version": 26
+  "version": 28
 }
