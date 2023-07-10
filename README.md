@@ -131,8 +131,9 @@ Autopilot provides a `/status` handler that can be queried to get the entire sys
 
 Tests can be tailored by a combination of:
 
-- `host=<hostname>`, to run all tests on a specific node
-- `check=<healthcheck>`, to run a single test (`pciebw`, `nic` and `remapped`)
+- `host=<hostname1,hostname2,...>`, to run all tests on a specific node or on a comma separated list of nodes
+- `check=<healthcheck>`, to run a single test (`pciebw`, `nic` and `remapped`, or `all`). When no parameters are specified, all tests are run.
+- `batch=<#hosts>`, how many hosts to check at a single moment. Requests to the batch are run in parallel. Batching is done to avoid running too many requests in parallel when the number of worker nodes increases. Default to 1.
 
 #### Query from a pod
 

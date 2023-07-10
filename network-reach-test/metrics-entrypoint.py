@@ -8,22 +8,27 @@ def main():
     print("[[ NETWORK ]] Evaluating reachability of Multi-NIC CNI.")
     nodename = os.getenv("NODE_NAME")
     command = ['python3', './network/read_status.py', nodename]
-    result = subprocess.run(command, capture_output=True, text=True)
+    timeout_s = 30
+    try:
+        result = subprocess.run(command, text=True, timeout=timeout_s)
+    except subprocess.TimeoutExpired:
+        print("Multi-NIC CNI health checker is not reachable - network reachability test cannot run")
+        sys.exit(0)
 
     if result.stderr:
+        print(result.stderr)
         print("Multi-NIC CNI health checker is not reachable - network reachability test cannot run")
         sys.exit(0)
     else:
         output = result.stdout
         print(output)
-
-    
+   
     if "OK" in output:
         print("[[ NETWORK ]] SUCCESS")
     else:
         print("[[ NETWORK ]] FAIL")
         print("Host ", os.getenv("NODE_NAME"))
-        return 0
+        sys.exit(0)
 
     connectable = output.split("Connectable network devices: ")[1]
     devices = int(connectable.split("/")[0])
