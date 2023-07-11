@@ -20,7 +20,7 @@ func main() {
 	bwThreshold := flag.String("bw", "4", "Sets bandwidth threshold for the init container")
 	logFile := flag.String("logfile", "report.log", "File where requests counter and info is being stored")
 	v := flag.String("loglevel", "2", "Log level")
-	repeat := flag.Int("w", 60, "Run all tests periodically on each node. Time set in minutes")
+	repeat := flag.Int("w", 60, "Run all tests periodically on each node. Time set in hours")
 
 	flag.Parse()
 
@@ -70,7 +70,7 @@ func main() {
 		}
 	}()
 
-	testsTicker := time.NewTicker(time.Duration(*repeat) * time.Minute)
+	testsTicker := time.NewTicker(time.Duration(*repeat) * time.Hour)
 	defer testsTicker.Stop()
 	for {
 		select {

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: find-endpoint
+  labels:
+    app.kubernetes.io/name: find-endpoint-app
+spec:
+  containers:
+  - name: find-endpoint
+    image: gracekariuki/find-endpoint:1.0
+    # command: [python3 ./listEndpointSlices.py]
+    args: ['service=autopilot-healthchecks', 'namespace=autopilot']
+    env:
+      - name: MY_NODE_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: spec.nodeName
+  restartPolicy: Never
