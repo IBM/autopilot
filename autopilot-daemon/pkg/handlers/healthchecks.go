@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.ibm.com/hybrid-cloud-infrastructure-research/autopilot-daemon/pkg/utils"
 	"k8s.io/klog/v2"
@@ -19,6 +20,7 @@ func runAllTestsLocal(check string) (error, *[]byte) {
 	out := []byte("")
 	var tmp *[]byte
 	var err error
+	start := time.Now()
 	switch check {
 	case "pciebw":
 		klog.Info("Running health check: ", check)
@@ -69,7 +71,9 @@ func runAllTestsLocal(check string) (error, *[]byte) {
 		out = append(out, *tmp...)
 
 	}
-
+	end := time.Now()
+	diff := end.Sub(start)
+	klog.Info("Total time (s) for all checks: ", diff.Seconds())
 	return nil, &out
 }
 
@@ -126,8 +130,13 @@ func runRemappedRows() (error, *[]byte) {
 		if strings.Contains(string(out[:]), "FAIL") {
 			klog.Info("Remapped Rows test failed.", string(out[:]))
 		}
-		output := strings.TrimSuffix(string(out[:]), "\n")
 
+		if strings.Contains(string(out[:]), "ABORT") {
+			klog.Info("PCIe BW cannot be run. ", string(out[:]))
+			return nil, &out
+		}
+
+		output := strings.TrimSuffix(string(out[:]), "\n")
 		split := strings.Split(output, "\n")
 		rmr := split[len(split)-1]
 		final := strings.Split(rmr, " ")
@@ -139,7 +148,7 @@ func runRemappedRows() (error, *[]byte) {
 				return err, nil
 			} else {
 				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", rm)
-				utils.Hchecks.WithLabelValues("remapped", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Observe(rm)
+				// utils.Hchecks.WithLabelValues("remapped", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Observe(rm)
 				utils.HchecksGauge.WithLabelValues("remapped", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(rm)
 			}
 		}
@@ -159,6 +168,11 @@ func runPCIeBw() (error, *[]byte) {
 			klog.Info("PCIe BW test failed.", string(out[:]))
 		}
 
+		if strings.Contains(string(out[:]), "ABORT") {
+			klog.Info("PCIe BW cannot be run. ", string(out[:]))
+			return nil, &out
+		}
+
 		output := strings.TrimSuffix(string(out[:]), "\n")
 		split := strings.Split(output, "\n")
 
@@ -172,7 +186,7 @@ func runPCIeBw() (error, *[]byte) {
 				return err, nil
 			} else {
 				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", bw)
-				utils.Hchecks.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Observe(bw)
+				// utils.Hchecks.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Observe(bw)
 				utils.HchecksGauge.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(bw)
 			}
 		}

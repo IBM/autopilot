@@ -19,6 +19,9 @@ def main():
             return 0
         print("Host ", os.getenv("NODE_NAME"))
         print(result.strip())
+    else:
+        print("[[ REMAPPED ROWS ]] ABORT")
+        print(result)
 
 if __name__ == '__main__':
     main()

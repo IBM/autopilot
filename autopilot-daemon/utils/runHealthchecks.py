@@ -95,7 +95,7 @@ def get_node_status(response):
     node_status_list = []
     response_list = response.split('\n')
     for line in response_list:
-        if ('FAIL' in line):
+        if ('FAIL' in line or 'ABORT' in line) :
             if ('PCIE' in line):
                 node_status_list.append('PCIE Failed')
             elif ('NETWORK' in line):
