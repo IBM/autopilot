@@ -15,13 +15,13 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 4,
-  "iteration": 1689009742892,
+  "id": 1,
+  "iteration": 1689354875983,
   "links": [],
   "panels": [
     {
       "collapsed": false,
-      "datasource": null,
+      "datasource": "OpenShift_Prometheus",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -106,7 +106,6 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:201",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -115,7 +114,6 @@
           "show": true
         },
         {
-          "$$hashKey": "object:202",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -131,7 +129,7 @@
     },
     {
       "collapsed": false,
-      "datasource": null,
+      "datasource": "OpenShift_Prometheus",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -148,7 +146,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": "OpenShift_Prometheus",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -228,7 +226,6 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:690",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -237,7 +234,6 @@
           "show": true
         },
         {
-          "$$hashKey": "object:691",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -252,7 +248,7 @@
       }
     },
     {
-      "datasource": null,
+      "datasource": "OpenShift_Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -276,10 +272,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 11,
-        "x": 12,
-        "y": 10
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 18
       },
       "id": 14,
       "options": {
@@ -311,7 +307,8 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": "OpenShift_Prometheus",
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -347,7 +344,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 27
       },
       "id": 4,
       "options": {
@@ -376,7 +373,7 @@
         },
         {
           "exemplar": true,
-          "expr": "group (avg(autopilot_health_report_total{health=\"netdevice\"})) by (node)",
+          "expr": "group (avg(autopilot_health_report_total{health=\"netdevice\"})) by (node))",
           "hide": true,
           "interval": "",
           "legendFormat": "{{ node }} ",
@@ -384,7 +381,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(autopilot_health_checks{health=\"net-reach\"})by(node)",
+          "expr": "sum(autopilot_health_checks{health=\"net-reach\"})by(node) < 2",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ node }}",
@@ -393,11 +390,11 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Secondary NIC by Node",
+      "title": "Faulty Secondary NIC by Node",
       "type": "gauge"
     },
     {
-      "datasource": null,
+      "datasource": "OpenShift_Prometheus",
       "description": "Checks remapped rows on GPUs. If no remapped rows, then value is 0. 1 otherwise.",
       "fieldConfig": {
         "defaults": {
@@ -425,7 +422,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 27
       },
       "id": 8,
       "options": {
@@ -444,7 +441,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(autopilot_health_checks{health=\"remapped\"})by(node)",
+          "expr": "sum(autopilot_health_checks{health=\"remapped\"})by(node)>0",
           "hide": false,
           "interval": "",
           "legendFormat": " {{ node }}",
@@ -453,17 +450,17 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Remapped Rows by Node",
+      "title": "Faulty Remapped Rows by Node",
       "type": "gauge"
     },
     {
       "collapsed": true,
-      "datasource": null,
+      "datasource": "OpenShift_Prometheus",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 35
       },
       "id": 26,
       "panels": [
@@ -472,7 +469,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": null,
+          "datasource": "OpenShift_Prometheus",
           "description": "",
           "fieldConfig": {
             "defaults": {},
@@ -484,7 +481,7 @@
             "h": 8,
             "w": 11,
             "x": 0,
-            "y": 11
+            "y": 27
           },
           "hiddenSeries": false,
           "id": 12,
@@ -567,7 +564,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": null,
+          "datasource": "OpenShift_Prometheus",
           "fieldConfig": {
             "defaults": {},
             "overrides": []
@@ -578,7 +575,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 11
+            "y": 27
           },
           "hiddenSeries": false,
           "id": 10,
@@ -679,11 +676,11 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
-          "text": "dev-ppv5g-worker-3-with-secondary-t9kxw",
-          "value": "dev-ppv5g-worker-3-with-secondary-t9kxw"
+          "selected": false,
+          "text": "llm-dev-ocp-dp4kx-worker-3-with-secondary-4ll7b",
+          "value": "llm-dev-ocp-dp4kx-worker-3-with-secondary-4ll7b"
         },
-        "datasource": null,
+        "datasource": "OpenShift_Prometheus",
         "definition": "label_values(nodename)",
         "description": null,
         "error": null,
@@ -692,23 +689,12 @@
         "label": "Node",
         "multi": false,
         "name": "node",
-        "options": [
-          {
-            "selected": false,
-            "text": "dev-ppv5g-worker-3-with-secondary-5fqgt",
-            "value": "dev-ppv5g-worker-3-with-secondary-5fqgt"
-          },
-          {
-            "selected": true,
-            "text": "dev-ppv5g-worker-3-with-secondary-t9kxw",
-            "value": "dev-ppv5g-worker-3-with-secondary-t9kxw"
-          }
-        ],
+        "options": [],
         "query": {
           "query": "label_values(nodename)",
           "refId": "StandardVariableQuery"
         },
-        "refresh": 0,
+        "refresh": 1,
         "regex": "/.*-worker-*/",
         "skipUrlSync": false,
         "sort": 0,
@@ -721,11 +707,11 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "pciebw",
           "value": "pciebw"
         },
-        "datasource": null,
+        "datasource": "OpenShift_Prometheus",
         "definition": "label_values(health)",
         "description": null,
         "error": null,
@@ -734,28 +720,12 @@
         "label": "Health Check",
         "multi": false,
         "name": "health",
-        "options": [
-          {
-            "selected": false,
-            "text": "net-reach",
-            "value": "net-reach"
-          },
-          {
-            "selected": true,
-            "text": "pciebw",
-            "value": "pciebw"
-          },
-          {
-            "selected": false,
-            "text": "remapped",
-            "value": "remapped"
-          }
-        ],
+        "options": [],
         "query": {
           "query": "label_values(health)",
           "refId": "StandardVariableQuery"
         },
-        "refresh": 0,
+        "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
@@ -772,7 +742,7 @@
           "text": "3",
           "value": "3"
         },
-        "datasource": null,
+        "datasource": "OpenShift_Prometheus",
         "definition": "label_values(deviceid)",
         "description": "GPU (0-7), NIC (1-2)",
         "error": null,
@@ -781,53 +751,12 @@
         "label": "Device ID",
         "multi": false,
         "name": "deviceid",
-        "options": [
-          {
-            "selected": false,
-            "text": "0",
-            "value": "0"
-          },
-          {
-            "selected": false,
-            "text": "1",
-            "value": "1"
-          },
-          {
-            "selected": false,
-            "text": "2",
-            "value": "2"
-          },
-          {
-            "selected": true,
-            "text": "3",
-            "value": "3"
-          },
-          {
-            "selected": false,
-            "text": "4",
-            "value": "4"
-          },
-          {
-            "selected": false,
-            "text": "5",
-            "value": "5"
-          },
-          {
-            "selected": false,
-            "text": "6",
-            "value": "6"
-          },
-          {
-            "selected": false,
-            "text": "7",
-            "value": "7"
-          }
-        ],
+        "options": [],
         "query": {
           "query": "label_values(deviceid)",
           "refId": "StandardVariableQuery"
         },
-        "refresh": 0,
+        "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
         "sort": 3,
@@ -847,5 +776,5 @@
   "timezone": "",
   "title": "Autopilot",
   "uid": "Ny3de_UVz",
-  "version": 28
+  "version": 8
 }
