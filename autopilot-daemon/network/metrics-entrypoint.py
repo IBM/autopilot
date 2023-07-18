@@ -27,7 +27,10 @@ def main():
         else:
             print("[[ NETWORK ]] FAIL")
             print("Host ", os.getenv("NODE_NAME"))
-
+        if "cannot" in output:
+            print("Multi-NIC CNI health checker is not reachable - network reachability test cannot run")
+            sys.exit(0)
+            
         connectable = output.split("Connectable network devices: ")[1]
         devices = int(connectable.split("/")[0])
         if devices == 2:
