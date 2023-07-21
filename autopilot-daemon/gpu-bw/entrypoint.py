@@ -30,6 +30,9 @@ def main():
                 y = x[1].split(" GB/s")
                 bws += y[0] + " "
         print(bws.strip())
+    else:
+        print("[[ PCIEBW ]] ABORT")
+        print(result)
 
 
 if __name__ == '__main__':

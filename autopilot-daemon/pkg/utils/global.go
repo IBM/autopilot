@@ -41,5 +41,5 @@ var (
 
 func Initmetrics(reg prometheus.Registerer) {
 	// Register custom metrics with the global prometheus registry
-	reg.MustRegister(Requests, Hchecks, HchecksGauge)
+	reg.MustRegister(HchecksGauge)
 }
