@@ -1,6 +1,7 @@
 ########################################################################
 # Python program that uses the Python Client Library for Kubernetes to
 # run autopilot health checks on all nodes or a specific node(s). 
+# Image: us.icr.io/cil15-shared-registry/gracek/run-healthchecks:2.2
 ########################################################################
 import argparse
 import os
