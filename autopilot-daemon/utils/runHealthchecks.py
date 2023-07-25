@@ -1,6 +1,7 @@
 ########################################################################
 # Python program that uses the Python Client Library for Kubernetes to
 # run autopilot health checks on all nodes or a specific node(s). 
+# Image: us.icr.io/cil15-shared-registry/gracek/run-healthchecks:2.2
 ########################################################################
 import argparse
 import os
@@ -19,14 +20,14 @@ v1 = client.CoreV1Api()
 parser = argparse.ArgumentParser()
 parser.add_argument('--service', type=str, default='autopilot-healthchecks', help='Autopilot healthchecks service name. Default is \"autopilot-healthchecks\".')
 parser.add_argument('--namespace', type=str, default='autopilot', help='Autopilot healthchecks namespace. Default is \"autopilot\".')
-parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Default is \"all\".')
-parser.add_argument('--check', type=str, default='all', help='The specific test that will run: \"all\", \"pciebw\", \"nic\", or \"remapped\". Default is \"all\".')
+parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Default is \"all\". Can be a comma separated list.')
+parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"nic\", or \"remapped\". Default is \"all\". Can be a comma separated list.')
 parser.add_argument('--batchSize', type=str, default='1', help='Number of nodes running in parallel at a time. Default is \"1\".')
 args = vars(parser.parse_args())
 service = args['service']
 namespace = args['namespace']
 node = args['nodes'].replace(' ', '').split(',') # list of nodes
-check = args['check']
+checks = args['check'].replace(' ', '').split(',') # list of checks
 batch_size = int(args['batchSize'])
 
 # debug: runtime
@@ -56,23 +57,29 @@ def get_addresses():
 def run_tests(address):
     daemon_node = str(address.node_name)
     pid = os.getpid()
-    url = create_url(address, daemon_node)
-    response = get_requests(url)
+    urls = create_url(address, daemon_node)
+    output = '\nAutopilot Endpoint: {ip}\nNode: {daemon_node}\nurl(s): {urls}'.format(ip=address.ip, daemon_node=daemon_node, urls='\n        '.join(urls))
+    response = []
+    for url in urls:
+        response.append(get_requests(url))
     node_status_list = get_node_status(response)
-    output = '\nEndpoint: {ip}\nNode: {daemon_node}\nurl: {url}\nResponse:\n{response}\nNode Status: {status}'.format(ip=address.ip, daemon_node=daemon_node, url=url, response=response, status=', '.join(node_status_list))
-    output += "\n-------------------------------------\n" # separator
+    output += '\nResponse:\n{response}\nNode Status: {status}\n-------------------------------------\n'.format(response='~~\n'.join(response), status=', '.join(node_status_list))
+    # output += "\n-------------------------------------\n" # separator
     return output, pid, daemon_node, node_status_list
 
 
 
 # create url for test
 def create_url(address, daemon_node):
-    if check == 'all':
-        return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node
-    elif (check == 'nic' or check == 'remapped' or check == 'pciebw'):
-        return 'http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + check
-    else:
-        raise Exception('Error: Issue with --check parameter. Options are \"all\", \"pciebw\", \"nic\", or \"remapped\"')
+    urls = []
+    for check in checks:
+        if check == 'all':
+            urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node)
+        elif (check == 'nic' or check == 'remapped' or check == 'pciebw'):
+            urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + check)
+        else:
+            raise Exception('Error: Issue with --check parameter. Options are \"all\", \"pciebw\", \"nic\", or \"remapped\"')
+    return urls
 
 
 # rest api calls for healthcheck
@@ -91,17 +98,18 @@ def get_requests(url):
 
 
 # check and print status of each node
-def get_node_status(response):
+def get_node_status(responses):
     node_status_list = []
-    response_list = response.split('\n')
-    for line in response_list:
-        if ('FAIL' in line or 'ABORT' in line) :
-            if ('PCIE' in line):
-                node_status_list.append('PCIE Failed')
-            elif ('NETWORK' in line):
-                node_status_list.append('MULTI-NIC CNI Failed')
-            elif('REMAPPED ROWS' in line):
-                node_status_list.append('REMAPPED ROWS Failed')
+    for response in responses:
+        response_list = response.split('\n')
+        for line in response_list:
+            if (('FAIL' in line) or ('ABORT' in line)):
+                if ('PCIE' in line):
+                    node_status_list.append('PCIE Failed')
+                elif ('NETWORK' in line):
+                    node_status_list.append('MULTI-NIC CNI Failed')
+                elif('REMAPPED ROWS' in line):
+                    node_status_list.append('REMAPPED ROWS Failed')
     if len(node_status_list) < 1:
         node_status_list.append('Ok')
     return node_status_list
@@ -117,7 +125,7 @@ if __name__ == "__main__":
     pids_dict = {} # debug: process list
 
     # set max number of processes (max is set to 4 for development)
-    if (total_nodes < 4):
+    if ((total_nodes * len(checks)) < 4):
         max_processes = total_nodes
     else:
         max_processes = 4
