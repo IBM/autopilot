@@ -11,9 +11,9 @@ spec:
     rules:
     - alert: PcieAlert
       annotations:
-        description: A node has a PCIE bandwidth of 4 or less
-        summary: A node has a PCIE bandwidth of 4 or less
-      expr: sum (autopilot_health_checks{health="pciebw"}<=4) by (node, deviceid) > 0
+        description: A node has a GPU with a PCIE bandwidth of 4 or less
+        summary: GPU device {{ $labels.deviceid}} on node {{ $labels.node }} has a PCIE bandwidth of {{ $value }}
+      expr: sum (autopilot_health_checks{health="pciebw"}<=4) by (node, deviceid, value) > 0
       for: 1m
       labels:
         severity: critical

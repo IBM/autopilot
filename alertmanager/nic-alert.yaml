@@ -12,7 +12,7 @@ spec:
     - alert: NicAlert
       annotations:
         description: A node is not reachable - check NIC status
-        summary: A node is not reachable - check NIC status
+        summary: Node {{ $labels.node }} is not reachable - check NIC status
       expr: sum (autopilot_health_checks{health="net-reach"}<1) by (node) > 0
       for: 1m
       labels:

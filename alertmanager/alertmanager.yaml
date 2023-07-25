@@ -16,32 +16,63 @@ inhibit_rules:
     target_matchers:
       - severity = info
 receivers:
-  - name: cordon-event
-    slack_configs:
-      - channel: ocp
-        api_url: >-
-          https://hooks.slack.com/services/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
-        text: node is cordoned
-        send_resolved: true
   - name: cordoned-slack-alert
     slack_configs:
-      - channel: monitoring
+      - channel: openshift-monitoring
         api_url: >-
-          https://hooks.slack.com/services/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
-        send_resolved: true
+          https://hooks.slack.com/services/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
+        username: Autopilot
         icon_emoji: ':warning:'
-        text: Node is cordoned - check node health
+        text: A node has been cordoned - check node health
+        send_resolved: true
+  - name: low-pcie-bw-alert
+    slack_configs:
+      - channel: openshift-monitoring
+        api_url: >-
+          https://hooks.slack.com/services/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
+        username: Autopilot
+        icon_emoji: ':warning:'
+        text: |-
+          summary: {{ .CommonAnnotations.summary }}
+          description: {{ .CommonAnnotations.description }}
+        send_resolved: true
+  - name: Default
+  - name: Watchdog
+  - name: nic-alert
+    slack_configs:
+      - channel: openshift-monitoring
+        api_url: >-
+          https://hooks.slack.com/services/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
+        username: Autopilot
+        icon_url: ':warning:'
+        text: >-
+          A node is not reachable - check NIC status {{ .CommonAnnotations.summary }}
+  - name: remapped-alert
+    slack_configs:
+      - channel: openshift-monitoring
+        api_url: >-
+          https://hooks.slack.com/services/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
+        username: Autopilot
+        icon_emoji: ':warning:'
+        text: |-
+          summary: {{ .CommonAnnotations.summary }}
+          description: {{ .CommonAnnotations.description }}
 route:
-  group_by:
-    - namespace
-  group_interval: 1m
-  group_wait: 30s
   receiver: Default
   repeat_interval: 12h
   routes:
-    - receiver: cordon-event
-      match_re:
-        cordon: autopilot
+    - receiver: low-pcie-bw-alert
+      matchers:
+        - pcie = autopilot
     - receiver: cordoned-slack-alert
-      match_re:
-        cordon: autopilot
+      matchers:
+        - cordon = autopilot
+    - receiver: Watchdog
+      matchers:
+        - alertname = Watchdog
+    - receiver: nic-alert
+      match:
+        nic: autopilot
+    - receiver: remapped-alert
+      match:
+        remapped: autopilot

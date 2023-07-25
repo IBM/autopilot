@@ -12,7 +12,7 @@ spec:
     - alert: RemappedAlert
       annotations:
         description: A node has a GPU with incorrect remapped rows in memory
-        summary: A node has a GPU with incorrect remapped rows in memory
+        summary: GPU device {{ $labels.deviceid}} on node {{ $labels.node }} has incorrect remapped rows
       expr: sum (autopilot_health_checks{health="remapped"}==1) by (node, deviceid)
       for: 1m
       labels:
