@@ -17,4 +17,4 @@ spec:
       for: 1m
       labels:
         severity: critical
-        cordon: autopilot
+        pcie: autopilot
