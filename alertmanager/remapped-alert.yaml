@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: remapped-alert
+  namespace: openshift-monitoring
+  labels:
+    remapped: autopilot
+spec:
+  groups:
+  - name: remapped
+    rules:
+    - alert: RemappedAlert
+      annotations:
+        description: A node has a GPU with incorrect remapped rows in memory
+        summary: A node has a GPU with incorrect remapped rows in memory
+      expr: sum (autopilot_health_checks{health="remapped"}==1) by (node, deviceid)
+      for: 1m
+      labels:
+        severity: critical
+        remapped: autopilot
