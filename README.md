@@ -92,7 +92,7 @@ In summary, the recommended commands are as follows. Notice that Helm will insta
 ```bash
 git clone git@github.ibm.com:ai-foundation/foundation-model-stack.git % or clone this repository and skip the next step
 % UPDATE VALUES IN THE HELM CHARTS
-helm install autopilot-daemon/helm-charts/autopilot 
+helm install autopilot autopilot-daemon/helm-charts/autopilot 
 % or make install
 ```
 
