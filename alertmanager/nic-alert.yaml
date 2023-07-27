@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nic-alert
+  namespace: openshift-monitoring
+  labels:
+    nic: autopilot
+spec:
+  groups:
+  - name: autopilot
+    rules:
+    - alert: NicAlert
+      annotations:
+        description: A node is not reachable - check NIC status
+        summary: Node {{ $labels.node }} is not reachable - check NIC status
+      expr: sum (autopilot_health_checks{health="net-reach"}<1) by (node) > 0
+      for: 1m
+      labels:
+        severity: critical
+        nic: autopilot

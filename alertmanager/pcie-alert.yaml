@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pcie-alert
+  namespace: openshift-monitoring
+  labels:
+    pcie: autopilot
+spec:
+  groups:
+  - name: autopilot
+    rules:
+    - alert: PcieAlert
+      annotations:
+        description: A node has a GPU with a PCIE bandwidth of 4 or less
+        summary: GPU device {{ $labels.deviceid}} on node {{ $labels.node }} has a PCIE bandwidth of {{ $value }}
+      expr: sum (autopilot_health_checks{health="pciebw"}<=4) by (node, deviceid, value) > 0
+      for: 1m
+      labels:
+        severity: critical
+        pcie: autopilot
