@@ -1,7 +1,7 @@
 ##################################################################################
 # Python program that uses the Python Client Library for Kubernetes to
 # run autopilot health checks on all nodes or a specific node(s).
-# Healchecks include PCIEBW, MULTI-NIC CNI Availability, and GPU REMAPPED ROWS.
+# Healchecks include PCIEBW, MULTI-NIC CNI Reachability, and GPU REMAPPED ROWS.
 # Image: us.icr.io/cil15-shared-registry/gracek/run-healthchecks:2.5
 ##################################################################################
 import argparse
