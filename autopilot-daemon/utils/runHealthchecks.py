@@ -1,8 +1,9 @@
-########################################################################
+##################################################################################
 # Python program that uses the Python Client Library for Kubernetes to
-# run autopilot health checks on all nodes or a specific node(s). 
-# Image: us.icr.io/cil15-shared-registry/gracek/run-healthchecks:2.2
-########################################################################
+# run autopilot health checks on all nodes or a specific node(s).
+# Healchecks include PCIEBW, MULTI-NIC CNI Availability, and GPU REMAPPED ROWS.
+# Image: us.icr.io/cil15-shared-registry/gracek/run-healthchecks:2.5
+##################################################################################
 import argparse
 import os
 import requests
@@ -19,19 +20,46 @@ v1 = client.CoreV1Api()
 # get arguments for service, namespace, node(s), and check (test type)
 parser = argparse.ArgumentParser()
 parser.add_argument('--service', type=str, default='autopilot-healthchecks', help='Autopilot healthchecks service name. Default is \"autopilot-healthchecks\".')
-parser.add_argument('--namespace', type=str, default='autopilot', help='Autopilot healthchecks namespace. Default is \"autopilot\".')
-parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Default is \"all\". Can be a comma separated list.')
+parser.add_argument('--namespace', type=str, default='autopilot', help='Namespace where autopilot DaemonSet is deployed. Default is \"autopilot\".')
+parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Can be a comma separated list. Default is \"all\" unless --wkload is provided, then set to None. Specific nodes can be provided in addition to --wkload.')
 parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"nic\", or \"remapped\". Default is \"all\". Can be a comma separated list.')
 parser.add_argument('--batchSize', type=str, default='1', help='Number of nodes running in parallel at a time. Default is \"1\".')
+parser.add_argument('--wkload', type=str, default='None', help='Workload type and its corresponding name. Ex: \"--wkload=job:job-name\". Default is set to None.')
 args = vars(parser.parse_args())
 service = args['service']
 namespace = args['namespace']
 node = args['nodes'].replace(' ', '').split(',') # list of nodes
 checks = args['check'].replace(' ', '').split(',') # list of checks
 batch_size = int(args['batchSize'])
+wkload = args['wkload'].split(':') # ex: --wkload=job:my-job
+# changing default node value from 'all' to an empty list if there is a workload.
+# this still allows users to include a list of nodes and a workload.
+if (len(wkload) > 1) and (node[0] == 'all'):
+    node = []
 
 # debug: runtime
 start_time = time.time()
+
+
+# find workload addresses
+def find_wkload():
+    node_len = len(node)
+    copy = False
+    wkload_type = wkload[0] # ex: "job"
+    wkload_name = wkload[1] # ex: "my-job"
+    wkload_pods = v1.list_pod_for_all_namespaces(label_selector=('job-name=' + wkload_name)).items
+    print('Workload:', ': '.join(wkload))
+    for pod in wkload_pods:
+        pod_name = pod.metadata.name
+        node_name = pod.spec.node_name
+        if node_name not in node:
+            node.append(node_name)
+        else:
+            copy = True
+        # return pod_name
+    if (len(node) == node_len) and not copy:
+        raise Exception('Error: Issue with --wkload parameter. Make sure your workload is spelled correctly and exists in the cluster.')
+
 
 # get addresses in desired endpointslice (autopilot-healthchecks) based on which node(s) the user chooses
 def get_addresses():
@@ -49,7 +77,7 @@ def get_addresses():
                         address_list.append(address)
                 if len(address_list) > 0:
                     return address_list
-                raise Exception('Error: Issue with --node parameter. Choices include: \"all\", a specific node name, or a comma separated list of node names.')
+                raise Exception('Error: Issue with --node and/or --wkload parameter. Node choices include: \"all\", a specific node name, or a comma separated list of node names. Check that workload is spelled correctly and exists in the cluster.')
     raise Exception('Error: Issue with --service and/or --namespace parameter(s). Check that they are correct.')
 
 
@@ -118,6 +146,8 @@ def get_node_status(responses):
 # start program
 if __name__ == "__main__":
     # initializing some variables
+    if wkload != 'None':
+        find_wkload()
     addresses = get_addresses()
     total_nodes = len(addresses)
     node_status = {} # updates after each node is tested
