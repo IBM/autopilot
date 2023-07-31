@@ -1,46 +1,57 @@
-# Slack Notifications for cordoned nodes with Alert Manager
+
+
+# Alerting for autopilot tests on OpenShift clusters
 
 This folder contains the files needed to set up Slack notifications for cordoned nodes using Prometheus and AlertManager on OpenShift. 
 
 There are 3 main steps to set it up:
-1) Create a Prometheus `AlertingRule`
+1) Create `PrometheusRules` (alerting rules)
 2) Create a Slack webhook application
 3) Create an `AlertManager` Receiver
 
 These steps are explained in more detail below.
 
-## Create an `AlertingRule` for Prometheus
+## Create alerting rules for Prometheus
 ```console
-kubectl create -f alertingrule.yaml
+oc project openshift-monitoring
+oc create -f nic-alert.yaml
+oc create -f pcie-alert.yaml
+oc create -f remapped-alert.yaml
+oc create -f cordon-alert.yaml
 ```
 
-Note the following lines in the alerting rule below:
+Note the following in the example below:
 
-- The `PrometheusRule` is created in the `openshift-monitoring` namespace - this is the namespace where Prometheus and Alert manager is deployed on the OpenShift cluster.
-- A `cordon: autopilot` label is added - this is important to match the alert with an Alert Manager receiver that we will create in the last step. This is how Prometheus knows which Alert Manager receiver to send the alert to. 
-- `expr: sum (kube_node_spec_unschedulable) by (node) > 0` is the expression used to count how many nodes are unschedulable (or cordoned) and if it's more than 0
+- The `PrometheusRule` is created in the `openshift-monitoring` namespace - this is the namespace where Prometheus and Alert Manager is deployed on the OpenShift cluster.
+- The `pcie: autopilot` label is added to match the alert with an Alert Manager receiver that we will create in the last step. This is how Prometheus knows which Alert Manager receiver to send the alert to. 
+- `sum (autopilot_health_checks{health="pciebw"}<=4) by (node, deviceid, value) > 0` is the PromQL query used to count how many nodes have a GPU device with a PCIE bandwidth of less than 4 
 ```
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: cordon-node-alert
+  name: pcie-alert
   namespace: openshift-monitoring
   labels:
-    cordon: autopilot
+    pcie: autopilot
 spec:
   groups:
-  - name: example
+  - name: autopilot
     rules:
-    - alert: CordonAlert
+    - alert: PcieAlert
       annotations:
-        description: A node has been cordoned - check health of nodes
-        summary: A node has been cordoned - check health of nodes
-      expr: sum (kube_node_spec_unschedulable) by (node) > 0
+        description: A node has a GPU with a PCIE bandwidth of 4 or less
+        summary: GPU device {{ $labels.deviceid}} on node {{ $labels.node }} has a PCIE bandwidth of {{ $value }}
+      expr: sum (autopilot_health_checks{health="pciebw"}<=4) by (node, deviceid, value) > 0
       for: 1m
       labels:
         severity: critical
-        cordon: autopilot
+        pcie: autopilot
 ```
+
+## Observe OpenShift dashboard notifications
+Once you have deployed the above `PrometheusRules`, you should start seeing alerts in the OpenShift dashboard when one of the autopilot tests fails. For example, this alert below warns about low PCIE bandwidth on a GPU device on a node:
+![PCIE Alert](images/pciealert.png)
+
 ## Create a Slack incoming webhook application
 - Create a Slack workspace using your personal Slack account (not your IBM Slack)
 - Go to https://slack.com/apps and select your workspace from the dropdown menu in the top right of the page
@@ -89,13 +100,13 @@ This will generate a yaml file like `alertmanager.yaml` in this folder and will 
 
 You can check the status of the `AlertManager` pod with this command:
 ```console
-$kubectl logs alertmanager-main-0 -c alertmanager -n openshift-monitoring
+oc logs alertmanager-main-0 -c alertmanager -n openshift-monitoring
 ```
 
 Once the AlertManager is updated, you can test the notifications by cordoning a node:
 ```console
-kubectl get nodes
-kubectl cordon a100-huge-m25p7-worker-2-2tfzd
+oc get nodes
+oc cordon a100-huge-m25p7-worker-2-2tfzd
 ```
 You should see a Slack message in the channel you specified in your personal Slack workspace like this:
 ![Slack notif](images/notif.png)
@@ -103,7 +114,10 @@ You should see a Slack message in the channel you specified in your personal Sla
 Now if you uncordon that node and there are no cordoned nodes left, you should see a `Resolved` message like this:
 ![Slack resolved](images/resolved.png)
 
-That's it! Now you can get notifications in Slack everytime a node is cordoned on your OpenShift cluster. If there is something else you wish to get notification for, you simply need to create a new `PrometheusRule` with a new `expr` and label, and create a new `AlertManager` Slack receiver with a matching label. 
+You can repeat these steps and create receivers for each of the alerts or you can copy paste the `alertmanager.yaml` in this folder to the OpenShift AlertManager WebUI page and you will get Slack alerts for all of the autopilot tests. See example below:
+![PCIE Slack notif](images/pcieSlackAlert.png)
+
+That's it! Now you can get notifications in Slack everytime an autopilot test fails or a node is cordoned.  If there is something else you wish to get notification for, you simply need to create a new `PrometheusRule` with a new `expr` and label, and create a new `AlertManager` Slack receiver with a matching label. 
 
 
 
