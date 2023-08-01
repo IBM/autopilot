@@ -40,7 +40,7 @@ spec:
   containers:
   - image: {{ .Values.image }}
     name: system-check
-    args: ['--service={{ .Values.autopilotService }}', '--namespace={{ .Values.autopilotNamespace }}', '--nodes={{ .Values.targetNode }}', '--check={{ .Values.testType }}', '--batchSize={{ .Values.batchSize }}']
+    args: ['--service={{ .Values.autopilotService }}', '--namespace={{ .Values.autopilotNamespace }}', '--nodes={{ .Values.targetNode }}', '--check={{ .Values.testType }}', '--batchSize={{ .Values.batchSize }}', '--wkload={{ .Values.workload }}']
     env:
     - name: MY_NODE_NAME
       valueFrom:
