@@ -54,6 +54,112 @@ At a high level, the flow is the following (omitting the MCAD part for simplific
 - At execution time, each pod will first run the health check container. If the test will succeed, then the pod will keep running normally.
 <!-- - If the test fails, the init container will create a HealthCheckReport CRD indicating the result of the test and the node involved. Also, the pod will label itself with `deschedule` so that it can be removed from the faulty node. -->
 
+
+## Run Health Checks
+
+Health checks can be executed through a utility tool provided with a Helm chart, or by querying the Autopilot service.
+Results can be visualized by either checking the logs of the utility tool/service query, or by looking at the data in a Grafana dashboard.
+The relevant `json` file can be found [here](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/blob/main/utility-tools/Autopilot-Grafana-Dashboard.json)
+
+### Helm Chart
+
+Users and admins can create a single pod that can run the desired health checks.
+Please refer to the [dedicated page](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/utility-tools/system-check) for more details and customization.
+
+### Query the Autopilot Service
+
+Autopilot provides a `/status` handler that can be queried to get the entire system status, meaning that it will run all the tests on all the nodes. Autopilot is reachable by service name `autopilot-healthchecks.autopilot.svc` in-cluster only, meaning it can be reached from a pod running in the cluster.
+
+Tests can be tailored by a combination of:
+
+- `host=<hostname1,hostname2,...>`, to run all tests on a specific node or on a comma separated list of nodes.
+- `check=<healthcheck1,healtcheck2,...>`, to run a single test (`pciebw`, `nic` and `remapped`, or `all`) or a list of comma separated tests. When no parameters are specified, all tests are run.
+- `batch=<#hosts>`, how many hosts to check at a single moment. Requests to the batch are run in parallel. Batching is done to avoid running too many requests in parallel when the number of worker nodes increases. Default to 1.
+
+#### Query from a pod
+In the example below, we create a utility `nginx` pod from which we can run `curl` commands against the `autopilot-healthchecks` service.
+We run the PCIe bandwidth test on all nodes, and we can see it is failing on one node.
+
+```bash
+$ kubectl create job curl-pod --image=nginx -- sleep inf
+$ kubectl exec jobs/curl-pod -- curl "http://autopilot-healthchecks.autopilot.svc:3333/status?check=pciebw"
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:--  0:00:32 --:--:--     0Checking status on all nodes
+
+
+Autopilot Endpoint: 10.128.6.187
+Node: dev-ppv5g-var-lib-containers-f4v6q
+url(s): http://10.128.6.187:3333/status?host=dev-ppv5g-var-lib-containers-f4v6q&check=pciebw
+Response:
+Checking system status of host dev-ppv5g-var-lib-containers-f4v6q (localhost) 
+
+[[ PCIEBW ]] Briefings completed. Continue with PCIe Bandwidth evaluation.
+[[ PCIEBW ]] FAIL
+Host  dev-ppv5g-var-lib-containers-f4v6q
+12.3 12.3 12.3 12.3 3.3 12.3 12.3 12.3
+
+Node Status: PCIE Failed
+-------------------------------------
+
+
+Autopilot Endpoint: 10.131.4.93
+Node: dev-ppv5g-var-lib-containers-pzccw
+url(s): http://10.131.4.93:3333/status?host=dev-ppv5g-var-lib-containers-pzccw&check=pciebw
+Response:
+Checking system status of host dev-ppv5g-var-lib-containers-pzccw (localhost) 
+
+[[ PCIEBW ]] Briefings completed. Continue with PCIe Bandwidth evaluation.
+[[ PCIEBW ]] SUCCESS
+Host  dev-ppv5g-var-lib-containers-pzccw
+12.1 12.0 12.3 12.3 11.9 11.5 12.1 12.1
+
+Node Status: Ok
+-------------------------------------
+
+Node Summary:
+
+{'dev-ppv5g-var-lib-containers-f4v6q': ['PCIE Failed'],
+ 'dev-ppv5g-var-lib-containers-pzccw': ['Ok']}
+
+~~~DEBUGGING BELOW~~~
+Processes (randomly ordered) and the nodes they ran (process:[nodes]):
+{486: ['dev-ppv5g-var-lib-containers-f4v6q'],
+ 487: ['dev-ppv5g-var-lib-containers-pzccw']}
+
+runtime: 31.845192193984985 sec
+```
+
+#### Query with Port-Forward
+
+Alternatively, it is possible to port-forward the autopilot healthchecks Service and `curl` from localhost. 
+
+```bash
+$ kubectl port-forward service/autopilot-healthchecks 3333:3333
+Forwarding from 127.0.0.1:3333 -> 3333
+Forwarding from [::1]:3333 -> 3333
+```
+
+Then on another terminal, run the desired curl command. In this example, we target one node and check if the secondary nics are reachable.
+
+```bash
+$ curl "http://127.0.0.1:3333/status?host=dev-ppv5g-worker-3-with-secondary-h5vb6&check=nic"
+Checking system status of host dev-ppv5g-worker-3-with-secondary-h5vb6 (localhost) 
+
+[[ NETWORK ]] Evaluating reachability of Multi-NIC CNI.
+===== Health Status of dev-ppv5g-worker-3-with-secondary-h5vb6 =====
+Allocatable network devices: 2/2
+Connectable network devices: 2/2
+Host is OK (all functional and connected).
+Reported by multi-nic-cni-health-checker-5cfb794496-57vtw at 2023-06-09T01:43:15Z
+
+[[ NETWORK ]] SUCCESS
+
+dev-ppv5g-worker-3-with-secondary-h5vb6 1 1
+
+```
+
+
 ## Install autopilot (Admin)
 **Installation**: Both projects can be installed through Helm and need admin privileges to create objects like services, serviceaccounts, namespaces and RBAC.
 
@@ -114,92 +220,3 @@ autopilot-daemon-autopilot-xhntv   1/1     Running   0          70m
 % or make uninstall (must be in the chart's namespace)
 ```
 
-## Run health checks
-
-Health checks can be executed through a utility tool provided with a Helm chart, or by querying the Autopilot service.
-Results can be visualized by either checking the logs of the utility tool/service query, or by looking at the data in a Grafana dashboard.
-The relevant `json` file can be found [here](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/blob/main/utility-tools/Autopilot-Grafana-Dashboard.json)
-
-### Helm Chart
-
-Users and admins can create a single pod that can run the desired health checks.
-Please refer to the [dedicated page](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/utility-tools/system-check) for more details and customization.
-
-### Query the Autopilot Service
-
-Autopilot provides a `/status` handler that can be queried to get the entire system status, meaning that it will run all the tests on all the nodes. Autopilot is reachable by service name `autopilot-healthchecks.autopilot.svc` in-cluster only, meaning it can be reached from a pod running in the cluster.
-
-Tests can be tailored by a combination of:
-
-- `host=<hostname1,hostname2,...>`, to run all tests on a specific node or on a comma separated list of nodes
-- `check=<healthcheck>`, to run a single test (`pciebw`, `nic` and `remapped`, or `all`). When no parameters are specified, all tests are run.
-- `batch=<#hosts>`, how many hosts to check at a single moment. Requests to the batch are run in parallel. Batching is done to avoid running too many requests in parallel when the number of worker nodes increases. Default to 1.
-
-#### Query from a pod
-
-```bash
-$ kubectl create job curl-pod --image=nginx -- sleep inf
-$ kubectl exec jobs/curl-pod -- curl "http://autopilot-healthchecks.autopilot.svc:3333/status?host=dev-ppv5g-worker-3-with-secondary-jdf7b&check=nic"
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-Asking to run on remote node dev-ppv5g-worker-3-with-secondary-jdf7bEndpointSlice: autopilot-healthchecks
-
-Endpoint: 10.129.12.39
-
-Node:  dev-ppv5g-worker-3-with-secondary-jdf7b
-
-url:  http://10.129.12.39:3333/status?host=dev-ppv5g-worker-3-with-secondary-jdf7b&check=nic
-
-Response: 
- Checking system status of host dev-ppv5g-worker-3-with-secondary-jdf7b (localhost) 
-
-[[ NETWORK ]] Evaluating reachability of Multi-NIC CNI.
-===== Health Status of dev-ppv5g-worker-3-with-secondary-jdf7b =====
-Allocatable network devices: 2/2
-Connectable network devices: 2/2
-Host is OK (all functional and connected).
-Reported by multi-nic-cni-health-checker-5cfb794496-57vtw at 2023-06-08T20:12:22Z
-
-[[ NETWORK ]] SUCCESS
-
-dev-ppv5g-worker-3-with-secondary-jdf7b 1 1
-
-
-Node Status:  Ok
-
--------------------------------------
-
-Node Summary: 
-
- dev-ppv5g-worker-3-with-secondary-jdf7b :  Ok
-```
-
-#### Query with Port-Forward
-
-Alternatively, it is possible to port-forward the autopilot healthchecks Service and `curl` from localhost. 
-
-```bash
-$ kubectl port-forward service/autopilot-healthchecks 3333:3333
-Forwarding from 127.0.0.1:3333 -> 3333
-Forwarding from [::1]:3333 -> 3333
-```
-
-Then on another terminal, run the desired curl command
-
-```bash
-$ curl "http://127.0.0.1:3333/status?host=dev-ppv5g-worker-3-with-secondary-h5vb6&check=nic"
-Checking system status of host dev-ppv5g-worker-3-with-secondary-h5vb6 (localhost) 
-
-[[ NETWORK ]] Evaluating reachability of Multi-NIC CNI.
-===== Health Status of dev-ppv5g-worker-3-with-secondary-h5vb6 =====
-Allocatable network devices: 2/2
-Connectable network devices: 2/2
-Host is OK (all functional and connected).
-Reported by multi-nic-cni-health-checker-5cfb794496-57vtw at 2023-06-09T01:43:15Z
-
-[[ NETWORK ]] SUCCESS
-
-dev-ppv5g-worker-3-with-secondary-h5vb6 1 1
-
-```
