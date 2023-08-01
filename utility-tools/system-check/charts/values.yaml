@@ -6,3 +6,4 @@ autopilotNamespace: "autopilot" # default=autopilot.
 targetNode:  # node where to run the health check i.e. all, a specific node name, or list of node names. default=all
 testType:  # type of test that will run i.e. pciebw, nic, remapped, or all. default=all
 batchSize:  # number of nodes running a health check per processor. default=1
+workload: # workload type and its corresponding name (currently jobs only). Ex: "job:job-name". Default is set to None.
