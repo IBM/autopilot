@@ -80,9 +80,20 @@ Tests can be tailored by a combination of:
 In the example below, we create a utility `nginx` pod from which we can run `curl` commands against the `autopilot-healthchecks` service.
 We run the PCIe bandwidth test on all nodes, and we can see it is failing on one node.
 
+Create a dummy nginx pod:
+
 ```bash
-$ kubectl create job curl-pod --image=nginx -- sleep inf
-$ kubectl exec jobs/curl-pod -- curl "http://autopilot-healthchecks.autopilot.svc:3333/status?check=pciebw"
+kubectl create job curl-pod --image=nginx -- sleep inf
+```
+
+Then run an health check:
+
+```bash
+kubectl exec jobs/curl-pod -- curl "http://autopilot-healthchecks.autopilot.svc:3333/status?check=pciebw"
+```
+
+The output of the command above, will look like this:
+```bash
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
   0     0    0     0    0     0      0      0 --:--:--  0:00:32 --:--:--     0Checking status on all nodes
@@ -135,7 +146,11 @@ runtime: 31.845192193984985 sec
 Alternatively, it is possible to port-forward the autopilot healthchecks Service and `curl` from localhost. 
 
 ```bash
-$ kubectl port-forward service/autopilot-healthchecks 3333:3333 -n autopilot
+kubectl port-forward service/autopilot-healthchecks 3333:3333 -n autopilot
+```
+
+Will print the following output:
+```bash
 Forwarding from 127.0.0.1:3333 -> 3333
 Forwarding from [::1]:3333 -> 3333
 ```
@@ -143,7 +158,12 @@ Forwarding from [::1]:3333 -> 3333
 Then on another terminal, run the desired curl command. In this example, we target one node and check if the secondary nics are reachable.
 
 ```bash
-$ curl "http://127.0.0.1:3333/status?host=dev-ppv5g-worker-3-with-secondary-h5vb6&check=nic"
+curl "http://127.0.0.1:3333/status?host=dev-ppv5g-worker-3-with-secondary-h5vb6&check=nic"
+```
+
+Will print an output like the following:
+
+```bash
 Checking system status of host dev-ppv5g-worker-3-with-secondary-h5vb6 (localhost) 
 
 [[ NETWORK ]] Evaluating reachability of Multi-NIC CNI.
@@ -197,15 +217,20 @@ In summary, the recommended commands are as follows. Notice that Helm will insta
 
 ```bash
 git clone git@github.ibm.com:ai-foundation/foundation-model-stack.git % or clone this repository and skip the next step
-% UPDATE VALUES IN THE HELM CHARTS
+```
+
+Update values for the Helm chart, then:
+
+```bash
 helm install autopilot autopilot-daemon/helm-charts/autopilot 
-% or make install
 ```
 
 The controllers should show up in the selected namespace
 
 ```bash
-$ oc get po -n autopilot
+oc get po -n autopilot
+```
+```bash
 NAME                               READY   STATUS    RESTARTS   AGE
 autopilot-daemon-autopilot-g7j6h   1/1     Running   0          70m
 autopilot-daemon-autopilot-g822n   1/1     Running   0          70m
@@ -217,6 +242,5 @@ autopilot-daemon-autopilot-xhntv   1/1     Running   0          70m
 
 ```bash
  helm uninstall autopilot % -n <namespace-where-chart-resides>
-% or make uninstall (must be in the chart's namespace)
 ```
 
