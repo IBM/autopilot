@@ -135,7 +135,7 @@ runtime: 31.845192193984985 sec
 Alternatively, it is possible to port-forward the autopilot healthchecks Service and `curl` from localhost. 
 
 ```bash
-$ kubectl port-forward service/autopilot-healthchecks 3333:3333
+$ kubectl port-forward service/autopilot-healthchecks 3333:3333 -n autopilot
 Forwarding from 127.0.0.1:3333 -> 3333
 Forwarding from [::1]:3333 -> 3333
 ```
