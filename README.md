@@ -216,7 +216,7 @@ nodeSelector:
 In summary, the recommended commands are as follows. Notice that Helm will install the chart in the current namespace (check with `oc project`):
 
 ```bash
-git clone git@github.ibm.com:ai-foundation/foundation-model-stack.git % or clone this repository and skip the next step
+git clone https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot.git
 ```
 
 Update values for the Helm chart, then:
