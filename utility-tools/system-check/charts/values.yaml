@@ -1,4 +1,4 @@
-image: "us.icr.io/cil15-shared-registry/autopilot/run-healthchecks:v1"
+image: us.icr.io/cil15-shared-registry/autopilot/run-healthchecks:v2
 namespace:  # namespace where to deploy the helm chart.
 imagePullSecret: "all-icr-io"
 autopilotService: "autopilot-healthchecks" # default=autopilot-healthchecks.
