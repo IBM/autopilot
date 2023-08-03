@@ -23,7 +23,7 @@ The Helm chart can be configured by updating the following values in `values.yam
 - `targetNode` to run the test(s) on a specific node only, rather than on the entire system
 - `testType` is the type of test that will run i.e. pciebw, nic, remapped, or all
 - `batchSize` is the number of nodes running a health check per processor. It is defaulted to `1` node per processor
-- `workload` runs desired health checks on nodes where a workload is deployed. Currently only for jobs. Ex: "job:job-name". It is defaulted to None.
+- `workload` runs desired health checks on nodes where a workload is deployed. Ex: "namespace:job-name=my-job" or "namespace:app=my-app". It is defaulted to None.
 
 To deploy the Pod:
 
