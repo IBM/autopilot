@@ -25,7 +25,7 @@ parser.add_argument('--namespace', type=str, default='autopilot', help='Namespac
 parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Can be a comma separated list. Default is \"all\" unless --wkload is provided, then set to None. Specific nodes can be provided in addition to --wkload.')
 parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"nic\", or \"remapped\". Default is \"all\". Can be a comma separated list.')
 parser.add_argument('--batchSize', type=str, default='1', help='Number of nodes running in parallel at a time. Default is \"1\".')
-parser.add_argument('--wkload', type=str, default='None', help='PyTorch workload name and its corresponding namespace. Ex: \"--wkload=namespace:label-key=label-value\". Default is set to None.')
+parser.add_argument('--wkload', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--wkload=namespace:label-key=label-value\". Default is set to None.')
 args = vars(parser.parse_args())
 service = args['service']
 namespace = args['namespace']
