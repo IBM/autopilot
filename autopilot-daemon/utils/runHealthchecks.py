@@ -51,7 +51,7 @@ def find_wkload():
     wkload_ns = wkload[0] # ex: "default"
     wkload_name = wkload[1] # ex: "my-job"
     try:
-        wkload_pods = v1.list_namespaced_pod(namespace=wkload_ns, label_selector=('training.kubeflow.org/job-name='+wkload_name))
+        wkload_pods = v1.list_namespaced_pod(namespace=wkload_ns, label_selector=('job-name='+wkload_name))
     except ApiException as e:
         print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
     # wkload_pods = v1.list_pod_for_all_namespaces(label_selector=('job-name=' + wkload_name)).items
