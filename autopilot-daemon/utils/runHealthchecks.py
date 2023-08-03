@@ -10,6 +10,7 @@ import requests
 import time
 import pprint
 from kubernetes import client, config
+from kubernetes.client.rest import ApiException
 from multiprocessing import Pool
 
 
@@ -24,18 +25,20 @@ parser.add_argument('--namespace', type=str, default='autopilot', help='Namespac
 parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Can be a comma separated list. Default is \"all\" unless --wkload is provided, then set to None. Specific nodes can be provided in addition to --wkload.')
 parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"nic\", or \"remapped\". Default is \"all\". Can be a comma separated list.')
 parser.add_argument('--batchSize', type=str, default='1', help='Number of nodes running in parallel at a time. Default is \"1\".')
-parser.add_argument('--wkload', type=str, default='None', help='Workload type and its corresponding name. Ex: \"--wkload=job:job-name\". Default is set to None.')
+parser.add_argument('--wkload', type=str, default='None', help='PyTorch workload name and its corresponding namespace. Ex: \"--wkload=namespace:job-name\". Default is set to None.')
 args = vars(parser.parse_args())
 service = args['service']
 namespace = args['namespace']
 node = args['nodes'].replace(' ', '').split(',') # list of nodes
 checks = args['check'].replace(' ', '').split(',') # list of checks
 batch_size = int(args['batchSize'])
-wkload = args['wkload'].split(':') # ex: --wkload=job:my-job
-# changing default node value from 'all' to an empty list if there is a workload.
-# this still allows users to include a list of nodes and a workload.
-if (len(wkload) > 1) and (node[0] == 'all'):
-    node = []
+wkload = args['wkload']
+if wkload != 'None':
+    wkload = args['wkload'].split(':') # ex: --wkload=job:my-job
+    # changing default node value from 'all' to an empty list if there is a workload.
+    # this still allows users to include a list of nodes and a workload.
+    if (len(wkload) > 1) and (node[0] == 'all'):
+        node = []
 
 # debug: runtime
 start_time = time.time()
@@ -45,11 +48,15 @@ start_time = time.time()
 def find_wkload():
     node_len = len(node)
     copy = False
-    wkload_type = wkload[0] # ex: "job"
+    wkload_ns = wkload[0] # ex: "default"
     wkload_name = wkload[1] # ex: "my-job"
-    wkload_pods = v1.list_pod_for_all_namespaces(label_selector=('job-name=' + wkload_name)).items
+    try:
+        wkload_pods = v1.list_namespaced_pod(namespace=wkload_ns, label_selector=('training.kubeflow.org/job-name='+wkload_name))
+    except ApiException as e:
+        print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
+    # wkload_pods = v1.list_pod_for_all_namespaces(label_selector=('job-name=' + wkload_name)).items
     print('Workload:', ': '.join(wkload))
-    for pod in wkload_pods:
+    for pod in wkload_pods.items:
         pod_name = pod.metadata.name
         node_name = pod.spec.node_name
         if node_name not in node:
@@ -58,7 +65,7 @@ def find_wkload():
             copy = True
         # return pod_name
     if (len(node) == node_len) and not copy:
-        raise Exception('Error: Issue with --wkload parameter. Make sure your workload is spelled correctly and exists in the cluster.')
+        raise Exception('Error: Issue with --wkload parameter.\nMake sure your workload is spelled correctly and exists in the cluster.')
 
 
 # get addresses in desired endpointslice (autopilot-healthchecks) based on which node(s) the user chooses

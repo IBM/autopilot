@@ -5,7 +5,7 @@ import sys
 
 
 def main():
-    print("[[ NETWORK ]] Evaluating reachability of Multi-NIC CNI.")
+    print("[[ MULTINIC-CNI-STATUS ]] Evaluating reachability of Multi-NIC CNI.")
     nodename = os.getenv("NODE_NAME")
     command = ['python3', './network/read_status.py', nodename]
     timeout_s = 30
@@ -23,9 +23,9 @@ def main():
         output = result.stdout
         print(output)
         if "OK" in output:
-            print("[[ NETWORK ]] SUCCESS")
+            print("[[ MULTINIC-CNI-STATUS ]] SUCCESS")
         else:
-            print("[[ NETWORK ]] FAIL")
+            print("[[ MULTINIC-CNI-STATUS ]] FAIL")
             print("Host ", os.getenv("NODE_NAME"))
         if "cannot" in output:
             print("Multi-NIC CNI health checker is not reachable - network reachability test cannot run")

@@ -16,60 +16,66 @@ func TimerRun() {
 	runAllTestsLocal("")
 }
 
-func runAllTestsLocal(check string) (error, *[]byte) {
+func runAllTestsLocal(checks string) (error, *[]byte) {
 	out := []byte("")
 	var tmp *[]byte
 	var err error
 	start := time.Now()
-	switch check {
-	case "pciebw":
-		klog.Info("Running health check: ", check)
-		err, tmp = runPCIeBw()
-		if err != nil {
-			klog.Error(err.Error())
-			return err, tmp
-		}
-		out = append(out, *tmp...)
+	for _, check := range strings.Split(checks, ",") {
 
-	case "remapped":
-		klog.Info("Running health check: ", check)
-		err, tmp = runRemappedRows()
-		if err != nil {
-			klog.Error(err.Error())
-			return err, nil
-		}
-		out = append(out, *tmp...)
+		switch check {
+		case "pciebw":
+			klog.Info("Running health check: ", check)
+			err, tmp = runPCIeBw()
+			if err != nil {
+				klog.Error(err.Error())
+				return err, tmp
+			}
+			out = append(out, *tmp...)
 
-	case "nic":
-		klog.Info("Running health check: ", check)
-		err, tmp = netReachability()
-		if err != nil {
-			klog.Error(err.Error())
-			return err, nil
-		}
-		out = append(out, *tmp...)
+		case "remapped":
+			klog.Info("Running health check: ", check)
+			err, tmp = runRemappedRows()
+			if err != nil {
+				klog.Error(err.Error())
+				return err, nil
+			}
+			out = append(out, *tmp...)
 
-	default:
-		klog.Info("Run all health checks\n")
-		err, tmp := runPCIeBw()
-		if err != nil {
-			klog.Error(err.Error())
-			return err, tmp
-		}
-		out = append(out, *tmp...)
-		err, tmp = runRemappedRows()
-		if err != nil {
-			klog.Error(err.Error())
-			return err, nil
-		}
-		out = append(out, *tmp...)
-		err, tmp = netReachability()
-		if err != nil {
-			klog.Error(err.Error())
-			return err, nil
-		}
-		out = append(out, *tmp...)
+		case "nic":
+			klog.Info("Running health check: ", check)
+			err, tmp = netReachability()
+			if err != nil {
+				klog.Error(err.Error())
+				return err, nil
+			}
+			out = append(out, *tmp...)
 
+		case "all":
+			klog.Info("Run all health checks\n")
+			err, tmp := runPCIeBw()
+			if err != nil {
+				klog.Error(err.Error())
+				return err, tmp
+			}
+			out = append(out, *tmp...)
+			err, tmp = runRemappedRows()
+			if err != nil {
+				klog.Error(err.Error())
+				return err, nil
+			}
+			out = append(out, *tmp...)
+			err, tmp = netReachability()
+			if err != nil {
+				klog.Error(err.Error())
+				return err, nil
+			}
+			out = append(out, *tmp...)
+
+		default:
+			notsupported := "check not supported: " + check
+			out = append(out, []byte(notsupported)...)
+		}
 	}
 	end := time.Now()
 	diff := end.Sub(start)
@@ -77,8 +83,10 @@ func runAllTestsLocal(check string) (error, *[]byte) {
 	return nil, &out
 }
 
-func runAllTestsRemote(host string, check string, batch string) (error, *[]byte) {
-	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--node="+host, "--check="+check, "--batchSize="+batch).Output()
+func runAllTestsRemote(host string, check string, batch string, jobName string) (error, *[]byte) {
+	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --service=autopilot-healthchecks", " --namespace="+os.Getenv("NAMESPACE"), " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName)
+
+	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--nodes="+host, "--check="+check, "--batchSize="+batch, "--wkload="+jobName).Output()
 	if err != nil {
 		klog.Error(err.Error())
 		return err, nil
