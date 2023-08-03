@@ -153,7 +153,7 @@ def get_node_status(responses):
 # start program
 if __name__ == "__main__":
     # initializing some variables
-    if wkload != 'None':
+    if len(wkload) > 1:
         find_wkload()
     addresses = get_addresses()
     total_nodes = len(addresses)
