@@ -2,7 +2,7 @@
 # Python program that uses the Python Client Library for Kubernetes to
 # run autopilot health checks on all nodes or a specific node(s).
 # Healchecks include PCIEBW, MULTI-NIC CNI Reachability, and GPU REMAPPED ROWS.
-# Image: us.icr.io/cil15-shared-registry/gracek/run-healthchecks:2.5
+# Image: us.icr.io/cil15-shared-registry/gracek/run-healthchecks:3.0.1
 ##################################################################################
 import argparse
 import os
@@ -25,7 +25,7 @@ parser.add_argument('--namespace', type=str, default='autopilot', help='Namespac
 parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Can be a comma separated list. Default is \"all\" unless --wkload is provided, then set to None. Specific nodes can be provided in addition to --wkload.')
 parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"nic\", or \"remapped\". Default is \"all\". Can be a comma separated list.')
 parser.add_argument('--batchSize', type=str, default='1', help='Number of nodes running in parallel at a time. Default is \"1\".')
-parser.add_argument('--wkload', type=str, default='None', help='PyTorch workload name and its corresponding namespace. Ex: \"--wkload=namespace:job-name\". Default is set to None.')
+parser.add_argument('--wkload', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--wkload=namespace:label-key=label-value\". Default is set to None.')
 args = vars(parser.parse_args())
 service = args['service']
 namespace = args['namespace']
@@ -34,7 +34,7 @@ checks = args['check'].replace(' ', '').split(',') # list of checks
 batch_size = int(args['batchSize'])
 wkload = args['wkload']
 if wkload != 'None':
-    wkload = args['wkload'].split(':') # ex: --wkload=job:my-job
+    wkload = args['wkload'].split(':') # ex: --wkload=namespace:label (ex: label='job-name:my-job' or 'app=my-deployment')
     # changing default node value from 'all' to an empty list if there is a workload.
     # this still allows users to include a list of nodes and a workload.
     if (len(wkload) > 1) and (node[0] == 'all'):
@@ -49,9 +49,9 @@ def find_wkload():
     node_len = len(node)
     copy = False
     wkload_ns = wkload[0] # ex: "default"
-    wkload_name = wkload[1] # ex: "my-job"
+    wkload_label = wkload[1] # ex: "job-name=my-job" or "app=my-app"
     try:
-        wkload_pods = v1.list_namespaced_pod(namespace=wkload_ns, label_selector=('job-name='+wkload_name))
+        wkload_pods = v1.list_namespaced_pod(namespace=wkload_ns, label_selector=wkload_label)
     except ApiException as e:
         print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
     # wkload_pods = v1.list_pod_for_all_namespaces(label_selector=('job-name=' + wkload_name)).items
@@ -70,8 +70,11 @@ def find_wkload():
 
 # get addresses in desired endpointslice (autopilot-healthchecks) based on which node(s) the user chooses
 def get_addresses():
-    endpoints = v1.list_namespaced_endpoints(namespace=namespace).items
-    for endpointslice in endpoints:
+    try:
+        endpoints = v1.list_namespaced_endpoints(namespace=namespace)
+    except ApiException as e:
+        print("Exception when calling CoreV1Api->list_namespaced_endpoints: %s\n" % e)
+    for endpointslice in endpoints.items:
         if endpointslice.metadata.name == service:
             # print("EndpointSlice: " + str(endpointslice.metadata.name)) 
             addresses = endpointslice.subsets[0].addresses
@@ -141,7 +144,7 @@ def get_node_status(responses):
             if (('FAIL' in line) or ('ABORT' in line)):
                 if ('PCIE' in line):
                     node_status_list.append('PCIE Failed')
-                elif ('NETWORK' in line):
+                elif ('MULTINIC-CNI-STATUS' in line):
                     node_status_list.append('MULTI-NIC CNI Failed')
                 elif('REMAPPED ROWS' in line):
                     node_status_list.append('REMAPPED ROWS Failed')
@@ -153,7 +156,7 @@ def get_node_status(responses):
 # start program
 if __name__ == "__main__":
     # initializing some variables
-    if len(wkload) > 1:
+    if wkload != 'None':
         find_wkload()
     addresses = get_addresses()
     total_nodes = len(addresses)
