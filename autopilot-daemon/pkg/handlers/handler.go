@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"os"
+	"strings"
 
 	"k8s.io/klog/v2"
 )
@@ -27,15 +28,26 @@ func SystemStatusHandler() http.Handler {
 		}
 
 		klog.Info("Batch size ", batch)
-		if hosts == "all" {
-			klog.Info("Checking status on all nodes")
-			w.Write([]byte("Checking status on all nodes\n\n"))
-			err, out := runAllTestsRemote("all", checks, batch, jobName)
+		// if hosts == "all" {
+		// 	klog.Info("Checking status on all nodes")
+		// 	w.Write([]byte("Checking status on all nodes\n\n"))
+		// 	err, out := runAllTestsRemote("all", checks, batch, jobName)
+		// 	if err != nil {
+		// 		klog.Error(err.Error())
+		// 	}
+		// 	w.Write(*out)
+		// } else {
+		if strings.Contains(checks, "iperf") {
+			klog.Info("Running iperf3 on hosts ", hosts, " or job ", jobName)
+			w.Write([]byte("Running iperf3 on hosts " + hosts + " or job " + jobName + "\n\n"))
+			checks = strings.Trim(checks, "iperf")
+			err, out := runIperf(hosts, jobName)
 			if err != nil {
 				klog.Error(err.Error())
 			}
 			w.Write(*out)
-		} else {
+		}
+		if checks != "" {
 			if hosts == os.Getenv("NODE_NAME") {
 				klog.Info("Checking system status of host " + hosts + " (localhost)")
 				w.Write([]byte("Checking system status of host " + hosts + " (localhost) \n\n"))
@@ -103,20 +115,24 @@ func NetReachHandler() http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func JobNameHandler() http.Handler {
+func IperfHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Job's node self discovery test. Use with /status?job=namespace:jobname"))
+		w.Write([]byte("Iperf3 test"))
+		hosts := r.URL.Query().Get("host")
+		if hosts == "" {
+			hosts = "all"
+		}
 		jobName := r.URL.Query().Get("job")
 		if jobName == "" {
 			jobName = "None"
 		}
-	}
-	return http.HandlerFunc(fn)
-}
-
-func GPUMemHandler() http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("HBM test. NOT IMPLEMENTED YET"))
+		err, out := runIperf(hosts, jobName)
+		if err != nil {
+			klog.Error(err.Error())
+		}
+		if out != nil {
+			w.Write(*out)
+		}
 	}
 	return http.HandlerFunc(fn)
 }

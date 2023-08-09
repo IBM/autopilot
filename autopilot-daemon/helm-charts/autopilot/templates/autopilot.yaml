@@ -11,6 +11,8 @@ spec:
       app: autopilot
   template:
     metadata:
+      annotations:
+      {{- toYaml .Values.annotations | nindent 8 }}
       labels:
         app: autopilot
     spec:
@@ -25,10 +27,15 @@ spec:
            - sh
            - -c
            - |
-             /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }}
+             iperf3 -s -p 5101 -D 
+             /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }} 
           imagePullPolicy: {{ .Values.image.pullPolicy }} 
           name: autopilot
           env:
+          {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value }}
+          {{- end }} 
             - name: "NODE_NAME"
               valueFrom:
                 fieldRef:

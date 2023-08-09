@@ -115,8 +115,8 @@ def create_url(address, daemon_node):
             urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node)
         elif (check == 'nic' or check == 'remapped' or check == 'pciebw'):
             urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + check)
-        else:
-            raise Exception('Error: Issue with --check parameter. Options are \"all\", \"pciebw\", \"nic\", or \"remapped\"')
+        # else:
+            # raise Exception('Error: Issue with --check parameter. Options are \"all\", \"pciebw\", \"nic\", or \"remapped\"')
     return urls
 
 

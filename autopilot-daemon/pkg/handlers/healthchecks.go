@@ -13,7 +13,7 @@ import (
 
 func TimerRun() {
 	klog.Info("Running a periodic check")
-	runAllTestsLocal("")
+	runAllTestsLocal("all")
 }
 
 func runAllTestsLocal(checks string) (error, *[]byte) {
@@ -197,6 +197,22 @@ func runPCIeBw() (error, *[]byte) {
 				// utils.Hchecks.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Observe(bw)
 				utils.HchecksGauge.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(bw)
 			}
+		}
+	}
+	return nil, &out
+}
+
+func runIperf(nodelist string, jobName string) (error, *[]byte) {
+	out, err := exec.Command("python3", "./network/iperf3-entrypoint.py", "--nodes", nodelist, "--job", jobName).Output()
+	if err != nil {
+		klog.Error(err.Error())
+		return err, nil
+	} else {
+		klog.Info("iperf3 test completed:")
+
+		if strings.Contains(string(out[:]), "FAIL") {
+			klog.Info("iperf3 test test failed.", string(out[:]))
+			return nil, &out
 		}
 	}
 	return nil, &out

@@ -30,6 +30,7 @@ RUN  apt -y update && apt -y upgrade && apt install -y --no-install-recommends \
         pip \
         pciutils \
         wget \
+        net-tools \
         && apt -y clean && apt -y autoremove
 
 # Add capabilities for ping
@@ -55,6 +56,7 @@ COPY gpu-bw/briefings.sh /home/autopilot/gpubw/briefings.sh
 
 # Secondary NIC tests files
 COPY network/metrics-entrypoint.py /home/autopilot/network/metrics-entrypoint.py
+COPY network/iperf3-entrypoint.py /home/autopilot/network/iperf3-entrypoint.py
 
 # Copy Python script to read Multi-NIC Health Checker status
 RUN cd network && wget https://raw.githubusercontent.com/foundation-model-stack/multi-nic-cni/main/health-check/example-client/read_status.py

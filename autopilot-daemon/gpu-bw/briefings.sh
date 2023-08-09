@@ -2,7 +2,7 @@
 exists=`which nvidia-smi`
 if [[ -z $exists ]]
 then
-	echo !! nvidia-smi not present. Check the GPU Operator. ABORT.
+	echo !! nvidia-smi not present. Try reboot the pod. ABORT.
 	exit 1
 fi
 nvidia-smi > error.log

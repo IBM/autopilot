@@ -5,12 +5,12 @@
 replicaCount: 1
 
 namespace: 
-  create: true
+  create: false
   name: autopilot
 
 image:
   repository: us.icr.io/cil15-shared-registry/autopilot/autopilot
-  tag: dev
+  tag: test
   pullPolicy: Always
 
 PCIeBW: 4
@@ -22,9 +22,21 @@ pullSecrets:
   name: autopilot-pull-secret
   imagePullSecretData: 
   
+env:
+  # - name: "CHECKER_URL"
+  #   value:
+  # - name: "CHECKER_NAMESPACE"
+  #   value: ""
+  # - name: "MULTI_NIC_HEALTH_CHECKER_ENDPOINT"
+  #   value:
+  # - name: "MULTI_NIC_HEALTH_CHECKER_TIMEOUT"
+  #   value:
 
 service:
   port: 3333
+
+annotations:
+  # k8s.v1.cni.cncf.io/networks: multi-nic-network
 
 nodeSelector:
   nvidia.com/gpu.present: 'true'
@@ -54,7 +66,7 @@ resources:
 
 # klog configuration
 loglevel: 2
-logfile: "/home/autopilot/data/report.log"
+# logfile: "/home/autopilot/data/report.log"
 
 # optional remote storage. A PVC and secret must exist
 additionalVolumeClaimTemplates:

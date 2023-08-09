@@ -18,16 +18,18 @@ import (
 func main() {
 	port := flag.String("port", "3333", "Port for the webhook to listen to. Defaulted to 3333")
 	bwThreshold := flag.String("bw", "4", "Sets bandwidth threshold for the init container")
-	logFile := flag.String("logfile", "report.log", "File where requests counter and info is being stored")
+	logFile := flag.String("logfile", "", "File where to save all the events")
+	devmode := flag.Bool("dev", false, "Dev mode disables the execution of health checks at pod startup. Default set to True, therefore health checks are executed at pod startup first, and then periodically.")
 	v := flag.String("loglevel", "2", "Log level")
-	repeat := flag.Int("w", 60, "Run all tests periodically on each node. Time set in hours")
+	repeat := flag.Int("w", 24, "Run all tests periodically on each node. Time set in hours. Defaults to 24h")
 
 	flag.Parse()
 
-	// var fs flag.FlagSet
 	klog.InitFlags(nil)
 	flag.Set("alsologtostderr", "true")
-	flag.Set("log_file", *logFile)
+	if *logFile != "" {
+		flag.Set("log_file", *logFile)
+	}
 	flag.Set("v", *v)
 	flag.Set("logtostderr", "false")
 	klog.OsExit = func(exitCode int) {
@@ -57,10 +59,9 @@ func main() {
 	hcMux := http.NewServeMux()
 	hcMux.Handle("/pciebw", handlers.PCIeBWHandler(utils.UserConfig.BWThreshold))
 	hcMux.Handle("/nic", handlers.NetReachHandler())
-	// hcMux.Handle("/gpumem", handlers.GPUMemHandler())
 	hcMux.Handle("/remapped", handlers.RemappedRowsHandler())
 	hcMux.Handle("/status", handlers.SystemStatusHandler())
-	hcMux.Handle("/job", handlers.JobNameHandler())
+	hcMux.Handle("/iperf", handlers.IperfHandler())
 
 	go func() {
 		klog.Info("Serving Health Checks on port :", *port)
@@ -70,6 +71,10 @@ func main() {
 			os.Exit(1)
 		}
 	}()
+
+	if !*devmode {
+		handlers.TimerRun()
+	}
 
 	testsTicker := time.NewTicker(time.Duration(*repeat) * time.Hour)
 	defer testsTicker.Stop()
