@@ -23,7 +23,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--service', type=str, default='autopilot-healthchecks', help='Autopilot healthchecks service name. Default is \"autopilot-healthchecks\".')
 parser.add_argument('--namespace', type=str, default='autopilot', help='Namespace where autopilot DaemonSet is deployed. Default is \"autopilot\".')
 parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Can be a comma separated list. Default is \"all\" unless --wkload is provided, then set to None. Specific nodes can be provided in addition to --wkload.')
-parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"nic\", or \"remapped\". Default is \"all\". Can be a comma separated list.')
+parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"nic\", \"remapped\" or \"iperf\". Default is \"all\". Can be a comma separated list.')
 parser.add_argument('--batchSize', type=str, default='1', help='Number of nodes running in parallel at a time. Default is \"1\".')
 parser.add_argument('--wkload', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--wkload=namespace:label-key=label-value\". Default is set to None.')
 args = vars(parser.parse_args())
@@ -113,10 +113,10 @@ def create_url(address, daemon_node):
     for check in checks:
         if check == 'all':
             urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node)
-        elif (check == 'nic' or check == 'remapped' or check == 'pciebw'):
+        elif (check == 'nic' or check == 'remapped' or check == 'pciebw' or check == 'iperf'):
             urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + check)
         # else:
-            # raise Exception('Error: Issue with --check parameter. Options are \"all\", \"pciebw\", \"nic\", or \"remapped\"')
+        #     raise Exception('Error: Issue with --check parameter. Options are \"all\", \"pciebw\", \"nic\", \"remapped\" or \"iperf\"')
     return urls
 
 
@@ -148,6 +148,8 @@ def get_node_status(responses):
                     node_status_list.append('MULTI-NIC CNI Failed')
                 elif('REMAPPED ROWS' in line):
                     node_status_list.append('REMAPPED ROWS Failed')
+                elif('IPERF' in line):
+                    node_status_list.append('iPERF Failed')
     if len(node_status_list) < 1:
         node_status_list.append('Ok')
     return node_status_list
