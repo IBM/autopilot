@@ -41,7 +41,11 @@ func SystemStatusHandler() http.Handler {
 			klog.Info("Running iperf3 on hosts ", hosts, " or job ", jobName)
 			w.Write([]byte("Running iperf3 on hosts " + hosts + " or job " + jobName + "\n\n"))
 			checks = strings.Trim(checks, "iperf")
-			err, out := runIperf(hosts, jobName)
+			iface := r.URL.Query().Get("iface")
+			if iface == "" {
+				iface = "eth0"
+			}
+			err, out := runIperf(hosts, jobName, iface)
 			if err != nil {
 				klog.Error(err.Error())
 			}
@@ -126,7 +130,11 @@ func IperfHandler() http.Handler {
 		if jobName == "" {
 			jobName = "None"
 		}
-		err, out := runIperf(hosts, jobName)
+		iface := r.URL.Query().Get("iface")
+		if iface == "" {
+			iface = "eth0"
+		}
+		err, out := runIperf(hosts, jobName, iface)
 		if err != nil {
 			klog.Error(err.Error())
 		}

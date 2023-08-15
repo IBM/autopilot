@@ -202,8 +202,8 @@ func runPCIeBw() (error, *[]byte) {
 	return nil, &out
 }
 
-func runIperf(nodelist string, jobName string) (error, *[]byte) {
-	out, err := exec.Command("python3", "./network/iperf3-entrypoint.py", "--nodes", nodelist, "--job", jobName).Output()
+func runIperf(nodelist string, jobName string, iface string) (error, *[]byte) {
+	out, err := exec.Command("python3", "./network/iperf3-entrypoint.py", "--nodes", nodelist, "--job", jobName, "--iface", iface).Output()
 	if err != nil {
 		klog.Error(err.Error())
 		return err, nil
