@@ -42,14 +42,14 @@ func runAllTestsLocal(checks string) (error, *[]byte) {
 			}
 			out = append(out, *tmp...)
 
-		case "nic":
-			klog.Info("Running health check: ", check)
-			err, tmp = netReachability()
-			if err != nil {
-				klog.Error(err.Error())
-				return err, nil
-			}
-			out = append(out, *tmp...)
+		// case "nic":
+		// 	klog.Info("Running health check: ", check)
+		// 	err, tmp = netReachability()
+		// 	if err != nil {
+		// 		klog.Error(err.Error())
+		// 		return err, nil
+		// 	}
+		// 	out = append(out, *tmp...)
 
 		case "all":
 			klog.Info("Run all health checks\n")
@@ -66,11 +66,11 @@ func runAllTestsLocal(checks string) (error, *[]byte) {
 			}
 			out = append(out, *tmp...)
 			err, tmp = netReachability()
-			if err != nil {
-				klog.Error(err.Error())
-				return err, nil
-			}
-			out = append(out, *tmp...)
+			// if err != nil {
+			// 	klog.Error(err.Error())
+			// 	return err, nil
+			// }
+			// out = append(out, *tmp...)
 
 		default:
 			notsupported := "check not supported: " + check
@@ -83,11 +83,12 @@ func runAllTestsLocal(checks string) (error, *[]byte) {
 	return nil, &out
 }
 
-func runAllTestsRemote(host string, check string, batch string, jobName string) (error, *[]byte) {
-	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --service=autopilot-healthchecks", " --namespace="+os.Getenv("NAMESPACE"), " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName)
+func runAllTestsRemote(host string, check string, batch string, jobName string, replicas string) (error, *[]byte) {
+	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --service=autopilot-healthchecks", " --namespace="+os.Getenv("NAMESPACE"), " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName, "--replicas="+replicas)
 
-	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--nodes="+host, "--check="+check, "--batchSize="+batch, "--wkload="+jobName).Output()
+	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace", os.Getenv("NAMESPACE"), "--nodes", host, "--check", check, "--batchSize", batch, "--wkload", jobName, "--replicas", replicas).CombinedOutput()
 	if err != nil {
+		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
 		return err, nil
 	}
@@ -96,8 +97,9 @@ func runAllTestsRemote(host string, check string, batch string, jobName string) 
 }
 
 func netReachability() (error, *[]byte) {
-	out, err := exec.Command("python3", "./network/metrics-entrypoint.py").Output()
+	out, err := exec.Command("python3", "./network/metrics-entrypoint.py").CombinedOutput()
 	if err != nil {
+		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
 		return err, nil
 	} else {
@@ -128,8 +130,9 @@ func netReachability() (error, *[]byte) {
 }
 
 func runRemappedRows() (error, *[]byte) {
-	out, err := exec.Command("python3", "./gpu-remapped/entrypoint.py").Output()
+	out, err := exec.Command("python3", "./gpu-remapped/entrypoint.py").CombinedOutput()
 	if err != nil {
+		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
 		return err, nil
 	} else {
@@ -165,8 +168,9 @@ func runRemappedRows() (error, *[]byte) {
 }
 
 func runPCIeBw() (error, *[]byte) {
-	out, err := exec.Command("python3", "./gpubw/entrypoint.py", "-t", utils.UserConfig.BWThreshold).Output()
+	out, err := exec.Command("python3", "./gpubw/entrypoint.py", "-t", utils.UserConfig.BWThreshold).CombinedOutput()
 	if err != nil {
+		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
 		return err, nil
 	} else {
@@ -202,18 +206,26 @@ func runPCIeBw() (error, *[]byte) {
 	return nil, &out
 }
 
-func runIperf(nodelist string, jobName string, iface string) (error, *[]byte) {
-	out, err := exec.Command("python3", "./network/iperf3-entrypoint.py", "--nodes", nodelist, "--job", jobName, "--iface", iface).Output()
+func runIperf(nodelist string, jobName string, plane string, replicas string) (error, *[]byte) {
+	out, err := exec.Command("python3", "./network/iperf3-entrypoint.py", "--nodes", nodelist, "--job", jobName, "--plane", plane, "--replicas", replicas).CombinedOutput()
+	klog.Info("Running command: ", "python3", "./network/iperf3-entrypoint.py", " --nodes ", nodelist, " --job ", jobName, " --plane ", plane, " --replicas ", replicas)
 	if err != nil {
+		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
 		return err, nil
 	} else {
 		klog.Info("iperf3 test completed:")
-
-		if strings.Contains(string(out[:]), "FAIL") {
-			klog.Info("iperf3 test test failed.", string(out[:]))
-			return nil, &out
-		}
+		// out, err := exec.Command("bash", "./network/iperf3-debrief.sh").CombinedOutput()
+		// if err != nil {
+		// 	klog.Info("Out:", string(out))
+		// 	klog.Error(err.Error())
+		// 	return err, nil
+		// }
+		// if strings.Contains(string(out[:]), "FAIL") {
+		// 	klog.Info("iperf3 test test failed.", string(out[:]))
+		// 	return nil, &out
+		// }
+		klog.Info("iperf3 result:\n", string(out))
 	}
 	return nil, &out
 }

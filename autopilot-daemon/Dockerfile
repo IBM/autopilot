@@ -57,6 +57,8 @@ COPY gpu-bw/briefings.sh /home/autopilot/gpubw/briefings.sh
 # Secondary NIC tests files
 COPY network/metrics-entrypoint.py /home/autopilot/network/metrics-entrypoint.py
 COPY network/iperf3-entrypoint.py /home/autopilot/network/iperf3-entrypoint.py
+COPY network/start-iperf-servers.py /home/autopilot/network/start-iperf-servers.py
+COPY network/iperf3-debrief.sh /home/autopilot/network/iperf3-debrief.sh
 
 # Copy Python script to read Multi-NIC Health Checker status
 RUN cd network && wget https://raw.githubusercontent.com/foundation-model-stack/multi-nic-cni/main/health-check/example-client/read_status.py
@@ -70,8 +72,8 @@ COPY gpu-remapped/remapped-rows.sh /home/autopilot/gpu-remapped/remapped-rows.sh
 COPY utils /home/autopilot/utils
 
 # Last touches
-RUN pip install --upgrade pip && pip install kubernetes
-RUN apt -y update && apt install -y vim && apt -y clean && apt -y autoremove
+RUN pip install --upgrade pip && pip install kubernetes netifaces
+RUN apt install -y vim && apt -y clean && apt -y autoremove
 RUN chmod 755 /usr/local/bin/autopilot && chown -hR autopilot /home/autopilot && chmod -R g=u /home/autopilot
 
 CMD ["/usr/local/bin/autopilot"]

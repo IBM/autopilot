@@ -27,7 +27,8 @@ spec:
            - sh
            - -c
            - |
-             iperf3 -s -p 5101 -D 
+             iperf3 -s -p 6310 -D 
+             python3 network/start-iperf-servers.py --replicas 64
              /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }} 
           imagePullPolicy: {{ .Values.image.pullPolicy }} 
           name: autopilot

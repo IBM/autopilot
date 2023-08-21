@@ -26,6 +26,9 @@ parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will 
 parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"nic\", \"remapped\" or \"iperf\". Default is \"all\". Can be a comma separated list.')
 parser.add_argument('--batchSize', type=str, default='1', help='Number of nodes running in parallel at a time. Default is \"1\".')
 parser.add_argument('--wkload', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--wkload=namespace:label-key=label-value\". Default is set to None.')
+parser.add_argument('--replicas', type=str, default='1', help='Number of iperf3 servers to be started')
+
+
 args = vars(parser.parse_args())
 service = args['service']
 namespace = args['namespace']
@@ -33,6 +36,7 @@ node = args['nodes'].replace(' ', '').split(',') # list of nodes
 checks = args['check'].replace(' ', '').split(',') # list of checks
 batch_size = int(args['batchSize'])
 wkload = args['wkload']
+replicas = args['replicas']
 if wkload != 'None':
     wkload = args['wkload'].split(':') # ex: --wkload=namespace:label (ex: label='job-name:my-job' or 'app=my-deployment')
     # changing default node value from 'all' to an empty list if there is a workload.
@@ -99,6 +103,9 @@ def run_tests(address):
     output = '\nAutopilot Endpoint: {ip}\nNode: {daemon_node}\nurl(s): {urls}'.format(ip=address.ip, daemon_node=daemon_node, urls='\n        '.join(urls))
     response = []
     for url in urls:
+        request = get_requests(url)
+        if request == '':
+            continue
         response.append(get_requests(url))
     node_status_list = get_node_status(response)
     output += '\nResponse:\n{response}\nNode Status: {status}\n-------------------------------------\n'.format(response='~~\n'.join(response), status=', '.join(node_status_list))
@@ -123,14 +130,19 @@ def create_url(address, daemon_node):
 # rest api calls for healthcheck
 def get_requests(url):
     page = ''
+    retries = 0
     while page == '':
         try:
             page = requests.get(url)
             break
         except:
             print('Connection refused by server..')
-            print('sleeping for 5 seconds')
-            time.sleep(5)
+            print('sleeping for 2 seconds -- retry ', str(retries))
+            time.sleep(2)
+            retries = retries+1
+            if retries == 5:
+                print('exiting')
+                return page
             continue
     return page.text
 
@@ -149,7 +161,7 @@ def get_node_status(responses):
                 elif('REMAPPED ROWS' in line):
                     node_status_list.append('REMAPPED ROWS Failed')
                 elif('IPERF' in line):
-                    node_status_list.append('iPERF Failed')
+                    node_status_list.append('IPERF Failed')
     if len(node_status_list) < 1:
         node_status_list.append('Ok')
     return node_status_list

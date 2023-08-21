@@ -10,12 +10,12 @@ namespace:
 
 image:
   repository: us.icr.io/cil15-shared-registry/autopilot/autopilot
-  tag: test
+  tag: iperf
   pullPolicy: Always
 
 PCIeBW: 4
 
-repeat: 24
+repeat: 12
 
 pullSecrets:
   create: true
@@ -49,8 +49,8 @@ resources:
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   limits:
-    cpu: 2
-    memory: 1Gi
+    cpu: 64
+    memory: 5Gi
     nvidia.com/gpu: 0
   requests:
     cpu: 500m
