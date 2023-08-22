@@ -43,13 +43,14 @@ func runAllTestsLocal(checks string) (error, *[]byte) {
 			out = append(out, *tmp...)
 
 		case "nic":
-			klog.Info("Running health check: ", check)
-			err, tmp = netReachability()
-			if err != nil {
-				klog.Error(err.Error())
-				return err, nil
-			}
-			out = append(out, *tmp...)
+			klog.Info("Running health check: ", check, " -- DISABLED")
+
+			// err, tmp = netReachability()
+			// if err != nil {
+			// 	klog.Error(err.Error())
+			// 	return err, nil
+			// }
+			// out = append(out, *tmp...)
 
 		case "all":
 			klog.Info("Run all health checks\n")
@@ -65,13 +66,12 @@ func runAllTestsLocal(checks string) (error, *[]byte) {
 				return err, nil
 			}
 			out = append(out, *tmp...)
-			err, tmp = netReachability()
-			if err != nil {
-				klog.Error(err.Error())
-				return err, nil
-			}
-			out = append(out, *tmp...)
-
+			// err, tmp = netReachability()
+			// if err != nil {
+			// 	klog.Error(err.Error())
+			// 	return err, nil
+			// }
+			// out = append(out, *tmp...)
 		default:
 			notsupported := "check not supported: " + check
 			out = append(out, []byte(notsupported)...)

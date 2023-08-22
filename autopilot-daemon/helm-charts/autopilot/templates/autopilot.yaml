@@ -21,13 +21,22 @@ spec:
       serviceAccountName: autopilot
       imagePullSecrets:
       - name: {{ .Values.pullSecrets.name }}
+      initContainers:
+        - args:
+          - until [ -f /usr/bin/nvidia-smi ]; do echo waiting for nvidia device plug-in to be setup; sleep 5 && exit -1; done
+          command:
+          - sh
+          - -c
+          image: us.icr.io/cil15-shared-registry/autopilot/autopilot:dev
+          imagePullPolicy: Always
+          name: device-plugin-validation
       containers:
         - image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
           command:
            - sh
            - -c
            - |
-             iperf3 -s -p 5101 -D 
+             iperf3 -s -p 6310 -D 
              /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }} 
           imagePullPolicy: {{ .Values.image.pullPolicy }} 
           name: autopilot
