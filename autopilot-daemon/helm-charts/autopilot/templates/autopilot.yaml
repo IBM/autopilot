@@ -27,7 +27,7 @@ spec:
           command:
           - sh
           - -c
-          image: us.icr.io/cil15-shared-registry/autopilot/autopilot:dev
+          image: {{ .Values.initContainer.image }}
           imagePullPolicy: Always
           name: device-plugin-validation
       containers:
