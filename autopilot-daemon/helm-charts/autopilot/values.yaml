@@ -8,6 +8,9 @@ namespace:
   create: false
   name: autopilot
 
+initContainer:
+  image: us.icr.io/cil15-shared-registry/autopilot/autopilot:test
+
 image:
   repository: us.icr.io/cil15-shared-registry/autopilot/autopilot
   tag: test
