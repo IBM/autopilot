@@ -21,6 +21,15 @@ spec:
       serviceAccountName: autopilot
       imagePullSecrets:
       - name: {{ .Values.pullSecrets.name }}
+      initContainers:
+        - args:
+          - until [ -f /usr/bin/nvidia-smi ]; do echo waiting for nvidia device plug-in to be setup; sleep 5 && exit -1; done
+          command:
+          - sh
+          - -c
+          image: {{ .Values.initContainer.image }}
+          imagePullPolicy: Always
+          name: device-plugin-validation
       containers:
         - image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
           command:
