@@ -73,7 +73,7 @@ COPY utils /home/autopilot/utils
 
 # Last touches
 RUN pip install --upgrade pip && pip install kubernetes netifaces
-RUN apt install -y vim && apt -y clean && apt -y autoremove
+RUN apt-get update -y && apt install -y vim && apt -y clean && apt -y autoremove
 RUN chmod 755 /usr/local/bin/autopilot && chown -hR autopilot /home/autopilot && chmod -R g=u /home/autopilot
 
 CMD ["/usr/local/bin/autopilot"]
