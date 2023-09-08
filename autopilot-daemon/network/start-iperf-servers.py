@@ -21,7 +21,7 @@ def main():
                     port = '51'+str(r)
                 else:
                     port = '510'+str(r)
-                command = ['iperf3', '-s', '-B', str(ip[0]['addr']), '-p', port, '-D']
+                command = ['iperf3', '-s', '-B', str(ip[0]['addr']), '-p', port, '-D', '-1']
                 print("Start server on " + str(ip[0]['addr']) + " - iface " + str(iface))
                 result = subprocess.run(command, text=True, capture_output=True)
                 if result.stderr:
