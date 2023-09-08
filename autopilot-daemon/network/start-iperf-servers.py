@@ -13,7 +13,7 @@ def main():
     subset = int(server_replicas/(len(interfaces)-2)) # quite a lame bet.. excluding eth0 and lo assuming all the other ones are what we want.
     print("Number of servers per interface: " + str(subset) + " -- " + str(server_replicas) + " / " + str(len(interfaces)-2))
     for iface in interfaces:
-        if iface != "lo"  and iface != "eth0":
+        if iface != "lo" and iface != "eth0":
             address = netifaces.ifaddresses(iface)
             ip = address[netifaces.AF_INET] 
             for r in range(subset):

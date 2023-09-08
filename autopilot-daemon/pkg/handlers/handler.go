@@ -156,3 +156,21 @@ func IperfHandler() http.Handler {
 	}
 	return http.HandlerFunc(fn)
 }
+
+func StartIperfServersHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Starting Iperf3 Servers"))
+		replicas := r.URL.Query().Get("replicas")
+		if replicas == "" {
+			replicas = "1"
+		}
+		err, out := startIperfServers(replicas)
+		if err != nil {
+			klog.Error(err.Error())
+		}
+		if out != nil {
+			w.Write(*out)
+		}
+	}
+	return http.HandlerFunc(fn)
+}

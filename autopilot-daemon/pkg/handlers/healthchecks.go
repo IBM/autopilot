@@ -207,6 +207,9 @@ func runPCIeBw() (error, *[]byte) {
 }
 
 func runIperf(nodelist string, jobName string, plane string, replicas string) (error, *[]byte) {
+	// Start servers on a different pod
+	// exec.Command("python3", "./network/start-iperf-servers.py", "--replicas", replicas)
+	// Start clients
 	out, err := exec.Command("python3", "./network/iperf3-entrypoint.py", "--nodes", nodelist, "--job", jobName, "--plane", plane, "--replicas", replicas).CombinedOutput()
 	klog.Info("Running command: ", "python3", "./network/iperf3-entrypoint.py", " --nodes ", nodelist, " --job ", jobName, " --plane ", plane, " --replicas ", replicas)
 	if err != nil {
@@ -226,6 +229,19 @@ func runIperf(nodelist string, jobName string, plane string, replicas string) (e
 		// 	return nil, &out
 		// }
 		klog.Info("iperf3 result:\n", string(out))
+	}
+	return nil, &out
+}
+
+func startIperfServers(replicas string) (error, *[]byte) {
+	out, err := exec.Command("python3", "./network/start-iperf-servers.py", "--replicas", replicas).CombinedOutput()
+	klog.Info("Running command: ", "python3", "./network/start-iperf-servers.py", "--replicas", replicas)
+	if err != nil {
+		klog.Info("Out:", string(out))
+		klog.Error(err.Error())
+		return err, nil
+	} else {
+		klog.Info("iperf3 servers started.")
 	}
 	return nil, &out
 }

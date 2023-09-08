@@ -44,8 +44,45 @@ if wkload != 'None':
     if (len(wkload) > 1) and (node[0] == 'all'):
         node = []
 
-# debug: runtime
-start_time = time.time()
+
+def main():
+    # debug: runtime
+    start_time = time.time()
+
+    # initializing some variables
+    if wkload != 'None':
+        find_wkload()
+    addresses = get_addresses()
+    total_nodes = len(addresses)
+    node_status = {} # updates after each node is tested
+    pids_tups = [] # debug: process list
+    pids_dict = {} # debug: process list
+
+    # set max number of processes (max is set to 4 for development)
+    if ((total_nodes * len(checks)) < 4):
+        max_processes = total_nodes
+    else:
+        max_processes = 4
+
+    # multiprocessing for parallelism in batches
+    with Pool(processes=max_processes) as pool:
+        for result, pid, daemon_node, node_status_list in pool.map(run_tests, addresses, chunksize=batch_size):
+            pids_tups.append((pid, daemon_node))
+            node_status[daemon_node] = node_status_list
+            print(result)
+
+    # print node summary at end of program
+    print("Node Summary:\n")
+    pprint.pprint(node_status)
+    
+    # debug: print each process with the nodes they ran
+    for p, n in pids_tups:
+        pids_dict.setdefault(p, []).append(n)
+    print("\n~~~DEBUGGING BELOW~~~\nProcesses (randomly ordered) and the nodes they ran (process:[nodes]):")
+    pprint.pprint(pids_dict, width=1)
+
+    # print runtime
+    print('\nruntime:', str(time.time() - start_time), 'sec')
 
 
 # find workload addresses
@@ -74,6 +111,8 @@ def find_wkload():
 
 # get addresses in desired endpointslice (autopilot-healthchecks) based on which node(s) the user chooses
 def get_addresses():
+    global server_address
+    server_address = ''
     try:
         endpoints = v1.list_namespaced_endpoints(namespace=namespace)
     except ApiException as e:
@@ -83,14 +122,19 @@ def get_addresses():
             # print("EndpointSlice: " + str(endpointslice.metadata.name)) 
             addresses = endpointslice.subsets[0].addresses
             if 'all' in node:
+                # server_address = [addresses[0], addresses[len(addresses)-1]]
                 return addresses
             else:
                 address_list = []
                 for address in addresses:
                     if address.node_name in node:
                         address_list.append(address)
+                    else:
+                        server_address = address
                 if len(address_list) > 0:
                     return address_list
+                # if server_address == '': # when all nodes are being tested / there's only one node
+                #     print('Iperf test cannot be completed')
                 raise Exception('Error: Issue with --node and/or --wkload parameter. Node choices include: \"all\", a specific node name, or a comma separated list of node names. Check that workload is spelled correctly and exists in the cluster.')
     raise Exception('Error: Issue with --service and/or --namespace parameter(s). Check that they are correct.')
 
@@ -118,10 +162,13 @@ def run_tests(address):
 def create_url(address, daemon_node):
     urls = []
     for check in checks:
-        if check == 'all':
-            urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node)
-        elif (check == 'nic' or check == 'remapped' or check == 'pciebw' or check == 'iperf'):
+        if check == 'iperf' and len(server_address) > 0:
+            urls.append('http://' + str(server_address.ip) + ':3333/servers&replicas=' + replicas)
+            urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + check + '&replicas=' + replicas)
+        if (check == 'nic' or check == 'remapped' or check == 'pciebw'):
             urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + check)
+        elif check == 'all':
+            urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node)
         # else:
         #     raise Exception('Error: Issue with --check parameter. Options are \"all\", \"pciebw\", \"nic\", \"remapped\" or \"iperf\"')
     return urls
@@ -169,37 +216,4 @@ def get_node_status(responses):
 
 # start program
 if __name__ == "__main__":
-    # initializing some variables
-    if wkload != 'None':
-        find_wkload()
-    addresses = get_addresses()
-    total_nodes = len(addresses)
-    node_status = {} # updates after each node is tested
-    pids_tups = [] # debug: process list
-    pids_dict = {} # debug: process list
-
-    # set max number of processes (max is set to 4 for development)
-    if ((total_nodes * len(checks)) < 4):
-        max_processes = total_nodes
-    else:
-        max_processes = 4
-
-    # multiprocessing for parallelism in batches
-    with Pool(processes=max_processes) as pool:
-        for result, pid, daemon_node, node_status_list in pool.map(run_tests, addresses, chunksize=batch_size):
-            pids_tups.append((pid, daemon_node))
-            node_status[daemon_node] = node_status_list
-            print(result)
-
-    # print node summary at end of program
-    print("Node Summary:\n")
-    pprint.pprint(node_status)
-    
-    # debug: print each process with the nodes they ran
-    for p, n in pids_tups:
-        pids_dict.setdefault(p, []).append(n)
-    print("\n~~~DEBUGGING BELOW~~~\nProcesses (randomly ordered) and the nodes they ran (process:[nodes]):")
-    pprint.pprint(pids_dict, width=1)
-
-    # print runtime
-    print('\nruntime:', str(time.time() - start_time), 'sec')
+    main()
