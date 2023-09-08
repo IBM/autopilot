@@ -1,6 +1,6 @@
 #!/bin/bash
 for FILE in out-*; do 
-    unable=$(grep unable out-*)
+    unable=`grep unable ${FILE}`
     if [ ! -z "$unable" ]
     then
         echo $FILE
