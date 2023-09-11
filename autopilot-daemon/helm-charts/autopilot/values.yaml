@@ -9,16 +9,16 @@ namespace:
   name: autopilot
 
 initContainer:
-  image: us.icr.io/cil15-shared-registry/autopilot/autopilot:test
+  image: us.icr.io/cil15-shared-registry/autopilot/autopilot:dcgm
 
 image:
   repository: us.icr.io/cil15-shared-registry/autopilot/autopilot
-  tag: test
+  tag: dcgm
   pullPolicy: Always
 
 PCIeBW: 4
 
-repeat: 24
+repeat: 1
 
 pullSecrets:
   create: true
@@ -53,11 +53,11 @@ resources:
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   limits:
     cpu: 2
-    memory: 1Gi
-    nvidia.com/gpu: 0
+    # memory: 1Gi
+    # nvidia.com/gpu: 0
   requests:
     cpu: 500m
-    memory: 500Mi
+    memory: 1Gi
     nvidia.com/gpu: 0
 
 # serviceAnnotations:

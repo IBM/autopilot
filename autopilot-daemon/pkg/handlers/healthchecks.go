@@ -13,17 +13,25 @@ import (
 
 func TimerRun() {
 	klog.Info("Running a periodic check")
-	runAllTestsLocal("all")
+	runAllTestsLocal("pciebw,remapped,dcgm", "1")
 }
 
-func runAllTestsLocal(checks string) (error, *[]byte) {
+func runAllTestsLocal(checks string, dcgmR string) (error, *[]byte) {
 	out := []byte("")
 	var tmp *[]byte
 	var err error
 	start := time.Now()
 	for _, check := range strings.Split(checks, ",") {
-
 		switch check {
+		case "dcgm":
+			klog.Info("Running health check: ", check)
+			err, tmp = runDCGM(dcgmR)
+			if err != nil {
+				klog.Error(err.Error())
+				return err, tmp
+			}
+			out = append(out, *tmp...)
+
 		case "pciebw":
 			klog.Info("Running health check: ", check)
 			err, tmp = runPCIeBw()
@@ -45,13 +53,6 @@ func runAllTestsLocal(checks string) (error, *[]byte) {
 		case "nic":
 			klog.Info("Running health check: ", check, " -- DISABLED")
 
-			// err, tmp = netReachability()
-			// if err != nil {
-			// 	klog.Error(err.Error())
-			// 	return err, nil
-			// }
-			// out = append(out, *tmp...)
-
 		case "all":
 			klog.Info("Run all health checks\n")
 			err, tmp := runPCIeBw()
@@ -66,6 +67,13 @@ func runAllTestsLocal(checks string) (error, *[]byte) {
 				return err, nil
 			}
 			out = append(out, *tmp...)
+			err, tmp = runDCGM(dcgmR)
+			if err != nil {
+				klog.Error(err.Error())
+				return err, tmp
+			}
+			out = append(out, *tmp...)
+
 			// err, tmp = netReachability()
 			// if err != nil {
 			// 	klog.Error(err.Error())
@@ -83,10 +91,10 @@ func runAllTestsLocal(checks string) (error, *[]byte) {
 	return nil, &out
 }
 
-func runAllTestsRemote(host string, check string, batch string, jobName string) (error, *[]byte) {
-	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --service=autopilot-healthchecks", " --namespace="+os.Getenv("NAMESPACE"), " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName)
+func runAllTestsRemote(host string, check string, batch string, jobName string, dcgmR string) (error, *[]byte) {
+	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --service=autopilot-healthchecks", " --namespace="+os.Getenv("NAMESPACE"), " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName, " --dcgmR="+dcgmR)
 
-	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--nodes="+host, "--check="+check, "--batchSize="+batch, "--wkload="+jobName).Output()
+	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--nodes="+host, "--check="+check, "--batchSize="+batch, "--wkload="+jobName, "--dcgmR="+dcgmR).Output()
 	if err != nil {
 		klog.Error(err.Error())
 		return err, nil
@@ -214,6 +222,43 @@ func runIperf(nodelist string, jobName string, iface string) (error, *[]byte) {
 			klog.Info("iperf3 test test failed.", string(out[:]))
 			return nil, &out
 		}
+	}
+	return nil, &out
+}
+
+func runDCGM(dcgmR string) (error, *[]byte) {
+	out, err := exec.Command("python3", "./gpu-dcgm/entrypoint.py", "-r", dcgmR).Output()
+	if err != nil {
+		klog.Error(err.Error())
+		return err, nil
+	} else {
+		klog.Info("DCGM test completed:")
+
+		if strings.Contains(string(out[:]), "FAIL") {
+			klog.Info("DCGM test failed.", string(out[:]))
+		}
+
+		if strings.Contains(string(out[:]), "ABORT") {
+			klog.Info("DCGM cannot be run. ", string(out[:]))
+			return nil, &out
+		}
+
+		// output := strings.TrimSuffix(string(out[:]), "\n")
+		// split := strings.Split(output, "\n")
+
+		// bws := split[len(split)-1]
+		// final := strings.Split(bws, " ")
+
+		// for gpuid, v := range final {
+		// 	bw, err := strconv.ParseFloat(v, 64)
+		// 	if err != nil {
+		// 		klog.Error(err.Error())
+		// 		return err, nil
+		// 	} else {
+		// 		klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", bw)
+		// 		utils.HchecksGauge.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(bw)
+		// 	}
+		// }
 	}
 	return nil, &out
 }
