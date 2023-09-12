@@ -16,14 +16,6 @@ from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from multiprocessing import Pool
 
-# ANSI colors
-c = (
-    "\033[0m",   # End of color
-    "\033[36m",  # Cyan
-    "\033[91m",  # Red
-    "\033[35m",  # Magenta
-)
-
 # load in cluster kubernetes config for access to cluster
 config.load_incluster_config()
 v1 = client.CoreV1Api()
