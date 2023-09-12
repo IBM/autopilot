@@ -8,11 +8,13 @@ import argparse
 import os
 import requests
 import time
+import asyncio
+import aiohttp
+from itertools import islice
 import pprint
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from multiprocessing import Pool
-
 
 # load in cluster kubernetes config for access to cluster
 config.load_incluster_config()
@@ -24,8 +26,10 @@ parser.add_argument('--service', type=str, default='autopilot-healthchecks', hel
 parser.add_argument('--namespace', type=str, default='autopilot', help='Namespace where autopilot DaemonSet is deployed. Default is \"autopilot\".')
 parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Can be a comma separated list. Default is \"all\" unless --wkload is provided, then set to None. Specific nodes can be provided in addition to --wkload.')
 parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"nic\", \"remapped\" or \"iperf\". Default is \"all\". Can be a comma separated list.')
-parser.add_argument('--batchSize', type=str, default='1', help='Number of nodes running in parallel at a time. Default is \"1\".')
+parser.add_argument('--batchSize', default='0', type=str, help='Number of nodes to check in parallel. Default is set to the number of the worker nodes.')
 parser.add_argument('--wkload', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--wkload=namespace:label-key=label-value\". Default is set to None.')
+parser.add_argument('--dcgmR', type=str, default='1', help='Run a diagnostic in dcgmi. Run a diagnostic. (Note: higher numbered tests include all beneath.)\n\t1 - Quick (System Validation ~ seconds)\n\t2 - Medium (Extended System Validation ~ 2 minutes)\n\t3 - Long (System HW Diagnostics ~ 15 minutes)\n\t4 - Extended (Longer-running System HW Diagnostics)')
+
 args = vars(parser.parse_args())
 service = args['service']
 namespace = args['namespace']
@@ -54,7 +58,6 @@ def find_wkload():
         wkload_pods = v1.list_namespaced_pod(namespace=wkload_ns, label_selector=wkload_label)
     except ApiException as e:
         print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
-    # wkload_pods = v1.list_pod_for_all_namespaces(label_selector=('job-name=' + wkload_name)).items
     print('Workload:', ': '.join(wkload))
     for pod in wkload_pods.items:
         pod_name = pod.metadata.name
@@ -113,10 +116,8 @@ def create_url(address, daemon_node):
     for check in checks:
         if check == 'all':
             urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node)
-        elif (check == 'nic' or check == 'remapped' or check == 'pciebw' or check == 'iperf'):
-            urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + check)
-        # else:
-        #     raise Exception('Error: Issue with --check parameter. Options are \"all\", \"pciebw\", \"nic\", \"remapped\" or \"iperf\"')
+            return urls
+    urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + args['check'] + '&r='+args['dcgmR'])
     return urls
 
 
@@ -129,7 +130,7 @@ def get_requests(url):
             break
         except:
             print('Connection refused by server..')
-            print('sleeping for 5 seconds')
+            print('Sleeping for 5 seconds')
             time.sleep(5)
             continue
     return page.text
@@ -149,11 +150,41 @@ def get_node_status(responses):
                 elif('REMAPPED ROWS' in line):
                     node_status_list.append('REMAPPED ROWS Failed')
                 elif('IPERF' in line):
-                    node_status_list.append('iPERF Failed')
+                    node_status_list.append('IPERF Failed')
+                elif('DCGM' in line):
+                    node_status_list.append('DCGM Failed')
     if len(node_status_list) < 1:
         node_status_list.append('Ok')
     return node_status_list
 
+async def makeconnection(address):
+    daemon_node = str(address.node_name)
+    pid = os.getpid()
+    url = create_url(address, daemon_node)
+    output = '\nAutopilot Endpoint: {ip}\nNode: {daemon_node}\nurl(s): {url}'.format(ip=address.ip, daemon_node=daemon_node, url='\n        '.join(url))
+    print(f"Initiated connection to {url}.")
+    total_timeout=aiohttp.ClientTimeout(total=60*60*24)
+    async with aiohttp.ClientSession(timeout=total_timeout) as session:
+        async with session.get(url[0]) as resp:
+            reply = await resp.text()
+    response=[reply]
+    node_status_list = get_node_status(response)
+    output += '\nResponse:\n{response}\nNode Status: {status}\n-------------------------------------\n'.format(response='~~\n'.join(response), status=', '.join(node_status_list))
+    # output += "\n-------------------------------------\n" # separator
+    return output, pid, daemon_node, node_status_list
+
+
+async def main(addresses):
+    res = await asyncio.gather(*(makeconnection(addr) for addr in addresses))
+    return res
+
+def batch_of_nodes(nodelist, batch_size):
+    it = iter(nodelist)
+    while True:
+        batch = list(islice(it, batch_size))
+        if not batch:
+            break
+        yield batch
 
 # start program
 if __name__ == "__main__":
@@ -166,20 +197,18 @@ if __name__ == "__main__":
     pids_tups = [] # debug: process list
     pids_dict = {} # debug: process list
 
-    # set max number of processes (max is set to 4 for development)
-    if ((total_nodes * len(checks)) < 4):
-        max_processes = total_nodes
-    else:
-        max_processes = 4
+    if batch_size == 0 or batch_size > total_nodes:
+        batch_size = total_nodes
+    asyncres = []
 
-    # multiprocessing for parallelism in batches
-    with Pool(processes=max_processes) as pool:
-        for result, pid, daemon_node, node_status_list in pool.map(run_tests, addresses, chunksize=batch_size):
-            pids_tups.append((pid, daemon_node))
-            node_status[daemon_node] = node_status_list
-            print(result)
+    for b in batch_of_nodes(addresses, batch_size):
+        asyncres.extend(asyncio.run(main(b)))
 
-    # print node summary at end of program
+    for result, pid, daemon_node, node_status_list in asyncres:
+        pids_tups.append((pid, daemon_node))
+        node_status[daemon_node] = node_status_list
+        print(result)
+    
     print("Node Summary:\n")
     pprint.pprint(node_status)
     
