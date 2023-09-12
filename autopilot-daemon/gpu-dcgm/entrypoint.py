@@ -24,22 +24,23 @@ def try_dcgm(command):
     result = subprocess.run(command, check=True, text=True, capture_output=True)
     if result.stderr:
         print(result.stderr)
-        print("[[ DCGM ]] exited with error: " + result.stderr + " FAIL")
+        print("[[ DCGM ]] exited with error: " + result.stderr + " ERR")
     else:
         dcgm_dict = json.loads(result.stdout)
         tests_dict = dcgm_dict['DCGM GPU Diagnostic']['test_categories'][0]['tests']
         success = True
+        output = ""
         for test in tests_dict:
             if test['results'][0]['status'] == 'Fail':
                 print(test['name'], ":", test['results'][0]['status'])
                 success = False
-                print("[[ DCGM ]] ", test['name'], " failed")
+                output+=(test['name']+" ")
         if success:
             print("[[ DCGM ]] SUCCESS")
         else:
+            print("Host ", os.getenv("NODE_NAME"))
             print("[[ DCGM ]] FAIL")
-        print("Host ", os.getenv("NODE_NAME"))    
-
+            print(output.strip())
 
 if __name__ == '__main__':
     main()

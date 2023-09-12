@@ -148,7 +148,7 @@ func runRemappedRows() (error, *[]byte) {
 		}
 
 		if strings.Contains(string(out[:]), "ABORT") {
-			klog.Info("PCIe BW cannot be run. ", string(out[:]))
+			klog.Info("Remapped Rows cannot be run. ", string(out[:]))
 			return nil, &out
 		}
 
@@ -234,31 +234,28 @@ func runDCGM(dcgmR string) (error, *[]byte) {
 	} else {
 		klog.Info("DCGM test completed:")
 
-		if strings.Contains(string(out[:]), "FAIL") {
-			klog.Info("DCGM test failed.", string(out[:]))
+		if strings.Contains(string(out[:]), "ERR") {
+			klog.Info("DCGM test exited with errors.", string(out[:]))
 		}
 
 		if strings.Contains(string(out[:]), "ABORT") {
 			klog.Info("DCGM cannot be run. ", string(out[:]))
 			return nil, &out
 		}
-
-		// output := strings.TrimSuffix(string(out[:]), "\n")
-		// split := strings.Split(output, "\n")
-
-		// bws := split[len(split)-1]
-		// final := strings.Split(bws, " ")
-
-		// for gpuid, v := range final {
-		// 	bw, err := strconv.ParseFloat(v, 64)
-		// 	if err != nil {
-		// 		klog.Error(err.Error())
-		// 		return err, nil
-		// 	} else {
-		// 		klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", bw)
-		// 		utils.HchecksGauge.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(bw)
-		// 	}
-		// }
+		output := strings.TrimSuffix(string(out[:]), "\n")
+		split := strings.Split(output, "\n")
+		dcgmtests := split[len(split)-1]
+		var res float64
+		res = 0
+		if strings.Contains(split[len(split)-1], "SUCCESS") {
+			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "result", " ", res)
+		} else if strings.Contains(split[len(split)-2], "FAIL") {
+			res = 1
+			for _, v := range strings.Split(dcgmtests, " ") {
+				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "Fail ", v, " ", res)
+			}
+		}
+		utils.HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), "").Set(res)
 	}
 	return nil, &out
 }

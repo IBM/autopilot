@@ -2,18 +2,16 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
-
 namespace: 
-  create: false
+  create: true
   name: autopilot
 
 initContainer:
-  image: us.icr.io/cil15-shared-registry/autopilot/autopilot:dcgm
+  image: us.icr.io/cil15-shared-registry/autopilot/autopilot:v1
 
 image:
-  repository: us.icr.io/cil15-shared-registry/autopilot/autopilot
-  tag: dcgm
+  repository:  us.icr.io/cil15-shared-registry/autopilot/autopilot
+  tag: v1
   pullPolicy: Always
 
 PCIeBW: 4
@@ -52,9 +50,9 @@ resources:
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   limits:
-    cpu: 2
+    # cpu: 2
     # memory: 1Gi
-    # nvidia.com/gpu: 0
+    nvidia.com/gpu: 0
   requests:
     cpu: 500m
     memory: 1Gi
