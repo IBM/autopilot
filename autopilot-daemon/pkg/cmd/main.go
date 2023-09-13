@@ -62,6 +62,7 @@ func main() {
 	hcMux.Handle("/remapped", handlers.RemappedRowsHandler())
 	hcMux.Handle("/status", handlers.SystemStatusHandler())
 	hcMux.Handle("/iperf", handlers.IperfHandler())
+	hcMux.Handle("/dcgm", handlers.DCGMHandler())
 
 	go func() {
 		klog.Info("Serving Health Checks on port :", *port)

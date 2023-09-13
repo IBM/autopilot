@@ -24,18 +24,19 @@ RUN go build -o bin/autopilot pkg/cmd/main.go
 
 # FROM python:3.9.15-slim
 FROM nvidia/cuda:12.1.1-runtime-ubuntu20.04
-RUN  apt -y update && apt -y upgrade && apt install -y --no-install-recommends \ 
+RUN  apt -y update && apt -y upgrade &&  DEBIAN_FRONTEND="noninteractive" TZ="America/New_York" apt install -y --no-install-recommends \ 
         build-essential iperf3 iputils-ping \
         python3 \
         pip \
         pciutils \
         wget \
         net-tools \
+        software-properties-common \
         && apt -y clean && apt -y autoremove
 
 # Add capabilities for ping
 RUN setcap cap_net_raw,cap_net_admin+p /bin/ping
-
+RUN add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /" && apt -y update && apt install -y datacenter-gpu-manager
 # add ca-certificates (Alpine commands, previous base image)
 # RUN apk update && apk --no-cache  add ca-certificates
 # RUN adduser -s /bin/bash -D -h /home/autopilot autopilot -G root 
@@ -71,9 +72,12 @@ COPY gpu-remapped/remapped-rows.sh /home/autopilot/gpu-remapped/remapped-rows.sh
 
 COPY utils /home/autopilot/utils
 
-# Last touches
-RUN pip install --upgrade pip && pip install kubernetes netifaces
-RUN apt-get update -y && apt install -y vim && apt -y clean && apt -y autoremove
-RUN chmod 755 /usr/local/bin/autopilot && chown -hR autopilot /home/autopilot && chmod -R g=u /home/autopilot
+# DGCM test files and dependencies 
+COPY gpu-dcgm/entrypoint.py /home/autopilot/gpu-dcgm/entrypoint.py
+# RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/datacenter-gpu-manager_3.1.8_amd64.deb && dpkg --install datacenter-gpu-manager_3.1.8_amd64.deb
 
+# Last touches
+RUN pip install --upgrade pip && pip install kubernetes netifaces aiohttp[speedups]
+RUN apt -y update && apt install -y vim && apt -y clean && apt -y autoremove
+RUN chmod 755 /usr/local/bin/autopilot && chown -hR autopilot /home/autopilot && chmod -R g=u /home/autopilot
 CMD ["/usr/local/bin/autopilot"]

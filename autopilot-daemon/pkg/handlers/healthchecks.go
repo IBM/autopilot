@@ -13,17 +13,25 @@ import (
 
 func TimerRun() {
 	klog.Info("Running a periodic check")
-	runAllTestsLocal("all")
+	runAllTestsLocal("pciebw,remapped,dcgm", "1")
 }
 
-func runAllTestsLocal(checks string) (error, *[]byte) {
+func runAllTestsLocal(checks string, dcgmR string) (error, *[]byte) {
 	out := []byte("")
 	var tmp *[]byte
 	var err error
 	start := time.Now()
 	for _, check := range strings.Split(checks, ",") {
-
 		switch check {
+		case "dcgm":
+			klog.Info("Running health check: ", check)
+			err, tmp = runDCGM(dcgmR)
+			if err != nil {
+				klog.Error(err.Error())
+				return err, tmp
+			}
+			out = append(out, *tmp...)
+
 		case "pciebw":
 			klog.Info("Running health check: ", check)
 			err, tmp = runPCIeBw()
@@ -45,13 +53,6 @@ func runAllTestsLocal(checks string) (error, *[]byte) {
 		case "nic":
 			klog.Info("Running health check: ", check, " -- DISABLED")
 
-			// err, tmp = netReachability()
-			// if err != nil {
-			// 	klog.Error(err.Error())
-			// 	return err, nil
-			// }
-			// out = append(out, *tmp...)
-
 		case "all":
 			klog.Info("Run all health checks\n")
 			err, tmp := runPCIeBw()
@@ -66,6 +67,13 @@ func runAllTestsLocal(checks string) (error, *[]byte) {
 				return err, nil
 			}
 			out = append(out, *tmp...)
+			err, tmp = runDCGM(dcgmR)
+			if err != nil {
+				klog.Error(err.Error())
+				return err, tmp
+			}
+			out = append(out, *tmp...)
+
 			// err, tmp = netReachability()
 			// if err != nil {
 			// 	klog.Error(err.Error())
@@ -83,10 +91,10 @@ func runAllTestsLocal(checks string) (error, *[]byte) {
 	return nil, &out
 }
 
-func runAllTestsRemote(host string, check string, batch string, jobName string, replicas string) (error, *[]byte) {
-	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --service=autopilot-healthchecks", " --namespace="+os.Getenv("NAMESPACE"), " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName, "--replicas="+replicas)
+func runAllTestsRemote(host string, check string, batch string, jobName string, dcgmR string, replicas string) (error, *[]byte) {
+	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --service=autopilot-healthchecks", " --namespace="+os.Getenv("NAMESPACE"), " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName, " --dcgmR="+dcgmR, "--replicas="+replicas)
 
-	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace", os.Getenv("NAMESPACE"), "--nodes", host, "--check", check, "--batchSize", batch, "--wkload", jobName, "--replicas", replicas).CombinedOutput()
+	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--nodes="+host, "--check="+check, "--batchSize="+batch, "--wkload="+jobName, "--dcgmR="+dcgmR, "--replicas", replicas).Output()
 	if err != nil {
 		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
@@ -143,7 +151,7 @@ func runRemappedRows() (error, *[]byte) {
 		}
 
 		if strings.Contains(string(out[:]), "ABORT") {
-			klog.Info("PCIe BW cannot be run. ", string(out[:]))
+			klog.Info("Remapped Rows cannot be run. ", string(out[:]))
 			return nil, &out
 		}
 
@@ -226,6 +234,40 @@ func runIperf(nodelist string, jobName string, plane string, replicas string) (e
 		// 	return nil, &out
 		// }
 		klog.Info("iperf3 result:\n", string(out))
+	}
+	return nil, &out
+}
+
+func runDCGM(dcgmR string) (error, *[]byte) {
+	out, err := exec.Command("python3", "./gpu-dcgm/entrypoint.py", "-r", dcgmR).Output()
+	if err != nil {
+		klog.Error(err.Error())
+		return err, nil
+	} else {
+		klog.Info("DCGM test completed:")
+
+		if strings.Contains(string(out[:]), "ERR") {
+			klog.Info("DCGM test exited with errors.", string(out[:]))
+		}
+
+		if strings.Contains(string(out[:]), "ABORT") {
+			klog.Info("DCGM cannot be run. ", string(out[:]))
+			return nil, &out
+		}
+		output := strings.TrimSuffix(string(out[:]), "\n")
+		split := strings.Split(output, "\n")
+		dcgmtests := split[len(split)-1]
+		var res float64
+		res = 0
+		if strings.Contains(split[len(split)-1], "SUCCESS") {
+			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "result", " ", res)
+		} else if strings.Contains(split[len(split)-2], "FAIL") {
+			res = 1
+			for _, v := range strings.Split(dcgmtests, " ") {
+				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "Fail ", v, " ", res)
+			}
+		}
+		utils.HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), "").Set(res)
 	}
 	return nil, &out
 }

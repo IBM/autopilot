@@ -19,16 +19,6 @@ var (
 		},
 	)
 
-	Hchecks = prometheus.NewSummaryVec(
-		prometheus.SummaryOpts{
-			Namespace:  "autopilot",
-			Name:       "health_report_total",
-			Help:       "Summary of the health checks measurements on compute nodes.",
-			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
-		},
-		[]string{"health", "node", "deviceid"},
-	)
-
 	HchecksGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: "autopilot",
