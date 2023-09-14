@@ -214,9 +214,9 @@ func runPCIeBw() (error, *[]byte) {
 	return nil, &out
 }
 
-func runIperf(nodelist string, jobName string, plane string, replicas string) (error, *[]byte) {
-	out, err := exec.Command("python3", "./network/iperf3-entrypoint.py", "--nodes", nodelist, "--job", jobName, "--plane", plane, "--replicas", replicas).CombinedOutput()
-	klog.Info("Running command: ", "python3", "./network/iperf3-entrypoint.py", " --nodes ", nodelist, " --job ", jobName, " --plane ", plane, " --replicas ", replicas)
+func runIperf(nodelist string, jobName string, plane string, clients string) (error, *[]byte) {
+	out, err := exec.Command("python3", "./network/iperf3-entrypoint.py", "--nodes", nodelist, "--job", jobName, "--plane", plane, "--clients", clients).CombinedOutput()
+	klog.Info("Running command: ", "python3", "./network/iperf3-entrypoint.py", " --nodes ", nodelist, " --job ", jobName, " --plane ", plane, " --clients ", clients)
 	if err != nil {
 		klog.Info("Out:", string(out))
 		klog.Error(err.Error())

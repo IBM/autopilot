@@ -13,9 +13,9 @@ parser.add_argument('--job', type=str, default='None', help='Workload node disco
 
 parser.add_argument('--iface', type=str, default='eth0', help='Name of the interface to test with iperf3. Will spawn a single client to connect to a single server. The client will connect to IP on the selected interface. Can be management plane (eth0) or data plane (e.g., net1). Only one value allowed. Default is set to eth0.')
 
-parser.add_argument('--plane', type=str, default='data', help='Run on either data plane (data) or management plane (mgmt, on eth0). Can be customized with --replicas to run multiple clients over a single server on multiple ports. Default is data plane.')
+parser.add_argument('--plane', type=str, default='data', help='Run on either data plane (data) or management plane (mgmt, on eth0). Can be customized with --clients to run multiple clients over a single server on multiple ports. Default is data plane.')
 
-parser.add_argument('--replicas', type=str, default='1', help='Number of iperf3 clients to connect to a remote server')
+parser.add_argument('--clients', type=str, default='1', help='Number of iperf3 clients to connect to a remote server')
 
 args = vars(parser.parse_args())
 
@@ -99,7 +99,7 @@ def get_addresses(allnodes, nodemap):
 
 
 def run_clients(address_map):
-    client_replicas_per_iface = args['replicas']
+    client_replicas_per_iface = args['clients']
     plane = args['plane']
     clients = []
     print("[IPERF] Starting " + client_replicas_per_iface + " clients per iface")
@@ -113,7 +113,7 @@ def run_clients(address_map):
             # print("[IPERF] Connect to " + ip[0] + " on " + ip[1])
             command[2] = ip[0]
             filename="out-"+ip[0]+"-"+command[4]
-            clients.append(try_connect_popen(command, ip, filename))
+            clients.append(try_connect_popen(command, filename))
             # try_connect(command, ip)
     # else if stresstest, run_clients(addresses)
     else:
