@@ -54,8 +54,8 @@ resources:
     # memory: 1Gi
     nvidia.com/gpu: 0
   requests:
-    cpu: 500m
-    memory: 1Gi
+#    cpu: 500m
+#    memory: 1Gi
     nvidia.com/gpu: 0
 
 # serviceAnnotations:
