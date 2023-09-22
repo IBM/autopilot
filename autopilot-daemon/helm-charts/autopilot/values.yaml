@@ -7,11 +7,11 @@ namespace:
   name: autopilot
 
 initContainer:
-  image: us.icr.io/cil15-shared-registry/autopilot/autopilot:v1
+  image: us.icr.io/cil15-shared-registry/autopilot/autopilot:v1.1.0
 
 image:
   repository:  us.icr.io/cil15-shared-registry/autopilot/autopilot
-  tag: v1
+  tag: v1.1.0
   pullPolicy: Always
 
 PCIeBW: 4
