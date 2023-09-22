@@ -5,21 +5,24 @@ import json
 import subprocess
 import argparse
 import math
+import asyncio
+import aiohttp
+import netifaces
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--nodes', type=str, default='all', help='Node(s) running autopilot that will be reached out by iperf3. Can be a comma separated list. Default is \"all\". Servers are reached out sequentially')
 
 parser.add_argument('--job', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--job=namespace:label-key=label-value\". Default is set to None.')
 
-parser.add_argument('--iface', type=str, default='eth0', help='Name of the interface to test with iperf3. Will spawn a single client to connect to a single server. The client will connect to IP on the selected interface. Can be management plane (eth0) or data plane (e.g., net1). Only one value allowed. Default is set to eth0.')
-
 parser.add_argument('--plane', type=str, default='data', help='Run on either data plane (data) or management plane (mgmt, on eth0). Can be customized with --clients to run multiple clients over a single server on multiple ports. Default is data plane.')
 
 parser.add_argument('--clients', type=str, default='1', help='Number of iperf3 clients to connect to a remote server')
 
+parser.add_argument('--servers', type=str, default='1', help='Number of iperf3 servers per node. If #replicas is less than the number of secondary nics, it will create #replicas server per nic. Otherwise, it will spread #replicas servers as evenly as possible on all interfaces')
+
 args = vars(parser.parse_args())
 
-def main():
+async def main():
     nodelist = args['nodes'].replace(' ', '').split(',') # list of nodes
     plane = args['plane']
     job = args['job']
@@ -43,11 +46,24 @@ def main():
     if len(address_map) == 0:
         return 
     
-    run_clients(address_map)
+    print("[IPERF] Starting servers on all other nodes... ")
+    interfaces = netifaces.interfaces()
+    if len(interfaces)<3:
+        print("[IPERF] Cannot launch servers -- secondary nics not found ", os.getenv("POD_NAME"), ". ABORT")
+        return
+
+    secondary_nics_count = (len(interfaces)-2)# quite a lame bet.. excluding eth0 and lo assuming all the other ones are what we want.
+    server_replicas = int(args['servers'])
+    if server_replicas > secondary_nics_count:
+        maxports = int(server_replicas/secondary_nics_count) 
+    else:
+        maxports = server_replicas
+    await start_servers(allnodes, nodemap)
+
+    run_clients(address_map, maxports)
 
 
 def get_job_nodes(nodelist):
-    
     v1 = client.CoreV1Api()
     # get nodes from job is specified
     nodemap = {}
@@ -91,18 +107,45 @@ def get_addresses(allnodes, nodemap):
                 for entry in entrylist:
                     if address_map.get(entry['interface']) == None:
                         address_map[entry['interface']] = []
-                    address_map.get(entry['interface']).append((entry['ips'][0],pod.spec.node_name))
+                    address_map.get(entry['interface']).append((entry['ips'],pod.spec.node_name))
     if len(address_map) == 0:
         print("[IPERF] No interfaces found. FAIL.")
 
     return address_map
 
+async def start_servers(allnodes, nodemap):
+    v1 = client.CoreV1Api()
+    address_list = []
+    try:
+        endpoints = v1.list_namespaced_endpoints(namespace=os.getenv("NAMESPACE"))
+    except ApiException as e:
+        print("Exception when calling CoreV1Api->list_namespaced_endpoints: %s\n" % e)
+    for endpointslice in endpoints.items:
+        if endpointslice.metadata.name == "autopilot-healthchecks":
+            addresses = endpointslice.subsets[0].addresses
+            for address in addresses:
+                if address.node_name != os.getenv("NODE_NAME") and (allnodes or (address.node_name in nodemap.keys())):
+                    address_list.append(address.ip)
+    res = await asyncio.gather(*(makeconnection(addr) for addr in address_list))
+    return res
 
-def run_clients(address_map):
-    client_replicas_per_iface = args['clients']
+async def makeconnection(address):
+    server_replicas = args['servers']
+    url = 'http://' + address + ':3333/iperfservers?replicas=' + server_replicas
+
+    print(f"Initiated connection to {url}.")
+    total_timeout=aiohttp.ClientTimeout(total=60*10)
+    async with aiohttp.ClientSession(timeout=total_timeout) as session:
+        async with session.get(url) as resp:
+            reply = await resp.text()
+    print(reply)
+
+
+def run_clients(address_map, maxports):
+    client_replicas_per_iface = int(args['clients'])
     plane = args['plane']
     clients = []
-    print("[IPERF] Starting " + client_replicas_per_iface + " clients per iface")
+    print("[IPERF] Trying to start " + str(client_replicas_per_iface) + " clients per iface")
     command = ['iperf3', '-c', '', '-p', '', '-t', '10']
     # if simple iperf
     if plane == "mgmt":
@@ -117,25 +160,35 @@ def run_clients(address_map):
             # try_connect(command, ip)
     # else if stresstest, run_clients(addresses)
     else:
-        subset = math.ceil(int(client_replicas_per_iface)/(len(address_map)-1)) # remove eth0 from the count
-        print("Number of servers per interface: " + str(subset))
-        # create the port and iterate over address map
-        
-        for ifacegroup in address_map: 
-            if ifacegroup != "eth0":
-                for ip in address_map.get(ifacegroup):
-                    for r in range(subset):
-                        if r > 9:
-                            port = '51'+str(r)
-                        else:
-                            port = '510'+str(r)
-                        # print("[IPERF] Connect to " + ip[0] + " on " + ip[1] + " :" + port)
-                        command[2] = ip[0]
-                        command[4] = port
-                        filename="out-"+ip[1]+"-"+ip[0]+"-"+port
-                        clients.append(try_connect_popen(command, filename))
-        print("[IPERF] Clients launched from ", os.getenv("POD_NAME"))
-    [c.wait() for c in clients]
+        if len(address_map)>1:
+            if client_replicas_per_iface < (len(address_map)-1):
+                client_replicas_per_iface = (len(address_map)-1)
+            subset = math.ceil(client_replicas_per_iface/(len(address_map)-1)) # remove eth0 from the count
+            if subset > maxports:
+                print("[IPERF] Mismatch in number of servers. Wants " + str(subset) + ", have " + str(maxports) + " server on each nic. Downsizing number of clients to match the existing servers.")
+            else:
+                maxports = subset
+            print("[IPERF] Number of servers per interface: " + str(subset))
+            # create the port and iterate over address map
+            for ifacegroup in address_map: 
+                if ifacegroup != "eth0":
+                    for entry in address_map.get(ifacegroup):
+                        for ip in entry[0]:
+                            for r in range(maxports):
+                                if r > 9:
+                                    port = '51'+str(r)
+                                else:
+                                    port = '510'+str(r)
+                                # print("[IPERF] Connect to " + ip + " on " + entry[1] + " :" + port)
+                                command[2] = ip
+                                command[4] = port
+                                filename="out-"+entry[1]+"-"+ip+"-"+port
+                                clients.append(try_connect_popen(command, filename))
+            print("[IPERF] Clients launched from ", os.getenv("POD_NAME"))
+        else:
+            print("[IPERF] Cannot launch clients -- secondary nics not found ", os.getenv("POD_NAME"), ". ABORT")
+            return
+        [c.wait() for c in clients]
     command = ['bash','./network/iperf3-debrief.sh']
     result = subprocess.run(command, text=True, capture_output=True)
     if result.stderr:
@@ -167,4 +220,4 @@ def try_connect(command, ip):
         print(output)
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())

@@ -28,8 +28,6 @@ parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will 
 parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"nic\", \"remapped\" or \"iperf\". Default is \"all\". Can be a comma separated list.')
 parser.add_argument('--batchSize', default='0', type=str, help='Number of nodes to check in parallel. Default is set to the number of the worker nodes.')
 parser.add_argument('--wkload', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--wkload=namespace:label-key=label-value\". Default is set to None.')
-parser.add_argument('--replicas', type=str, default='1', help='Number of iperf3 servers to be started')
-
 parser.add_argument('--dcgmR', type=str, default='1', help='Run a diagnostic in dcgmi. Run a diagnostic. (Note: higher numbered tests include all beneath.)\n\t1 - Quick (System Validation ~ seconds)\n\t2 - Medium (Extended System Validation ~ 2 minutes)\n\t3 - Long (System HW Diagnostics ~ 15 minutes)\n\t4 - Extended (Longer-running System HW Diagnostics)')
 
 args = vars(parser.parse_args())
@@ -39,7 +37,6 @@ node = args['nodes'].replace(' ', '').split(',') # list of nodes
 checks = args['check'].replace(' ', '').split(',') # list of checks
 batch_size = int(args['batchSize'])
 wkload = args['wkload']
-replicas = args['replicas']
 if wkload != 'None':
     wkload = args['wkload'].split(':') # ex: --wkload=namespace:label (ex: label='job-name:my-job' or 'app=my-deployment')
     # changing default node value from 'all' to an empty list if there is a workload.
@@ -49,7 +46,6 @@ if wkload != 'None':
 
 # debug: runtime
 start_time = time.time()
-
 
 # find workload addresses
 def find_wkload():
@@ -76,6 +72,8 @@ def find_wkload():
 
 # get addresses in desired endpointslice (autopilot-healthchecks) based on which node(s) the user chooses
 def get_addresses():
+    global server_address
+    server_address = ''
     try:
         endpoints = v1.list_namespaced_endpoints(namespace=namespace)
     except ApiException as e:
@@ -85,36 +83,21 @@ def get_addresses():
             # print("EndpointSlice: " + str(endpointslice.metadata.name)) 
             addresses = endpointslice.subsets[0].addresses
             if 'all' in node:
+                # server_address = [addresses[0], addresses[len(addresses)-1]]
                 return addresses
             else:
                 address_list = []
                 for address in addresses:
                     if address.node_name in node:
                         address_list.append(address)
+                    else:
+                        server_address = address
                 if len(address_list) > 0:
                     return address_list
+                # if server_address == '': # when all nodes are being tested / there's only one node
+                #     print('Iperf test cannot be completed')
                 raise Exception('Error: Issue with --node and/or --wkload parameter. Node choices include: \"all\", a specific node name, or a comma separated list of node names. Check that workload is spelled correctly and exists in the cluster.')
     raise Exception('Error: Issue with --service and/or --namespace parameter(s). Check that they are correct.')
-
-
-# runs healthchecks at each endpoint (there is one endpoint in each node)
-def run_tests(address):
-    daemon_node = str(address.node_name)
-    pid = os.getpid()
-    urls = create_url(address, daemon_node)
-    output = '\nAutopilot Endpoint: {ip}\nNode: {daemon_node}\nurl(s): {urls}'.format(ip=address.ip, daemon_node=daemon_node, urls='\n        '.join(urls))
-    response = []
-    for url in urls:
-        request = get_requests(url)
-        if request == '':
-            continue
-        response.append(get_requests(url))
-    node_status_list = get_node_status(response)
-    output += '\nResponse:\n{response}\nNode Status: {status}\n-------------------------------------\n'.format(response='~~\n'.join(response), status=', '.join(node_status_list))
-    # output += "\n-------------------------------------\n" # separator
-    return output, pid, daemon_node, node_status_list
-
-
 
 # create url for test
 def create_url(address, daemon_node):
@@ -125,23 +108,6 @@ def create_url(address, daemon_node):
             return urls
     urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + args['check'] + '&r='+args['dcgmR'])
     return urls
-
-
-# rest api calls for healthcheck
-def get_requests(url):
-    page = ''
-    retries = 0
-    while page == '':
-        try:
-            page = requests.get(url)
-            break
-        except:
-            print('Connection refused by server..')
-            print('Sleeping for 5 seconds')
-            time.sleep(5)
-            continue
-    return page.text
-
 
 # check and print status of each node
 def get_node_status(responses):
