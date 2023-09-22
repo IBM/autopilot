@@ -26,13 +26,13 @@ func SystemStatusHandler() http.Handler {
 		if jobName == "" {
 			jobName = "None"
 		}
-		iperfclients := r.URL.Query().Get("clients")
+		iperfclients := r.URL.Query().Get("clientsperiface")
 		if iperfclients == "" {
 			iperfclients = "1"
 		}
-		replicas := r.URL.Query().Get("replicas")
-		if replicas == "" {
-			replicas = "1"
+		iperfservers := r.URL.Query().Get("serverspernode")
+		if iperfservers == "" {
+			iperfservers = "1"
 		}
 		dcgmR := r.URL.Query().Get("r")
 		if dcgmR == "" {
@@ -49,7 +49,7 @@ func SystemStatusHandler() http.Handler {
 			if plane == "" {
 				plane = "data"
 			}
-			err, out := runIperf(hosts, jobName, plane, iperfclients)
+			err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers)
 			if err != nil {
 				klog.Error(err.Error())
 			}
@@ -67,7 +67,7 @@ func SystemStatusHandler() http.Handler {
 			} else {
 				klog.Info("Asking to run on remote node(s) ", hosts)
 				w.Write([]byte("Asking to run on remote node(s) " + hosts + "\n\n"))
-				err, out := runAllTestsRemote(hosts, checks, batch, jobName, dcgmR, replicas)
+				err, out := runAllTestsRemote(hosts, checks, batch, jobName, dcgmR)
 				if err != nil {
 					klog.Error(err.Error())
 				}
@@ -138,15 +138,37 @@ func IperfHandler() http.Handler {
 		if iface == "" {
 			iface = "eth0"
 		}
-		iperfclients := r.URL.Query().Get("clients")
+		iperfclients := r.URL.Query().Get("clientsperiface")
 		if iperfclients == "" {
 			iperfclients = "1"
+		}
+		iperfservers := r.URL.Query().Get("serverspernode")
+		if iperfservers == "" {
+			iperfservers = "1"
 		}
 		plane := r.URL.Query().Get("plane")
 		if plane == "" {
 			plane = "data"
 		}
-		err, out := runIperf(hosts, jobName, plane, iperfclients)
+		err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers)
+		if err != nil {
+			klog.Error(err.Error())
+		}
+		if out != nil {
+			w.Write(*out)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
+
+func StartIperfServersHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		replicas := r.URL.Query().Get("replicas")
+		if replicas == "" {
+			replicas = "1"
+		}
+		err, out := startIperfServers(replicas)
+
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -171,7 +193,6 @@ func DCGMHandler() http.Handler {
 		if out != nil {
 			w.Write(*out)
 		}
-
 	}
 	return http.HandlerFunc(fn)
 }

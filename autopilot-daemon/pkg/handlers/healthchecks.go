@@ -91,10 +91,10 @@ func runAllTestsLocal(checks string, dcgmR string) (error, *[]byte) {
 	return nil, &out
 }
 
-func runAllTestsRemote(host string, check string, batch string, jobName string, dcgmR string, replicas string) (error, *[]byte) {
-	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --service=autopilot-healthchecks", " --namespace="+os.Getenv("NAMESPACE"), " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName, " --dcgmR="+dcgmR, "--replicas="+replicas)
+func runAllTestsRemote(host string, check string, batch string, jobName string, dcgmR string) (error, *[]byte) {
+	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --service=autopilot-healthchecks", " --namespace="+os.Getenv("NAMESPACE"), " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName, " --dcgmR="+dcgmR)
 
-	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--nodes="+host, "--check="+check, "--batchSize="+batch, "--wkload="+jobName, "--dcgmR="+dcgmR, "--replicas", replicas).Output()
+	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--nodes="+host, "--check="+check, "--batchSize="+batch, "--wkload="+jobName, "--dcgmR="+dcgmR).Output()
 	if err != nil {
 		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
@@ -214,11 +214,11 @@ func runPCIeBw() (error, *[]byte) {
 	return nil, &out
 }
 
-func runIperf(nodelist string, jobName string, plane string, clients string) (error, *[]byte) {
-	out, err := exec.Command("python3", "./network/iperf3-entrypoint.py", "--nodes", nodelist, "--job", jobName, "--plane", plane, "--clients", clients).CombinedOutput()
-	klog.Info("Running command: ", "python3", "./network/iperf3-entrypoint.py", " --nodes ", nodelist, " --job ", jobName, " --plane ", plane, " --clients ", clients)
+func runIperf(nodelist string, jobName string, plane string, clients string, servers string) (error, *[]byte) {
+	out, err := exec.Command("python3", "./network/iperf3-entrypoint.py", "--nodes", nodelist, "--job", jobName, "--plane", plane, "--clients", clients, "--servers", servers).CombinedOutput()
+	klog.Info("Running command: ./network/iperf3-entrypoint.py ", " --nodes ", nodelist, " --job ", jobName, " --plane ", plane, " --clients ", clients, " --servers ", servers)
 	if err != nil {
-		klog.Info("Out:", string(out))
+		klog.Info(string(out))
 		klog.Error(err.Error())
 		return err, nil
 	} else {
@@ -234,6 +234,19 @@ func runIperf(nodelist string, jobName string, plane string, clients string) (er
 		// 	return nil, &out
 		// }
 		klog.Info("iperf3 result:\n", string(out))
+	}
+	return nil, &out
+}
+
+func startIperfServers(replicas string) (error, *[]byte) {
+	out, err := exec.Command("python3", "./network/start-iperf-servers.py", "--replicas", replicas).CombinedOutput()
+	klog.Info("Running command: ./network/start-iperf-servers.py --replicas ", replicas)
+	if err != nil {
+		klog.Info(string(out))
+		klog.Error(err.Error())
+		return err, nil
+	} else {
+		klog.Info("iperf3 servers started.")
 	}
 	return nil, &out
 }
