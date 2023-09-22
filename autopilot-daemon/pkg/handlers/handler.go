@@ -20,27 +20,27 @@ func SystemStatusHandler() http.Handler {
 		}
 		batch := r.URL.Query().Get("batch")
 		if batch == "" {
-			batch = "1"
+			batch = "0"
 		}
 		jobName := r.URL.Query().Get("job")
 		if jobName == "" {
 			jobName = "None"
 		}
-		replicas := r.URL.Query().Get("replicas")
-		if replicas == "" {
-			replicas = "1"
+		iperfclients := r.URL.Query().Get("clientsperiface")
+		if iperfclients == "" {
+			iperfclients = "1"
+		}
+		iperfservers := r.URL.Query().Get("serverspernode")
+		if iperfservers == "" {
+			iperfservers = "1"
+		}
+		dcgmR := r.URL.Query().Get("r")
+		if dcgmR == "" {
+			dcgmR = "1"
 		}
 
-		klog.Info("Batch size ", batch)
-		// if hosts == "all" {
-		// 	klog.Info("Checking status on all nodes")
-		// 	w.Write([]byte("Checking status on all nodes\n\n"))
-		// 	err, out := runAllTestsRemote("all", checks, batch, jobName)
-		// 	if err != nil {
-		// 		klog.Error(err.Error())
-		// 	}
-		// 	w.Write(*out)
-		// } else {
+		// klog.Info("Batch size ", batch)
+
 		if strings.Contains(checks, "iperf") {
 			klog.Info("Running iperf3 on hosts ", hosts, " or job ", jobName)
 			w.Write([]byte("Running iperf3 on hosts " + hosts + " or job " + jobName + "\n\n"))
@@ -49,7 +49,7 @@ func SystemStatusHandler() http.Handler {
 			if plane == "" {
 				plane = "data"
 			}
-			err, out := runIperf(hosts, jobName, plane, replicas)
+			err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers)
 			if err != nil {
 				klog.Error(err.Error())
 			}
@@ -59,7 +59,7 @@ func SystemStatusHandler() http.Handler {
 			if hosts == os.Getenv("NODE_NAME") {
 				klog.Info("Checking system status of host " + hosts + " (localhost)")
 				w.Write([]byte("Checking system status of host " + hosts + " (localhost) \n\n"))
-				err, out := runAllTestsLocal(checks)
+				err, out := runAllTestsLocal(checks, dcgmR)
 				if err != nil {
 					klog.Error(err.Error())
 				}
@@ -67,7 +67,7 @@ func SystemStatusHandler() http.Handler {
 			} else {
 				klog.Info("Asking to run on remote node(s) ", hosts)
 				w.Write([]byte("Asking to run on remote node(s) " + hosts + "\n\n"))
-				err, out := runAllTestsRemote(hosts, checks, batch, jobName, replicas)
+				err, out := runAllTestsRemote(hosts, checks, batch, jobName, dcgmR)
 				if err != nil {
 					klog.Error(err.Error())
 				}
@@ -138,15 +138,19 @@ func IperfHandler() http.Handler {
 		if iface == "" {
 			iface = "eth0"
 		}
-		replicas := r.URL.Query().Get("replicas")
-		if replicas == "" {
-			replicas = "1"
+		iperfclients := r.URL.Query().Get("clientsperiface")
+		if iperfclients == "" {
+			iperfclients = "1"
+		}
+		iperfservers := r.URL.Query().Get("serverspernode")
+		if iperfservers == "" {
+			iperfservers = "1"
 		}
 		plane := r.URL.Query().Get("plane")
 		if plane == "" {
 			plane = "data"
 		}
-		err, out := runIperf(hosts, jobName, plane, replicas)
+		err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers)
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -159,12 +163,30 @@ func IperfHandler() http.Handler {
 
 func StartIperfServersHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Starting Iperf3 Servers"))
 		replicas := r.URL.Query().Get("replicas")
 		if replicas == "" {
 			replicas = "1"
 		}
 		err, out := startIperfServers(replicas)
+
+		if err != nil {
+			klog.Error(err.Error())
+		}
+		if out != nil {
+			w.Write(*out)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
+
+func DCGMHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("DCGM test"))
+		dcgmR := r.URL.Query().Get("r")
+		if dcgmR == "" {
+			dcgmR = "1"
+		}
+		err, out := runDCGM(dcgmR)
 		if err != nil {
 			klog.Error(err.Error())
 		}

@@ -21,6 +21,15 @@ spec:
       serviceAccountName: autopilot
       imagePullSecrets:
       - name: {{ .Values.pullSecrets.name }}
+      initContainers:
+        - args:
+          - until [ -f /usr/bin/nvidia-smi ]; do echo waiting for nvidia device plug-in to be setup; sleep 5 && exit -1; done
+          command:
+          - sh
+          - -c
+          image: {{ .Values.initContainer.image }}
+          imagePullPolicy: Always
+          name: device-plugin-validation
       containers:
         - image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
           command:
@@ -28,7 +37,6 @@ spec:
            - -c
            - |
              iperf3 -s -p 6310 -D 
-            #  python3 network/start-iperf-servers.py --replicas 64
              /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }} 
           imagePullPolicy: {{ .Values.image.pullPolicy }} 
           name: autopilot
@@ -45,6 +53,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: "POD_NAME"
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           ports:
             - containerPort: {{ .Values.service.port }}
               name: healthcheck
