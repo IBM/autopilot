@@ -173,6 +173,7 @@ def run_clients(address_map, maxports):
             for ifacegroup in address_map: 
                 if ifacegroup != "eth0":
                     for entry in address_map.get(ifacegroup):
+                        netid = 0
                         for ip in entry[0]:
                             for r in range(maxports):
                                 if r > 9:
@@ -182,8 +183,9 @@ def run_clients(address_map, maxports):
                                 # print("[IPERF] Connect to " + ip + " on " + entry[1] + " :" + port)
                                 command[2] = ip
                                 command[4] = port
-                                filename="out-"+entry[1]+"-"+ip+"-"+port
+                                filename="out:"+entry[1]+":"+ip+"_net-"+str(netid)
                                 clients.append(try_connect_popen(command, filename))
+                            netid+=1
             print("[IPERF] Clients launched from ", os.getenv("POD_NAME"))
         else:
             print("[IPERF] Cannot launch clients -- secondary nics not found ", os.getenv("POD_NAME"), ". ABORT")
@@ -200,7 +202,7 @@ def run_clients(address_map, maxports):
         
 
 def try_connect_popen(command, filename):
-    log_file = open(filename, "wt")
+    log_file = open(filename, "at")
     p = subprocess.Popen(command, start_new_session=True, text=True, stdout=log_file, stderr=log_file)
     return p
 
