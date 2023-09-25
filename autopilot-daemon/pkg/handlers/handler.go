@@ -49,7 +49,11 @@ func SystemStatusHandler() http.Handler {
 			if plane == "" {
 				plane = "data"
 			}
-			err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers)
+			sourceNode := r.URL.Query().Get("source")
+			if sourceNode == "" {
+				sourceNode = "None"
+			}
+			err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode)
 			if err != nil {
 				klog.Error(err.Error())
 			}
@@ -134,9 +138,9 @@ func IperfHandler() http.Handler {
 		if jobName == "" {
 			jobName = "None"
 		}
-		iface := r.URL.Query().Get("iface")
-		if iface == "" {
-			iface = "eth0"
+		sourceNode := r.URL.Query().Get("source")
+		if sourceNode == "" {
+			sourceNode = "None"
 		}
 		iperfclients := r.URL.Query().Get("clientsperiface")
 		if iperfclients == "" {
@@ -150,7 +154,7 @@ func IperfHandler() http.Handler {
 		if plane == "" {
 			plane = "data"
 		}
-		err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers)
+		err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode)
 		if err != nil {
 			klog.Error(err.Error())
 		}

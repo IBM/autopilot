@@ -1,5 +1,6 @@
 #!/bin/bash
-for FILE in out-*; do 
+echo Unreachable servers, if any:
+for FILE in out*; do 
     unable=`grep unable ${FILE}`
     if [ ! -z "$unable" ]
     then
@@ -7,12 +8,14 @@ for FILE in out-*; do
     fi
 done
 
-echo Total bw Gbit/s
-cat out-* | grep receiver| awk '{print $7}'| awk '{s+=$1}END{print s}'
+echo Aggregate bw Gbit/s
+cat out* | grep receiver| awk '{print $7}'| awk '{s+=$1}END{print s}'
 
-echo Unreachable servers printed above, if any
-count=$(cat out-* | grep unable | wc -l)
+echo Aggregate bw per interface
+for i in $(ls out*); do echo $(echo ${i}| cut -d ':' -f 2) "${i##*_}" $(cat ${i} | grep receiver| awk '{print $7}'| awk '{s+=$1}END{print s}');done 
+
+count=$(cat out* | grep unable | wc -l)
 echo Unreachable servers count: $count
 
 echo Cleanup...
-rm out-*
+rm out*
