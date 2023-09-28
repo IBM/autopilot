@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dcgm-alert
+  namespace: openshift-monitoring
+  labels:
+    dcgm: autopilot
+spec:
+  groups:
+  - name: dcgm
+    rules:
+    - alert: DCGMAlert
+      annotations:
+        description: GPUs on node {{ $labels.node }} have DCGM failures
+        summary: GPUs have DCGM failures
+      expr: sum (autopilot_health_checks{health="dcgm"}==1) by (node)
+      for: 1m
+      labels:
+        severity: critical
+        dcgm: autopilot

@@ -20,7 +20,7 @@ receivers:
     slack_configs:
       - channel: openshift-monitoring
         api_url: >-
-          https://hooks.slack.com/services/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
+          https://hooks.slack.com/services/...
         username: Autopilot
         icon_emoji: ':warning:'
         text: A node has been cordoned - check node health
@@ -29,7 +29,7 @@ receivers:
     slack_configs:
       - channel: openshift-monitoring
         api_url: >-
-          https://hooks.slack.com/services/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
+          https://hooks.slack.com/services/...
         username: Autopilot
         icon_emoji: ':warning:'
         text: |-
@@ -42,7 +42,7 @@ receivers:
     slack_configs:
       - channel: openshift-monitoring
         api_url: >-
-          https://hooks.slack.com/services/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
+          https://hooks.slack.com/services/...
         username: Autopilot
         icon_url: ':warning:'
         text: >-
@@ -51,7 +51,7 @@ receivers:
     slack_configs:
       - channel: openshift-monitoring
         api_url: >-
-          https://hooks.slack.com/services/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
+          https://hooks.slack.com/services/...
         username: Autopilot
         icon_emoji: ':warning:'
         text: |-
