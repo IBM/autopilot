@@ -8,6 +8,7 @@ import math
 import asyncio
 import aiohttp
 import netifaces
+import requests
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--nodes', type=str, default='all', help='Node(s) running autopilot that will be reached out by iperf3. Can be a comma separated list. Default is \"all\". Servers are reached out sequentially')
@@ -20,26 +21,44 @@ parser.add_argument('--clients', type=str, default='1', help='Number of iperf3 c
 
 parser.add_argument('--servers', type=str, default='1', help='Number of iperf3 servers per node. If #replicas is less than the number of secondary nics, it will create #replicas server per nic. Otherwise, it will spread #replicas servers as evenly as possible on all interfaces')
 
+parser.add_argument('--source', type=str, default='None', help='Number of iperf3 clients to connect to a remote server')
+
 args = vars(parser.parse_args())
 
 async def main():
     nodelist = args['nodes'].replace(' ', '').split(',') # list of nodes
-    plane = args['plane']
     job = args['job']
     allnodes = False
     nodemap = {}
 
     config.load_incluster_config()
+    if args['source'] != "None" and args['source'] != os.getenv("NODE_NAME"):
+        print("[IPERF] Asking to run from a different node. Invoking the test on target node", os.getenv("NODE_NAME"))
+        v1 = client.CoreV1Api()
+        try:
+            endpoints = v1.list_namespaced_endpoints(namespace=os.getenv("NAMESPACE"),field_selector="metadata.name=autopilot-healthchecks")
+        except ApiException as e:
+            print("Exception when calling CoreV1Api->list_namespaced_endpoints: %s\n" % e)
+        for endpointslice in endpoints.items:
+            addresses = endpointslice.subsets[0].addresses
+            for address in addresses:
+                if address.node_name == args['source']:
+                    url = 'http://' + address.ip + ':3333/status?check=iperf&host='+args['nodes']+'&job='+args['job']+'&plane='+args['plane']+'&clientsperiface='+args['clients']+'&serverspernode='+args['servers']
+                    print("[IPERF] Forward request to", address.ip, "url", url)
+                    page = ''
+                    while page == '':
+                        page = requests.get(url)
+                    print(page.text)
+                    exit()
 
     if 'all' in nodelist and job == 'None':
         allnodes = True
     else:
         nodemap = get_job_nodes(nodelist)
         
-
-    print("[IPERF] All? ", allnodes)
-    print("[IPERF] Nodes: ", nodemap.keys())
-    print("[IPERF] Data/mgmt plane:", plane)
+    # print("[IPERF] All? ", allnodes)
+    # print("[IPERF] Nodes: ", nodemap.keys())
+    # print("[IPERF] Data/mgmt plane:", plane)
     print("[IPERF] Pod running clients: ", os.getenv("POD_NAME"))
     
     address_map= get_addresses(allnodes, nodemap)
@@ -117,15 +136,14 @@ async def start_servers(allnodes, nodemap):
     v1 = client.CoreV1Api()
     address_list = []
     try:
-        endpoints = v1.list_namespaced_endpoints(namespace=os.getenv("NAMESPACE"))
+        endpoints = v1.list_namespaced_endpoints(namespace=os.getenv("NAMESPACE"),field_selector="metadata.name=autopilot-healthchecks")
     except ApiException as e:
         print("Exception when calling CoreV1Api->list_namespaced_endpoints: %s\n" % e)
     for endpointslice in endpoints.items:
-        if endpointslice.metadata.name == "autopilot-healthchecks":
-            addresses = endpointslice.subsets[0].addresses
-            for address in addresses:
-                if address.node_name != os.getenv("NODE_NAME") and (allnodes or (address.node_name in nodemap.keys())):
-                    address_list.append(address.ip)
+        addresses = endpointslice.subsets[0].addresses
+        for address in addresses:
+            if address.node_name != os.getenv("NODE_NAME") and (allnodes or (address.node_name in nodemap.keys())):
+                address_list.append(address.ip)
     res = await asyncio.gather(*(makeconnection(addr) for addr in address_list))
     return res
 
@@ -157,8 +175,6 @@ def run_clients(address_map, maxports):
             command[2] = ip[0]
             filename="out-"+ip[0]+"-"+command[4]
             clients.append(try_connect_popen(command, filename))
-            # try_connect(command, ip)
-    # else if stresstest, run_clients(addresses)
     else:
         if len(address_map)>1:
             if client_replicas_per_iface < (len(address_map)-1):
@@ -168,11 +184,12 @@ def run_clients(address_map, maxports):
                 print("[IPERF] Mismatch in number of servers. Wants " + str(subset) + ", have " + str(maxports) + " server on each nic. Downsizing number of clients to match the existing servers.")
             else:
                 maxports = subset
-            print("[IPERF] Number of servers per interface: " + str(subset))
+            print("[IPERF] Number of clients per interface: " + str(subset))
             # create the port and iterate over address map
             for ifacegroup in address_map: 
                 if ifacegroup != "eth0":
                     for entry in address_map.get(ifacegroup):
+                        netid = 0
                         for ip in entry[0]:
                             for r in range(maxports):
                                 if r > 9:
@@ -182,8 +199,9 @@ def run_clients(address_map, maxports):
                                 # print("[IPERF] Connect to " + ip + " on " + entry[1] + " :" + port)
                                 command[2] = ip
                                 command[4] = port
-                                filename="out-"+entry[1]+"-"+ip+"-"+port
+                                filename="out:"+entry[1]+":"+ip+"_net-"+str(netid)
                                 clients.append(try_connect_popen(command, filename))
+                            netid+=1
             print("[IPERF] Clients launched from ", os.getenv("POD_NAME"))
         else:
             print("[IPERF] Cannot launch clients -- secondary nics not found ", os.getenv("POD_NAME"), ". ABORT")
@@ -200,24 +218,9 @@ def run_clients(address_map, maxports):
         
 
 def try_connect_popen(command, filename):
-    log_file = open(filename, "wt")
+    log_file = open(filename, "at")
     p = subprocess.Popen(command, start_new_session=True, text=True, stdout=log_file, stderr=log_file)
     return p
-
-
-def try_connect(command, ip):
-    timeout_s = 60
-    try:
-        result = subprocess.run(command, text=True, capture_output=True, timeout=timeout_s)
-    except subprocess.TimeoutExpired:
-        print("[IPERF] server " + ip[0] + " on " + ip[1] + " unreachable - timeout error. FAIL")
-        return
-    if result.stderr:
-        print(result.stderr)
-        print("[IPERF] server " + ip[0] + " on " + ip[1] + " exited with error: " + result.stderr + " FAIL")
-    else:
-        output = result.stdout
-        print(output)
 
 if __name__ == '__main__':
     asyncio.run(main())
