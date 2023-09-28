@@ -214,7 +214,7 @@ def run_clients(address_map, maxports):
         print("[IPERF] output parse exited with error: " + result.stderr + " FAIL")
     else:
         output = result.stdout
-        print(output)
+        print(output.strip())
         
 
 def try_connect_popen(command, filename):

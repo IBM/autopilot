@@ -206,7 +206,6 @@ func runPCIeBw() (error, *[]byte) {
 				return err, nil
 			} else {
 				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", bw)
-				// utils.Hchecks.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Observe(bw)
 				utils.HchecksGauge.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(bw)
 			}
 		}
@@ -223,17 +222,26 @@ func runIperf(nodelist string, jobName string, plane string, clients string, ser
 		return err, nil
 	} else {
 		klog.Info("iperf3 test completed:")
-		// out, err := exec.Command("bash", "./network/iperf3-debrief.sh").CombinedOutput()
-		// if err != nil {
-		// 	klog.Info("Out:", string(out))
-		// 	klog.Error(err.Error())
-		// 	return err, nil
-		// }
-		// if strings.Contains(string(out[:]), "FAIL") {
-		// 	klog.Info("iperf3 test test failed.", string(out[:]))
-		// 	return nil, &out
-		// }
 		klog.Info("iperf3 result:\n", string(out))
+		if (clients == "1" && servers == "1") {
+			output := strings.TrimSuffix(string(out[:]), "\n")
+			line := strings.Split(output, "\n")
+			for i := len(line) - 3; i > 0; i-- {
+				if strings.Contains(line[i], "Aggregate") {
+					break
+				}
+				entries := strings.Split(line[i], " ")
+				bw, err := strconv.ParseFloat(entries[2], 64)
+				if err != nil {
+					klog.Error(err.Error())
+					return err, nil
+				} else {
+					klog.Info("Observation: ", entries[0], " ", entries[1], " ", bw)
+					utils.HchecksGauge.WithLabelValues("iperf", entries[0], entries[1]).Set(bw)
+				}
+			}
+		}
+		
 	}
 	return nil, &out
 }
