@@ -48,7 +48,7 @@ async def main():
                     page = ''
                     while page == '':
                         page = requests.get(url)
-                    print(page.text)
+                    print((page.text).strip())
                     exit()
 
     if 'all' in nodelist and job == 'None':

@@ -226,22 +226,25 @@ func runIperf(nodelist string, jobName string, plane string, clients string, ser
 		if (clients == "1" && servers == "1") {
 			output := strings.TrimSuffix(string(out[:]), "\n")
 			line := strings.Split(output, "\n")
+			var bw float64
 			for i := len(line) - 3; i > 0; i-- {
 				if strings.Contains(line[i], "Aggregate") {
 					break
 				}
 				entries := strings.Split(line[i], " ")
-				bw, err := strconv.ParseFloat(entries[2], 64)
+				if(len(entries)==2) {
+					bw = 0
+				} else {
+					bw, err = strconv.ParseFloat(entries[2], 64)
+				}
 				if err != nil {
 					klog.Error(err.Error())
 					return err, nil
-				} else {
-					klog.Info("Observation: ", entries[0], " ", entries[1], " ", bw)
-					utils.HchecksGauge.WithLabelValues("iperf", entries[0], entries[1]).Set(bw)
 				}
+				klog.Info("Observation: ", entries[0], " ", entries[1], " ", bw)
+				utils.HchecksGauge.WithLabelValues("iperf", entries[0], entries[1]).Set(bw)
 			}
 		}
-		
 	}
 	return nil, &out
 }
