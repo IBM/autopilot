@@ -17,4 +17,5 @@ spec:
       for: 1m
       labels:
         severity: critical
-        dcgm: autopilot
+        ping: autopilot
+        
