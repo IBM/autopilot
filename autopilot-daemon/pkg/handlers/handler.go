@@ -38,9 +38,6 @@ func SystemStatusHandler() http.Handler {
 		if dcgmR == "" {
 			dcgmR = "1"
 		}
-
-		// klog.Info("Batch size ", batch)
-
 		if strings.Contains(checks, "iperf") {
 			klog.Info("Running iperf3 on hosts ", hosts, " or job ", jobName)
 			w.Write([]byte("Running iperf3 on hosts " + hosts + " or job " + jobName + "\n\n"))
@@ -54,6 +51,16 @@ func SystemStatusHandler() http.Handler {
 				sourceNode = "None"
 			}
 			err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode)
+			if err != nil {
+				klog.Error(err.Error())
+			}
+			w.Write(*out)
+		}
+		if strings.Contains(checks, "ping") {
+			klog.Info("Running ping on hosts ", hosts, " or job ", jobName)
+			w.Write([]byte("Running ping on hosts " + hosts + " or job " + jobName + "\n"))
+			checks = strings.Trim(checks, "ping")
+			err, out := runPing(hosts, jobName)
 			if err != nil {
 				klog.Error(err.Error())
 			}
@@ -117,6 +124,28 @@ func NetReachHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Requesting secondary nics reachability test\n"))
 		err, out := netReachability()
+		if err != nil {
+			klog.Error(err.Error())
+		}
+		if out != nil {
+			w.Write(*out)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
+
+func PingHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Ping test"))
+		hosts := r.URL.Query().Get("host")
+		if hosts == "" {
+			hosts = "all"
+		}
+		jobName := r.URL.Query().Get("job")
+		if jobName == "" {
+			jobName = "None"
+		}
+		err, out := runPing(hosts, jobName)
 		if err != nil {
 			klog.Error(err.Error())
 		}

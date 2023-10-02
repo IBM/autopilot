@@ -1,119 +1,109 @@
-from kubernetes import client, config, watch
+from kubernetes import client, config
 from kubernetes.client.rest import ApiException
-from pprint import pprint
+from pythonping import ping
 import os
-from subprocess import Popen
 import json
-from datetime import datetime
-import time
+import argparse
+import asyncio
+import subprocess
 
-def main():
-   
+parser = argparse.ArgumentParser()
+parser.add_argument('--job', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--job=namespace:label-key=label-value\". Default is set to None.')
+parser.add_argument('--nodes', type=str, default='all', help='Node(s) running autopilot that will be reached out by iperf3. Can be a comma separated list. Default is \"all\". Servers are reached out sequentially')
+args = vars(parser.parse_args())
+
+job = args['job']
+nodemap = {}
+namespace_self = os.getenv("NAMESPACE")
+nodename_self  = os.getenv("NODE_NAME")
+
+async def main():
+    nodelist = args['nodes'].replace(' ', '').split(',') # list of nodes
+    job = args['job']
+    nodemap = {}
+
+    if job != 'None':
+        nodemap = get_job_nodes(nodelist)
+    
+
     config.load_incluster_config()
+    kubeapi = client.CoreV1Api()
 
+    nodes={}
+    ifaces=set()
+    print("[PING] Pod running ping: ", os.getenv("POD_NAME"))
+    # keep reloading pod information *until* they all have network status
+    print("[PING] Starting: collecting node list")
+    try:
+        autopilot_pods = kubeapi.list_namespaced_pod(namespace=namespace_self, label_selector="app=autopilot")
+    except ApiException as e:
+        print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
+        exit(1)
+
+    for pod in autopilot_pods.items:
+        if not 'k8s.v1.cni.cncf.io/network-status' in pod.metadata.annotations:
+            print("[PING] Pod", pod.metadata.name, "misses network annotation. ABORT.")
+
+    # run through all pods and create a map of all interfaces
+    print("Creating a list of interfaces and IPs")
+    for pod in autopilot_pods.items:
+        if pod.spec.node_name != nodename_self and (job=='None' or (pod.spec.node_name in nodemap.keys())):
+            node={}
+            nodes[pod.spec.node_name] = node
+            entrylist = json.loads(pod.metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
+            for entry in entrylist:
+                iface=entry['interface']
+                ifaces = ifaces | {iface}
+                node[iface] = {
+                    'ips': entry['ips'], 
+                    'pod': pod.metadata.name
+                }
+
+    # run ping tests to each pod on each interface
+    print("[PING] Running ping tests for every interface")
+    conn_dict = dict()
+    for nodename in nodes.keys():
+        conn_dict[nodename] = {}
+        for iface in ifaces:
+            for ip in nodes[nodename][iface]['ips']:
+            # ip=nodes[nodename][iface]['ips']
+            # r = ping(ip, timeout=1, count=1, verbose=False)
+            # conn_dict[nodename][iface] = r.success()
+                command = ['ping',ip,'-t','1','-c','1']
+                result = subprocess.run(command, text=True, capture_output=True)
+                if result.stderr:
+                    print(result.stderr)
+                    print("[IPERF] output parse exited with error: " + result.stderr + " FAIL")
+                else:
+                    output = result.stdout
+                    print("Node", nodename, ip, "1") if "Unreachable" in output else print("Node", nodename, ip, "0")                
+            
+def get_job_nodes(nodelist):
     v1 = client.CoreV1Api()
-    count = int(os.getenv("COUNT"))
-    w = watch.Watch()
-    namespace = os.getenv("NAMESPACE")
-    selector = os.getenv("SELECTOR")
-    ifaces = []
-    for event in w.stream(v1.list_namespaced_pod, namespace=namespace,label_selector=selector, timeout_seconds=20):
-        entry = json.loads(event['object'].metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
-        podName = event['object'].metadata.name
-        ips = entry[1]['ips']
-        print("\nPod " + podName + " has these IPs:")
-        print(ips)
-        for i in ips:
-            ifaces.append(i)
-        count -= 1
-        if not count:
-            w.stop()
-    print("\nFinished with Pod list stream.")
-    print(ifaces)
-
-    print("\nReaching out all hosts..")
-    unreachableHosts = []
-    for host in ifaces:
-        maxRetries = 3
-        numTry = 0
-        unreachable = True
-        while (numTry < maxRetries):
-            proc = Popen(['ping', host,'-c','1',"-W","2"])
-            proc.wait()
-            # If response is not 0, ping was unsuccessful 
-            if proc.poll():
-                time.sleep(3)
-            else:
-                unreachable = False
-                break
-            numTry+=1
-        if unreachable: 
-            print(str(host) + " is unreachable")
-            unreachableHosts.append(host)
-        
-    print("\nTest completed")
-
-    if len(unreachableHosts) != 0:
-        print("The following hosts were unreachable ", unreachableHosts)
-        api = client.CustomObjectsApi()
- 
-
-# # apiVersion: my.domain/v1alpha1
-# # kind: HealthCheckReport
-# # metadata:
-# #   labels:
-# #     name: healthcheckreport
-# #   name: healthcheckreport-sample
-# # spec:
-# #   node: "worker-0"
-# #   report: <the output>
-
-
-        nodename = os.getenv("NODE_NAME")
-        namespace = os.getenv("NAMESPACE")
-        # api_instance = client.CoreV1Api()
-
-        # We probably don't need to deschedule the pod at all costs.. Also, a less aggressive option should be considered instead of cordining the node, in this case, as it should be an issue with the secondary nic operator.
-
-        # body = {
-        #     "metadata": {
-        #         "labels": {
-        #             "deschedule": ""}
-        #     }
-        # }
-
-        # try:
-        #     api_instance.patch_namespaced_pod(namespace=namespace, name=podname, body=body)
-        # except ApiException as e:
-        #     print("Exception when patching pod:\n", e)
-
-        result = "Cannot reach the following addresses: " 
-        for h in unreachableHosts:
-            result = result + str(h) + "\n"
-
-        dt = datetime.now()
-        hcr_manifest = {
-            'apiVersion': 'my.domain/v1alpha1',
-            'kind': 'HealthCheckReport',
-            'metadata': {
-                'name': "netcheck-"+nodename+"-"+dt.strftime("%d-%m-%Y-%H.%M.%S.%f")
-            },
-            'spec': {
-                'node': nodename,
-                'report': result,
-                'issuer': "net-reach"
-            }
-        }
-        group = "my.domain"
-        v = "v1alpha1"
-        plural = "healthcheckreports"
+    # get nodes from job is specified
+    nodemap = {}
+    node_name_self = os.getenv("NODE_NAME")
+    job = args['job']
+    if job != 'None':
+        job = args['job'].split(':') 
+        job_ns = job[0] # ex: "default"
+        job_label = job[1] # ex: "job-name=my-job" or "app=my-app"
         try:
-            api.create_namespaced_custom_object(group, v, namespace, plural, hcr_manifest)
+            job_pods = v1.list_namespaced_pod(namespace=job_ns, label_selector=job_label)
         except ApiException as e:
-            print("Exception when calling create health check report:\n", e)
+            print("[PING] Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
 
-        raise TypeError("Failing init container.")
-        # all_reports = api.list_namespaced_custom_object(group, v, namespace, plural)
+        print('[PING] Workload:', ': '.join(job))
+        for pod in job_pods.items:
+            if pod.spec.node_name != node_name_self:
+                nodemap[pod.spec.node_name] = True
+    # get nodes from input list, if any
+    if 'all' not in nodelist:
+        for i in nodelist:
+            if i != node_name_self:
+                nodemap[i] = True
+    return nodemap
+
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())

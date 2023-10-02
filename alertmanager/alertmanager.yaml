@@ -15,64 +15,83 @@ inhibit_rules:
       - severity = warning
     target_matchers:
       - severity = info
+  - equal:
+      - namespace
+    source_matchers:
+      - alertname = InfoInhibitor
+    target_matchers:
+      - severity = info
 receivers:
-  - name: cordoned-slack-alert
-    slack_configs:
-      - channel: openshift-monitoring
-        api_url: >-
-          https://hooks.slack.com/services/...
-        username: Autopilot
-        icon_emoji: ':warning:'
-        text: A node has been cordoned - check node health
-        send_resolved: true
-  - name: low-pcie-bw-alert
-    slack_configs:
-      - channel: openshift-monitoring
-        api_url: >-
-          https://hooks.slack.com/services/...
-        username: Autopilot
-        icon_emoji: ':warning:'
-        text: |-
-          summary: {{ .CommonAnnotations.summary }}
-          description: {{ .CommonAnnotations.description }}
-        send_resolved: true
   - name: Default
   - name: Watchdog
-  - name: nic-alert
+  - name: Critical
+  - name: 'null'
+  - name: autopilot-pcie
     slack_configs:
-      - channel: openshift-monitoring
+      - channel: autopilot-pokmvp-alerts
         api_url: >-
           https://hooks.slack.com/services/...
+        text: 'summary: {{ .CommonAnnotations.summary }}'
+        send_resolved: true
         username: Autopilot
-        icon_url: ':warning:'
-        text: >-
-          A node is not reachable - check NIC status {{ .CommonAnnotations.summary }}
-  - name: remapped-alert
+  - name: autopilot-ping
     slack_configs:
-      - channel: openshift-monitoring
+      - channel: autopilot-pokmvp-alerts
         api_url: >-
           https://hooks.slack.com/services/...
+        text: 'summary: {{ .CommonAnnotations.summary }}'
+        send_resolved: true
         username: Autopilot
-        icon_emoji: ':warning:'
-        text: |-
-          summary: {{ .CommonAnnotations.summary }}
-          description: {{ .CommonAnnotations.description }}
+  - name: autopilot-remapped
+    slack_configs:
+      - channel: autopilot-pokmvp-alerts
+        api_url: >-
+          https://hooks.slack.com/services/...
+        text: 'summary: {{ .CommonAnnotations.summary }}'
+        send_resolved: true
+        username: Autopilot
+  - name: autopilot-dcgm
+    slack_configs:
+      - channel: autopilot-pokmvp-alerts
+        api_url: >-
+          https://hooks.slack.com/services/...
+        text: 'summary: {{ .CommonAnnotations.summary }}'
+        send_resolved: true
+        username: Autopilot
+  - name: autopilot-cordon
+    slack_configs:
+      - channel: autopilot-pokmvp-alerts
+        api_url: >-
+          https://hooks.slack.com/services/...
+        text: 'summary: {{ .CommonAnnotations.summary }}'
+        send_resolved: true
+        username: Autopilot
 route:
+  group_by:
+    - namespace
+  group_interval: 5m
+  group_wait: 30s
   receiver: Default
   repeat_interval: 12h
   routes:
-    - receiver: low-pcie-bw-alert
-      matchers:
-        - pcie = autopilot
-    - receiver: cordoned-slack-alert
-      matchers:
-        - cordon = autopilot
-    - receiver: Watchdog
-      matchers:
+    - matchers:
         - alertname = Watchdog
-    - receiver: nic-alert
+      receiver: Watchdog
+    - matchers:
+        - alertname = InfoInhibitor
+      receiver: 'null'
+    - receiver: autopilot-pcie
       match:
-        nic: autopilot
-    - receiver: remapped-alert
+        pcie: autopilot
+    - receiver: autopilot-remapped
       match:
         remapped: autopilot
+    - receiver: autopilot-dcgm
+      match:
+        dcgm: autopilot
+    - receiver: autopilot-ping
+      match:
+        ping: autopilot
+    - receiver: autopilot-cordon
+      match:
+        cordon: autopilot
