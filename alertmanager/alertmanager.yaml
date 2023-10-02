@@ -28,7 +28,7 @@ receivers:
   - name: 'null'
   - name: autopilot-pcie
     slack_configs:
-      - channel: autopilot-pokmvp-alerts
+      - channel: slack-channel-name
         api_url: >-
           https://hooks.slack.com/services/...
         text: 'summary: {{ .CommonAnnotations.summary }}'
@@ -36,7 +36,7 @@ receivers:
         username: Autopilot
   - name: autopilot-ping
     slack_configs:
-      - channel: autopilot-pokmvp-alerts
+      - channel: slack-channel-name
         api_url: >-
           https://hooks.slack.com/services/...
         text: 'summary: {{ .CommonAnnotations.summary }}'
@@ -44,7 +44,7 @@ receivers:
         username: Autopilot
   - name: autopilot-remapped
     slack_configs:
-      - channel: autopilot-pokmvp-alerts
+      - channel: slack-channel-name
         api_url: >-
           https://hooks.slack.com/services/...
         text: 'summary: {{ .CommonAnnotations.summary }}'
@@ -52,7 +52,7 @@ receivers:
         username: Autopilot
   - name: autopilot-dcgm
     slack_configs:
-      - channel: autopilot-pokmvp-alerts
+      - channel: slack-channel-name
         api_url: >-
           https://hooks.slack.com/services/...
         text: 'summary: {{ .CommonAnnotations.summary }}'
@@ -60,7 +60,7 @@ receivers:
         username: Autopilot
   - name: autopilot-cordon
     slack_configs:
-      - channel: autopilot-pokmvp-alerts
+      - channel: slack-channel-name
         api_url: >-
           https://hooks.slack.com/services/...
         text: 'summary: {{ .CommonAnnotations.summary }}'
