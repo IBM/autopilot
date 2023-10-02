@@ -64,6 +64,7 @@ func main() {
 	hcMux.Handle("/iperf", handlers.IperfHandler())
 	hcMux.Handle("/iperfservers", handlers.StartIperfServersHandler())
 	hcMux.Handle("/dcgm", handlers.DCGMHandler())
+	hcMux.Handle("/ping", handlers.PingHandler())
 
 	go func() {
 		klog.Info("Serving Health Checks on port :", *port)

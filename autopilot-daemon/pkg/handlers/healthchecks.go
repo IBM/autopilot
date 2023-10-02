@@ -13,7 +13,7 @@ import (
 
 func TimerRun() {
 	klog.Info("Running a periodic check")
-	runAllTestsLocal("pciebw,remapped,dcgm", "1")
+	runAllTestsLocal("pciebw,remapped,dcgm,ping", "1")
 }
 
 func runAllTestsLocal(checks string, dcgmR string) (error, *[]byte) {
@@ -23,6 +23,15 @@ func runAllTestsLocal(checks string, dcgmR string) (error, *[]byte) {
 	start := time.Now()
 	for _, check := range strings.Split(checks, ",") {
 		switch check {
+		case "ping":
+			klog.Info("Running health check: ", check)
+			err, tmp = runPing("all","None")
+			if err != nil {
+				klog.Error(err.Error())
+				return err, tmp
+			}
+			out = append(out, *tmp...)
+
 		case "dcgm":
 			klog.Info("Running health check: ", check)
 			err, tmp = runDCGM(dcgmR)
@@ -73,13 +82,12 @@ func runAllTestsLocal(checks string, dcgmR string) (error, *[]byte) {
 				return err, tmp
 			}
 			out = append(out, *tmp...)
-
-			// err, tmp = netReachability()
-			// if err != nil {
-			// 	klog.Error(err.Error())
-			// 	return err, nil
-			// }
-			// out = append(out, *tmp...)
+			err, tmp = runDCGM(dcgmR)
+			if err != nil {
+				klog.Error(err.Error())
+				return err, tmp
+			}
+			out = append(out, *tmp...)
 		default:
 			notsupported := "check not supported: " + check
 			out = append(out, []byte(notsupported)...)
@@ -208,6 +216,37 @@ func runPCIeBw() (error, *[]byte) {
 				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", bw)
 				utils.HchecksGauge.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(bw)
 			}
+		}
+	}
+	return nil, &out
+}
+
+func runPing(nodelist string, jobName string)(error, *[]byte){
+	out, err := exec.Command("python3", "./network/ping-entrypoint.py", "--nodes", nodelist, "--job", jobName).CombinedOutput()
+	// klog.Info("Running command: ./network/ping-entrypoint.py ", " --nodes ", nodelist, " --job ", jobName)
+	if err != nil {
+		klog.Info(string(out))
+		klog.Error(err.Error())
+		return err, nil
+	} else {
+		output := strings.TrimSuffix(string(out[:]), "\n")
+		lines := strings.Split(output, "\n")
+		success := true
+		for _, line := range lines {
+			if strings.HasPrefix(line, "Node") {
+				entry := strings.Split(line, " ")
+				if entry[1]== "1"{
+					utils.HchecksGauge.WithLabelValues("ping", entry[1], entry[2]).Set(1)
+					klog.Info("Observation: ", entry[1], " ", entry[2], " ", entry[3], " Unreachable")
+					success = false
+				} 
+				// else {
+				// 	utils.HchecksGauge.WithLabelValues("ping", entry[1], entry[2]).Set(0)
+				// }
+			}
+		}
+		if success {
+			klog.Info("Observation: all nodes are reachable")
 		}
 	}
 	return nil, &out
