@@ -9,30 +9,29 @@ import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--job', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--job=namespace:label-key=label-value\". Default is set to None.')
-parser.add_argument('--nodes', type=str, default='all', help='Node(s) running autopilot that will be reached out by iperf3. Can be a comma separated list. Default is \"all\". Servers are reached out sequentially')
+parser.add_argument('--nodes', type=str, default='all', help='Node(s) running autopilot that will be reached out by ping. Can be a comma separated list. Default is \"all\". Servers are reached out sequentially')
 args = vars(parser.parse_args())
 
 job = args['job']
 nodemap = {}
 namespace_self = os.getenv("NAMESPACE")
 nodename_self  = os.getenv("NODE_NAME")
+config.load_incluster_config()
+kubeapi = client.CoreV1Api()
 
 async def main():
     nodelist = args['nodes'].replace(' ', '').split(',') # list of nodes
     job = args['job']
     nodemap = {}
-
-    if job != 'None':
+    allnodes = False
+    if 'all' in nodelist and job == 'None':
+        allnodes = True
+    else:
         nodemap = get_job_nodes(nodelist)
-    
-
-    config.load_incluster_config()
-    kubeapi = client.CoreV1Api()
 
     nodes={}
     ifaces=set()
     print("[PING] Pod running ping: ", os.getenv("POD_NAME"))
-    # keep reloading pod information *until* they all have network status
     print("[PING] Starting: collecting node list")
     try:
         autopilot_pods = kubeapi.list_namespaced_pod(namespace=namespace_self, label_selector="app=autopilot")
@@ -47,7 +46,7 @@ async def main():
     # run through all pods and create a map of all interfaces
     print("Creating a list of interfaces and IPs")
     for pod in autopilot_pods.items:
-        if pod.spec.node_name != nodename_self and (job=='None' or (pod.spec.node_name in nodemap.keys())):
+        if pod.spec.node_name != nodename_self and (allnodes or (pod.spec.node_name in nodemap.keys())):
             node={}
             nodes[pod.spec.node_name] = node
             entrylist = json.loads(pod.metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
@@ -87,7 +86,7 @@ def get_job_nodes(nodelist):
     if job != 'None':
         job = args['job'].split(':') 
         job_ns = job[0] # ex: "default"
-        job_label = job[1] # ex: "job-name=my-job" or "app=my-app"
+        job_label = job[1] # ex: "job-name=my-job" or "app=my-app"]
         try:
             job_pods = v1.list_namespaced_pod(namespace=job_ns, label_selector=job_label)
         except ApiException as e:
