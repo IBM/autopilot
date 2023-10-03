@@ -16,11 +16,14 @@ def main():
         output = os.popen('./gpubw/gpuLocalBandwidthTest.sh -t ' + args.threshold)
         result = output.read()
 
-        if "FAIL" not in result:
-            print("[[ PCIEBW ]] SUCCESS")
-        else:
+        if "FAIL" in result:
             print("[[ PCIEBW ]] FAIL")
-        
+        elif "ABORT" in result:
+            print("[[ PCIEBW ]] ABORT")
+            print(result)
+            exit()
+
+        print("SUCCESS")
         print("Host ", os.getenv("NODE_NAME"))
         fhand = open('./gpubw/gpuBandwidthTest.log')
         bws = ""
