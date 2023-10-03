@@ -58,6 +58,7 @@ COPY gpu-bw/briefings.sh /home/autopilot/gpubw/briefings.sh
 # Secondary NIC tests files
 COPY network/metrics-entrypoint.py /home/autopilot/network/metrics-entrypoint.py
 COPY network/iperf3-entrypoint.py /home/autopilot/network/iperf3-entrypoint.py
+COPY network/ping-entrypoint.py /home/autopilot/network/ping-entrypoint.py
 COPY network/start-iperf-servers.py /home/autopilot/network/start-iperf-servers.py
 COPY network/iperf3-debrief.sh /home/autopilot/network/iperf3-debrief.sh
 

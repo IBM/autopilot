@@ -1,6 +1,5 @@
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
-from pythonping import ping
 import os
 import json
 import argparse
