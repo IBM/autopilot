@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  autopilot-daemon:
+  - apiVersion: v2
+    appVersion: v1.3.2
+    created: "2023-10-03T13:35:38.723146-04:00"
+    description: Autopilot installation Helm Chart
+    digest: 0df2232995a3804ca1c0353f0075ab488106834f6f21e484901a3ae276f793ae
+    name: autopilot-daemon
+    type: application
+    urls:
+    - https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/chart-files/autopilot-daemon-1.0.0.tgz
+    version: 1.0.0
+generated: "2023-10-03T13:35:38.722417-04:00"
