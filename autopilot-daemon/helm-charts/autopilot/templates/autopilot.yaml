@@ -27,7 +27,7 @@ spec:
           command:
           - sh
           - -c
-          image: {{ .Values.initContainer.image }}
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
           imagePullPolicy: Always
           name: device-plugin-validation
       containers:
