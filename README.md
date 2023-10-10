@@ -160,8 +160,6 @@ Processes (randomly ordered) and the nodes they ran (process:[nodes]):
 runtime: 31.845192193984985 sec
 ```
 
-```
-
 #### Query from a pod
 In the example below, we create a utility `nginx` pod from which we can run `curl` commands against the `autopilot-healthchecks` service.
 We run the PCIe bandwidth test on all nodes, and we can see it is failing on one node.
@@ -178,17 +176,23 @@ Then run an health check:
 kubectl exec jobs/curl-pod -- curl "http://autopilot-healthchecks.autopilot.svc:3333/status?check=pciebw"
 ```
 
-
 #### Helm Chart
 
 Users and admins can create a single pod that can run the desired health checks.
 Please refer to the [dedicated page](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/utility-tools/system-check) for more details and customization.
 
 ## Install autopilot (Admin)
-**Installation**: Both projects can be installed through Helm and need admin privileges to create objects like services, serviceaccounts, namespaces and RBAC.
+**Installation**: Autopilot can be installed through Helm and need admin privileges to create objects like services, serviceaccounts, namespaces and relevant RBAC.
 
-A basic system requirement is that an image pull secret to `icr.io` or `us.icr.io` is available. An image for each component is pushed in each region. 
+### Requirements
+- A basic system requirement is that an image pull secret to IBM Cloud Container Registry `us.icr.io` is available.
+- `ssh` keys must be available on the system, to be able to clone this repository. If not, you can contact Claudia Misale [c.misale@ibm.com] to have your Deploy Key added to this repository.
+- Need to install `helm-git` plugin on all hosts 
+```bash
+helm plugin install https://github.com/aslafy-z/helm-git --version 0.15.1
+```
 
+### Helm Chart customization
 
 Helm charts values can be found [here](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/autopilot-daemon/helm-charts/autopilot).
 
@@ -200,7 +204,10 @@ namespace:
   name: autopilot
 ```
 
-- To pull images from `cil15` registry, the admin needs to add `imagePullSecret` data in one of the helm charts. Both webhook and controller have such entry. It is possible to avoid the creation of the pull secret by setting the value `create` to false in the imagePullSecret block, and by setting the name of the one that will be used (i.e., `all-icr-io`).
+If you do not want to create a new namespace and use an existing one, then set `create: false` and specify the namespace name.
+Notice that you **must** label the namespace `oc label ns <namespace> openshift.io/cluster-monitoring=true` to have Prometheus scrape metrics from Autopilot.
+
+- To pull the image from `cil15` registry, the admin needs to add `imagePullSecret` data in one of the helm charts. It is possible to avoid the creation of the pull secret by setting the value `create` to false in the imagePullSecret block, and by setting the name of the one that will be used (i.e., `all-icr-io`).
 
 ```yaml
 pullSecrets:
@@ -209,24 +216,59 @@ pullSecrets:
   imagePullSecretData: 
 ```
 
-Autopilot needs to run on GPU nodes, but it does not request any GPU in the resource requirements.
-To avoid landing on non-GPU nodes (e.g., worker nodes dedicated to infrastructure components), we recommend to have the following in the Helm chart values. It is enabled by default.
+- Autopilot runs tests periodically. The default is set to every hour, but it can be customized be changing the following
 
 ```yaml
-nodeSelector:
-  nvidia.com/gpu.present: 'true'
-```  
- 
-In summary, the recommended commands are as follows. Notice that Helm will install the chart in the current namespace (check with `oc project`):
-
-```bash
-git clone https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot.git
+repeat: <hours>
 ```
 
-Update values for the Helm chart, then:
+- PCIe bandwidth critical value is defaulted to 4GB/s. It can be customized by changing the following
+
+```yaml
+PCIeBW: <val>
+```
+
+- If secondary nics are available by, for instance, Multus or Multi-Nic-Operator, those can be enabled in autopilot by setting the following
+
+```yaml
+annotations:
+  k8s.v1.cni.cncf.io/networks: <network-config-name>
+```
+
+All these values can be saved in a `config.yaml` file, which can be passed to `helm`.
+An example (the image repository and tag are set by default to the ones in this example):
+
+```yaml
+namespace:
+  create: true
+  name: autopilot
+
+image:
+  repository: us.icr.io/cil15-shared-registry/autopilot/autopilot
+  tag: v1.3.2
+
+
+pullSecrets:
+  create: true
+  name: autopilot-pull-secret
+  imagePullSecretData: <encoded-key>
+
+annotations:
+  k8s.v1.cni.cncf.io/networks: multi-nic-config
+```
+
+### Install
+
+1) Add autopilot repo, here is where it checks for ssh keys
 
 ```bash
-helm install autopilot autopilot-daemon/helm-charts/autopilot 
+helm repo add autopilot  git+ssh://git@github.ibm.com/hybrid-cloud-infrastructure-research/autopilot@autopilot-daemon/helm-charts/autopilot?ref=gh-pages
+```
+
+2) Install autopilot (idempotent command). The config file is for customizing the helm values. Namespace is where the helm chart will live, not the namespace where Autopilot runs
+
+```bash
+helm upgrade autopilot autopilot/autopilot-daemon --install --namespace=<default> -f config.yml
 ```
 
 The controllers should show up in the selected namespace
@@ -234,6 +276,7 @@ The controllers should show up in the selected namespace
 ```bash
 oc get po -n autopilot
 ```
+
 ```bash
 NAME                               READY   STATUS    RESTARTS   AGE
 autopilot-daemon-autopilot-g7j6h   1/1     Running   0          70m
