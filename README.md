@@ -10,11 +10,10 @@ We provide a collection of tools (named Autopilot) to steer and address these in
 Autopilot runs as a DaemonSet on all worker nodes that have GPUs. All results from health checks are exposed through Prometheus and a Grafana dashboard is available in the `utility-tools` folder.
 
 
+![image](https://media.github.ibm.com/user/96687/files/0d466863-a19e-459d-a492-e2275377d4b9)
 
-![autopilot-pod](https://media.github.ibm.com/user/96687/files/3f513944-2b23-4ce1-92ce-5cbbf5a40f10)
 
-
-The toolkit will provide pre-flight, in-flight and post-flight checks. In more details (list subject to changes):
+The toolkit currently provides health checks for pre-flight and post-flight phases, while in-flight checks will be enabled in the future. In more details (list subject to change):
 
 - pre-flight checks
 
@@ -28,77 +27,97 @@ The toolkit will provide pre-flight, in-flight and post-flight checks. In more d
 
   - issue alert to end users
 
-- post-flight learning
+- post-flight checks
 
-  - improve anomaly detection based on infrastructure validation data
+  -  validate infrastructure once the job ends
 
-### Health Checks
-The current status of the Autopilot includes:
+![image](https://media.github.ibm.com/user/96687/files/4a7c81ba-857a-43d4-bc82-0784ef81b270)
 
-- The PCIe NVIDIA bandwidth test to check host-to-device connection on each node
-- A check on GPUs remapped rows
-- A check on the multi-nic CNI availability
-<!-- - A HealthCheckReport Custom Resource Definition (CRD) and a controller that takes action based on the bandwidth test result -->
+## Health Checks
+The current status of Autopilot includes:
 
-<!-- The Mutating Webhook and HealthCheckReport Operator are linked in this repository as submodules.
-Please follow the links to get more information about each sub-project.
+- The PCIe NVidia bandwidth test to check host-to-device connection on each node
+- GPUs remapped rows evaluation
+- NVidia DCGM (Data Center GPU Manager) diagnostics
+- Ping to evaluate hosts reachability 
+- Iperf3 to evaluate network bandwidth and hosts connectivity 
 
-The image below shows the current execution flow of a pre-flight check 
+All test except `iperf3` are executed periodically every hour by default. The time frame can be customized during installation.
 
-![execflow-autopilot](https://media.github.ibm.com/user/96687/files/8fa9e470-7007-4d5a-af7a-fb66d7da5429)
+### Query the Autopilot Service
 
-At a high level, the flow is the following (omitting the MCAD part for simplification):
+Autopilot provides a `/status` handler that can be queried to get the entire system status, meaning that it will run all the tests on all the nodes. Autopilot is reachable by service name `autopilot-healthchecks.autopilot.svc` in-cluster only, meaning it can be reached from a pod running in the cluster, or through port forwarding (see below).
 
-- A job is created by the user, containing the label `autopilot:""`.
-- The mutating webhook will check if the pods are also requesting GPUs. If so, it will inject the init container with the PCIe bandwidth test.
-- At execution time, each pod will first run the health check container. If the test will succeed, then the pod will keep running normally.
-<!-- - If the test fails, the init container will create a HealthCheckReport CRD indicating the result of the test and the node involved. Also, the pod will label itself with `deschedule` so that it can be removed from the faulty node. -->
+Health check names are `pciebw`, `dcgm`, `remapped`, `ping`, `iperf`.
+
+For example, using port forwarding to localhost and `curl`
+
+```bash
+curl "http://localhost:3333/status?check=pciebw&host=nodename1"
+```
+
+All tests can be tailored by a combination of:
+
+- `host=<hostname1,hostname2,...>`, to run all tests on a specific node or on a comma separated list of nodes.
+- `check=<healthcheck1,healtcheck2,...>`, to run a single test (`pciebw`, `dcgm`, `remapped`, `ping`, `iperf` or `all`) or a list of comma separated tests. When no parameters are specified, `pciebw`, `dcgm`, `remapped`, `ping` tests are run.
+- `batch=<#hosts>`, how many hosts to check at a single moment. Requests to the batch are run in parallel asynchronously. Batching is done to avoid running too many requests in parallel when the number of worker nodes increases. Defaults to all nodes.
+
+Some health checks provide further customization.
+
+#### DCGM
+This test runs `dcgmi diag`, and we support only `r` as (parameter)[https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/dcgm-diagnostics.html#command-line-options]. 
+
+The default is `1`, but can customize it by `/status?check=dcgm&r=2`.
+
+#### IPERF 
+This tests runs from a client node, which
+
+- Issues several RPCs to start remote `iperf3` servers
+- Launches a certain number of clients towards each of those servers
+
+Both can be customized.
+- `serverspernode` can be used to create a certain number of servers on each remote node.
+  - if the value is lower than the number of secondary network interfaces, it will create the minimum number of `1` server per interface (excludes `eth0` and `lo`). Each server runs on a separate port.
+  - otherwise, it will divide that value by the number of network interfaces existing in the cluster.
+- `clientsperiface` can be used to launch a desired number of clients against a single remote server.
+
+Another possible customization is to decide which network plane to test. By default is `data` plane, that is, what runs on secondary interfaces.
+
+To test connection on `eth0`, that is, the management plane (`mgmt`), can use the `plane` parameter as follows `/status?check=iperf&plane=mgmt`.
+It will create only one client and there is a single server per node.
+
 
 
 ## Run Health Checks
 
 Health checks can be executed through a utility tool provided with a Helm chart, or by querying the Autopilot service.
 Results can be visualized by either checking the logs of the utility tool/service query, or by looking at the data in a Grafana dashboard.
-The relevant `json` file can be found [here](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/blob/main/utility-tools/Autopilot-Grafana-Dashboard.json)
+A very basic `json` for a Grafana Dasnhboard can be found [here](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/blob/main/utility-tools/Autopilot-Grafana-Dashboard.json).
 
-### Helm Chart
+#### Query with Port-Forward
 
-Users and admins can create a single pod that can run the desired health checks.
-Please refer to the [dedicated page](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/utility-tools/system-check) for more details and customization.
-
-### Query the Autopilot Service
-
-Autopilot provides a `/status` handler that can be queried to get the entire system status, meaning that it will run all the tests on all the nodes. Autopilot is reachable by service name `autopilot-healthchecks.autopilot.svc` in-cluster only, meaning it can be reached from a pod running in the cluster.
-
-Tests can be tailored by a combination of:
-
-- `host=<hostname1,hostname2,...>`, to run all tests on a specific node or on a comma separated list of nodes.
-- `check=<healthcheck1,healtcheck2,...>`, to run a single test (`pciebw`, `nic` and `remapped`, or `all`) or a list of comma separated tests. When no parameters are specified, all tests are run.
-- `batch=<#hosts>`, how many hosts to check at a single moment. Requests to the batch are run in parallel. Batching is done to avoid running too many requests in parallel when the number of worker nodes increases. Default to 1.
-
-#### Query from a pod
-In the example below, we create a utility `nginx` pod from which we can run `curl` commands against the `autopilot-healthchecks` service.
-We run the PCIe bandwidth test on all nodes, and we can see it is failing on one node.
-
-Create a dummy nginx pod:
+Alternatively, it is possible to port-forward the autopilot healthchecks Service and `curl` from localhost. 
 
 ```bash
-kubectl create job curl-pod --image=nginx -- sleep inf
+kubectl port-forward service/autopilot-healthchecks 3333:3333 -n autopilot
 ```
 
-Then run an health check:
-
+Will print the following output:
 ```bash
-kubectl exec jobs/curl-pod -- curl "http://autopilot-healthchecks.autopilot.svc:3333/status?check=pciebw"
+Forwarding from 127.0.0.1:3333 -> 3333
+Forwarding from [::1]:3333 -> 3333
 ```
 
-The output of the command above, will look like this:
+Then on another terminal, run the desired curl command. In this example, we target one node and check the pcie bandwidth.
+In this scenario, we have a value lower than `4GB/s`, which results in an alert. This error will be exported to the OpenShift web console and on Slack, if that is enabled by admins.
+
 ```bash
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:--  0:00:32 --:--:--     0Checking status on all nodes
+curl "http://127.0.0.1:3333/status?check=pciebw"
+```
 
-
+The output of the command above, will be similar to the following (edited to save space):
+```bash
+Checking status on all nodes
 Autopilot Endpoint: 10.128.6.187
 Node: dev-ppv5g-var-lib-containers-f4v6q
 url(s): http://10.128.6.187:3333/status?host=dev-ppv5g-var-lib-containers-f4v6q&check=pciebw
@@ -141,44 +160,29 @@ Processes (randomly ordered) and the nodes they ran (process:[nodes]):
 runtime: 31.845192193984985 sec
 ```
 
-#### Query with Port-Forward
-
-Alternatively, it is possible to port-forward the autopilot healthchecks Service and `curl` from localhost. 
-
-```bash
-kubectl port-forward service/autopilot-healthchecks 3333:3333 -n autopilot
 ```
 
-Will print the following output:
-```bash
-Forwarding from 127.0.0.1:3333 -> 3333
-Forwarding from [::1]:3333 -> 3333
-```
+#### Query from a pod
+In the example below, we create a utility `nginx` pod from which we can run `curl` commands against the `autopilot-healthchecks` service.
+We run the PCIe bandwidth test on all nodes, and we can see it is failing on one node.
 
-Then on another terminal, run the desired curl command. In this example, we target one node and check if the secondary nics are reachable.
+Create a dummy nginx pod:
 
 ```bash
-curl "http://127.0.0.1:3333/status?host=dev-ppv5g-worker-3-with-secondary-h5vb6&check=nic"
+kubectl create job curl-pod --image=nginx -- sleep inf
 ```
 
-Will print an output like the following:
+Then run an health check:
 
 ```bash
-Checking system status of host dev-ppv5g-worker-3-with-secondary-h5vb6 (localhost) 
-
-[[ NETWORK ]] Evaluating reachability of Multi-NIC CNI.
-===== Health Status of dev-ppv5g-worker-3-with-secondary-h5vb6 =====
-Allocatable network devices: 2/2
-Connectable network devices: 2/2
-Host is OK (all functional and connected).
-Reported by multi-nic-cni-health-checker-5cfb794496-57vtw at 2023-06-09T01:43:15Z
-
-[[ NETWORK ]] SUCCESS
-
-dev-ppv5g-worker-3-with-secondary-h5vb6 1 1
-
+kubectl exec jobs/curl-pod -- curl "http://autopilot-healthchecks.autopilot.svc:3333/status?check=pciebw"
 ```
 
+
+#### Helm Chart
+
+Users and admins can create a single pod that can run the desired health checks.
+Please refer to the [dedicated page](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/utility-tools/system-check) for more details and customization.
 
 ## Install autopilot (Admin)
 **Installation**: Both projects can be installed through Helm and need admin privileges to create objects like services, serviceaccounts, namespaces and RBAC.
