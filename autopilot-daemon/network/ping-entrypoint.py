@@ -73,6 +73,7 @@ async def main():
     # run ping tests to each pod on each interface
     print("[PING] Running ping tests for every interface")
     conn_dict = dict()
+    clients = []
     for nodename in nodes.keys():
         conn_dict[nodename] = {}
         for iface in ifaces:
@@ -81,13 +82,20 @@ async def main():
             # r = ping(ip, timeout=1, count=1, verbose=False)
             # conn_dict[nodename][iface] = r.success()
                 command = ['ping',ip,'-t','1','-c','1']
-                result = subprocess.run(command, text=True, capture_output=True)
-                if result.stderr:
-                    print(result.stderr)
-                    print("[PING] output parse exited with error: " + result.stderr + " FAIL")
-                else:
-                    output = result.stdout
-                    print("Node", nodename, ip, "1") if "Unreachable" in output else print("Node", nodename, ip, "0")                
+                clients.append((subprocess.Popen(command, start_new_session=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE), nodename, ip))
+    # [c[0].wait() for c in clients]
+    for c in clients:
+        try:
+            c[0].wait(30)
+        except:
+            print("Timeout while waiting for", c[2], "on node", c[1])
+            continue
+    for c in clients:
+        stdout, stderr = c[0].communicate()
+        if stderr:
+            print("[PING] output parse exited with error: " + stderr + " FAIL")
+        else:
+            print("Node", c[1], c[2], "1") if "Unreachable" in stdout or "0 received" in stdout else print("Node", c[1], c[2], "0")
             
 def get_job_nodes(nodelist):
     v1 = client.CoreV1Api()
