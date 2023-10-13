@@ -13,7 +13,7 @@ import (
 
 func TimerRun() {
 	klog.Info("Running a periodic check")
-	runAllTestsLocal("pciebw,remapped,dcgm,ping", "1")
+	runAllTestsLocal("pciebw,remapped,dcgm,ping,gpupower", "1")
 }
 
 func runAllTestsLocal(checks string, dcgmR string) (error, *[]byte) {
@@ -25,7 +25,7 @@ func runAllTestsLocal(checks string, dcgmR string) (error, *[]byte) {
 		switch check {
 		case "ping":
 			klog.Info("Running health check: ", check)
-			err, tmp = runPing("all","None")
+			err, tmp = runPing("all", "None")
 			if err != nil {
 				klog.Error(err.Error())
 				return err, tmp
@@ -59,8 +59,14 @@ func runAllTestsLocal(checks string, dcgmR string) (error, *[]byte) {
 			}
 			out = append(out, *tmp...)
 
-		case "nic":
-			klog.Info("Running health check: ", check, " -- DISABLED")
+		case "gpupower":
+			klog.Info("Running health check: ", check)
+			err, tmp = runGPUPower()
+			if err != nil {
+				klog.Error(err.Error())
+				return err, nil
+			}
+			out = append(out, *tmp...)
 
 		case "all":
 			klog.Info("Run all health checks\n")
@@ -82,7 +88,13 @@ func runAllTestsLocal(checks string, dcgmR string) (error, *[]byte) {
 				return err, tmp
 			}
 			out = append(out, *tmp...)
-			err, tmp = runDCGM(dcgmR)
+			err, tmp = runPing("all", "None")
+			if err != nil {
+				klog.Error(err.Error())
+				return err, tmp
+			}
+			out = append(out, *tmp...)
+			err, tmp = runGPUPower()
 			if err != nil {
 				klog.Error(err.Error())
 				return err, tmp
@@ -112,6 +124,7 @@ func runAllTestsRemote(host string, check string, batch string, jobName string, 
 	return nil, &out
 }
 
+// deprecated
 func netReachability() (error, *[]byte) {
 	out, err := exec.Command("python3", "./network/metrics-entrypoint.py").CombinedOutput()
 	if err != nil {
@@ -221,7 +234,7 @@ func runPCIeBw() (error, *[]byte) {
 	return nil, &out
 }
 
-func runPing(nodelist string, jobName string)(error, *[]byte){
+func runPing(nodelist string, jobName string) (error, *[]byte) {
 	out, err := exec.Command("python3", "./network/ping-entrypoint.py", "--nodes", nodelist, "--job", jobName).CombinedOutput()
 	// klog.Info("Running command: ./network/ping-entrypoint.py ", " --nodes ", nodelist, " --job ", jobName)
 	if err != nil {
@@ -231,23 +244,23 @@ func runPing(nodelist string, jobName string)(error, *[]byte){
 	} else {
 		output := strings.TrimSuffix(string(out[:]), "\n")
 		lines := strings.Split(output, "\n")
-		success := true
+		unreach_nodes := make(map[string][]string)
+		reach_nodes := make(map[string][]string)
 		for _, line := range lines {
 			if strings.HasPrefix(line, "Node") {
 				entry := strings.Split(line, " ")
-				if entry[1]== "1"{
+				if entry[1] == "1" {
 					utils.HchecksGauge.WithLabelValues("ping", entry[1], entry[2]).Set(1)
 					klog.Info("Observation: ", entry[1], " ", entry[2], " ", entry[3], " Unreachable")
-					success = false
-				} 
-				// else {
-				// 	utils.HchecksGauge.WithLabelValues("ping", entry[1], entry[2]).Set(0)
-				// }
+					unreach_nodes[entry[1]] = append(unreach_nodes[entry[1]], entry[2])
+				} else {
+					// 	utils.HchecksGauge.WithLabelValues("ping", entry[1], entry[2]).Set(0)
+					reach_nodes[entry[1]] = append(reach_nodes[entry[1]], entry[2])
+				}
 			}
 		}
-		if success {
-			klog.Info("Observation: all nodes are reachable")
-		}
+		klog.Info("Unreachable ", unreach_nodes)
+		klog.Info("Observation: ", len(reach_nodes)-len(unreach_nodes), "/", len(reach_nodes)+len(unreach_nodes), " remote nodes are reachable")
 	}
 	return nil, &out
 }
@@ -262,7 +275,7 @@ func runIperf(nodelist string, jobName string, plane string, clients string, ser
 	} else {
 		klog.Info("iperf3 test completed:")
 		klog.Info("iperf3 result:\n", string(out))
-		if (clients == "1" && servers == "1") {
+		if clients == "1" && servers == "1" {
 			output := strings.TrimSuffix(string(out[:]), "\n")
 			line := strings.Split(output, "\n")
 			var bw float64
@@ -271,7 +284,7 @@ func runIperf(nodelist string, jobName string, plane string, clients string, ser
 					break
 				}
 				entries := strings.Split(line[i], " ")
-				if(len(entries)==2) {
+				if len(entries) == 2 {
 					bw = 0
 				} else {
 					bw, err = strconv.ParseFloat(entries[2], 64)
@@ -331,6 +344,42 @@ func runDCGM(dcgmR string) (error, *[]byte) {
 			}
 		}
 		utils.HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), "").Set(res)
+	}
+	return nil, &out
+}
+
+func runGPUPower() (error, *[]byte) {
+	out, err := exec.Command("bash", "./gpu-power/power-throttle.sh").Output()
+	if err != nil {
+		klog.Error(err.Error())
+		return err, nil
+	} else {
+		klog.Info("Power Throttle check test completed:")
+
+		if strings.Contains(string(out[:]), "FAIL") {
+			klog.Info("Power Throttle test failed.", string(out[:]))
+		}
+
+		if strings.Contains(string(out[:]), "ABORT") {
+			klog.Info("Power Throttle cannot be run. ", string(out[:]))
+			return nil, &out
+		}
+
+		output := strings.TrimSuffix(string(out[:]), "\n")
+		split := strings.Split(output, "\n")
+		pwrs := split[len(split)-1]
+		final := strings.Split(pwrs, " ")
+
+		for gpuid, v := range final {
+			pw, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				klog.Error(err.Error())
+				return err, nil
+			} else {
+				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", pw)
+				utils.HchecksGauge.WithLabelValues("power-slowdown", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(pw)
+			}
+		}
 	}
 	return nil, &out
 }

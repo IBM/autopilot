@@ -55,8 +55,8 @@ COPY gpu-bw/gpuLocalBandwidthTest.sh /home/autopilot/gpubw/gpuLocalBandwidthTest
 COPY gpu-bw/entrypoint.py /home/autopilot/gpubw/entrypoint.py
 COPY gpu-bw/briefings.sh /home/autopilot/gpubw/briefings.sh
 
-# Secondary NIC tests files
-COPY network/metrics-entrypoint.py /home/autopilot/network/metrics-entrypoint.py
+# Network tests files
+# COPY network/metrics-entrypoint.py /home/autopilot/network/metrics-entrypoint.py
 COPY network/iperf3-entrypoint.py /home/autopilot/network/iperf3-entrypoint.py
 COPY network/ping-entrypoint.py /home/autopilot/network/ping-entrypoint.py
 COPY network/start-iperf-servers.py /home/autopilot/network/start-iperf-servers.py
@@ -76,6 +76,10 @@ COPY utils /home/autopilot/utils
 # DGCM test files and dependencies 
 COPY gpu-dcgm/entrypoint.py /home/autopilot/gpu-dcgm/entrypoint.py
 # RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/datacenter-gpu-manager_3.1.8_amd64.deb && dpkg --install datacenter-gpu-manager_3.1.8_amd64.deb
+
+# GPU Power cap
+COPY gpu-power/briefings.sh /home/autopilot/gpu-power/briefings.sh
+COPY gpu-power/power-throttle.sh /home/autopilot/gpu-power/power-throttle.sh
 
 # Last touches
 RUN pip install --upgrade pip && pip install kubernetes netifaces aiohttp[speedups]

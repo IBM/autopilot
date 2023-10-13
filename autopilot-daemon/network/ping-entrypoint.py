@@ -5,6 +5,7 @@ import json
 import argparse
 import asyncio
 import subprocess
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--job', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--job=namespace:label-key=label-value\". Default is set to None.')
@@ -33,10 +34,22 @@ async def main():
     print("[PING] Pod running ping: ", os.getenv("POD_NAME"))
     print("[PING] Starting: collecting node list")
     try:
+        retries = 0
+        daemonset_size = expectedPods()
         autopilot_pods = kubeapi.list_namespaced_pod(namespace=namespace_self, label_selector="app=autopilot")
+        while len(autopilot_pods.items) < daemonset_size or retries > 100:
+            print("[PING] Waiting for all Autopilot pods to run")
+            time.sleep(5)
+            autopilot_pods = kubeapi.list_namespaced_pod(namespace=namespace_self, label_selector="app=autopilot")
+            retries +=1
+        if retries > 100 and len(autopilot_pods.items) < daemonset_size:
+            print("[PING] Reached max retries of 100. ABORT")
+            exit()
+
+        # print("Expecting ", daemonset_size, " pods, got ", len(autopilot_pods.items))
     except ApiException as e:
         print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
-        exit(1)
+        exit()
 
     for pod in autopilot_pods.items:
         if not 'k8s.v1.cni.cncf.io/network-status' in pod.metadata.annotations:
@@ -71,7 +84,7 @@ async def main():
                 result = subprocess.run(command, text=True, capture_output=True)
                 if result.stderr:
                     print(result.stderr)
-                    print("[IPERF] output parse exited with error: " + result.stderr + " FAIL")
+                    print("[PING] output parse exited with error: " + result.stderr + " FAIL")
                 else:
                     output = result.stdout
                     print("Node", nodename, ip, "1") if "Unreachable" in output else print("Node", nodename, ip, "0")                
@@ -102,6 +115,15 @@ def get_job_nodes(nodelist):
                 nodemap[i] = True
     return nodemap
 
+
+def expectedPods():
+    v1 = client.AppsV1Api()
+    try:
+        autopilot = v1.list_namespaced_daemon_set(namespace=namespace_self, label_selector="app=autopilot")
+    except ApiException as e:
+        print("[PING] Exception when calling fetching Autopilot by corev1api->list_namespaced_daemon_set", e)
+        return 0
+    return autopilot.items[0].status.desired_number_scheduled
 
 if __name__ == '__main__':
     asyncio.run(main())
