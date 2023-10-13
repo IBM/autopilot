@@ -200,13 +200,19 @@ def run_clients(address_map, maxports):
                                 command[2] = ip
                                 command[4] = port
                                 filename="out:"+entry[1]+":"+ip+"_net-"+str(netid)
-                                clients.append(try_connect_popen(command, filename))
+                                clients.append((try_connect_popen(command, filename), entry[1], ip))
                             netid+=1
-            print("[IPERF] Clients launched from ", os.getenv("POD_NAME"))
+            print("[IPERF] All clients launched from ", os.getenv("POD_NAME"))
         else:
             print("[IPERF] Cannot launch clients -- secondary nics not found ", os.getenv("POD_NAME"), ". ABORT")
             return
-        [c.wait() for c in clients]
+        for c in clients:
+            try:
+                c[0].wait(30)
+            except:
+               print("Timeout while waiting for", c[2], "on node", c[1])
+               continue
+
     command = ['bash','./network/iperf3-debrief.sh']
     result = subprocess.run(command, text=True, capture_output=True)
     if result.stderr:
