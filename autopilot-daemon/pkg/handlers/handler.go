@@ -56,16 +56,16 @@ func SystemStatusHandler() http.Handler {
 			}
 			w.Write(*out)
 		}
-		if strings.Contains(checks, "ping") {
-			klog.Info("Running ping on hosts ", hosts, " or job ", jobName)
-			w.Write([]byte("Running ping on hosts " + hosts + " or job " + jobName + "\n"))
-			checks = strings.Trim(checks, "ping")
-			err, out := runPing(hosts, jobName)
-			if err != nil {
-				klog.Error(err.Error())
-			}
-			w.Write(*out)
-		}
+		// if strings.Contains(checks, "ping") {
+		// 	klog.Info("Ping hosts ", hosts, " or job ", jobName)
+		// 	w.Write([]byte("Ping hosts " + hosts + " or job " + jobName + "\n"))
+		// 	checks = strings.Trim(checks, "ping")
+		// 	err, out := runPing(hosts, jobName)
+		// 	if err != nil {
+		// 		klog.Error(err.Error())
+		// 	}
+		// 	w.Write(*out)
+		// }
 		if checks != "" {
 			if hosts == os.Getenv("NODE_NAME") {
 				klog.Info("Checking system status of host " + hosts + " (localhost)")
@@ -116,20 +116,6 @@ func RemappedRowsHandler() http.Handler {
 			w.Write(*out)
 		}
 
-	}
-	return http.HandlerFunc(fn)
-}
-
-func NetReachHandler() http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Requesting secondary nics reachability test\n"))
-		err, out := netReachability()
-		if err != nil {
-			klog.Error(err.Error())
-		}
-		if out != nil {
-			w.Write(*out)
-		}
 	}
 	return http.HandlerFunc(fn)
 }
@@ -220,6 +206,20 @@ func DCGMHandler() http.Handler {
 			dcgmR = "1"
 		}
 		err, out := runDCGM(dcgmR)
+		if err != nil {
+			klog.Error(err.Error())
+		}
+		if out != nil {
+			w.Write(*out)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
+
+func GpuPowerHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("GPU Power Measurement test"))
+		err, out := runGPUPower()
 		if err != nil {
 			klog.Error(err.Error())
 		}

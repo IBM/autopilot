@@ -1,7 +1,7 @@
 ##################################################################################
 # Python program that uses the Python Client Library for Kubernetes to
 # run autopilot health checks on all nodes or a specific node(s).
-# Healchecks include PCIEBW, MULTI-NIC CNI Reachability, and GPU REMAPPED ROWS.
+# Healchecks include PCIEBW, and GPU REMAPPED ROWS.
 # Image: us.icr.io/cil15-shared-registry/gracek/run-healthchecks:3.0.1
 ##################################################################################
 import argparse
@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--service', type=str, default='autopilot-healthchecks', help='Autopilot healthchecks service name. Default is \"autopilot-healthchecks\".')
 parser.add_argument('--namespace', type=str, default='autopilot', help='Namespace where autopilot DaemonSet is deployed. Default is \"autopilot\".')
 parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Can be a comma separated list. Default is \"all\" unless --wkload is provided, then set to None. Specific nodes can be provided in addition to --wkload.')
-parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"nic\", \"remapped\" or \"iperf\". Default is \"all\". Can be a comma separated list.')
+parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"dcgm\", \"remapped\", \"ping\" or \"gpupower\". Default is \"all\". Can be a comma separated list.')
 parser.add_argument('--batchSize', default='0', type=str, help='Number of nodes to check in parallel. Default is set to the number of the worker nodes.')
 parser.add_argument('--wkload', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--wkload=namespace:label-key=label-value\". Default is set to None.')
 parser.add_argument('--dcgmR', type=str, default='1', help='Run a diagnostic in dcgmi. Run a diagnostic. (Note: higher numbered tests include all beneath.)\n\t1 - Quick (System Validation ~ seconds)\n\t2 - Medium (Extended System Validation ~ 2 minutes)\n\t3 - Long (System HW Diagnostics ~ 15 minutes)\n\t4 - Extended (Longer-running System HW Diagnostics)')
@@ -59,13 +59,11 @@ def find_wkload():
         print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
     print('Workload:', ': '.join(wkload))
     for pod in wkload_pods.items:
-        pod_name = pod.metadata.name
         node_name = pod.spec.node_name
         if node_name not in node:
             node.append(node_name)
         else:
             copy = True
-        # return pod_name
     if (len(node) == node_len) and not copy:
         raise Exception('Error: Issue with --wkload parameter.\nMake sure your workload is spelled correctly and exists in the cluster.')
 
@@ -118,14 +116,12 @@ def get_node_status(responses):
             if (('FAIL' in line) or ('ABORT' in line)):
                 if ('PCIE' in line):
                     node_status_list.append('PCIE Failed')
-                elif ('MULTINIC-CNI-STATUS' in line):
-                    node_status_list.append('MULTI-NIC CNI Failed')
                 elif('REMAPPED ROWS' in line):
                     node_status_list.append('REMAPPED ROWS Failed')
-                elif('IPERF' in line):
-                    node_status_list.append('IPERF Failed')
                 elif('DCGM' in line):
                     node_status_list.append('DCGM Failed')
+                elif('GPU POWER' in line):
+                    node_status_list.append('GPU POWER Failed')
     if len(node_status_list) < 1:
         node_status_list.append('Ok')
     return node_status_list

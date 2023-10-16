@@ -10,8 +10,8 @@ for d in $RES; do
   fi
 done
 if [[ $D -eq 0 ]]; then
-  echo -n "Detected NVIDIA GPU: "
-  for d in $RES; do 
+  echo -n "[GPU POWER] Detected NVIDIA GPU: "
+  for d in $RES; do
     d=${d#*"nvidia"*}
     if [[ "$d" =~ $numre ]]; then
       echo -n "$d "
@@ -20,23 +20,25 @@ if [[ $D -eq 0 ]]; then
   done
   echo "Total: $D"
 else
-  echo "No NVIDIA GPU detected. Skipping the Remapped Rows check."
-  echo "SKIP"
+  echo "[GPU POWER] No NVIDIA GPU detected. Skipping the Power Throttle check."
+  echo "ABORT"
   exit 0
 fi
 RESULT=""
 FAIL=0
 for i in $(seq 0 1 $((D-1))) ; do
-  OUT=$(nvidia-smi -q -i $i| grep -A 10 "Remapped Rows")
-  REMAPPED=$(echo $OUT | egrep "Pending\s*:\s+Yes")
-  if [[ -z "$REMAPPED" ]]; then
+  OUT=$(nvidia-smi --format=csv -i $i --query-gpu=clocks_event_reasons.hw_slowdown)
+  NOTACTIVE=$(echo $OUT | grep "Not Active")
+  if [[ ! -z "$NOTACTIVE" ]]; then
     RESULT+="0 "
   else
     RESULT+="1 "
     FAIL=1
   fi
 done
-if [[ $FAIL -eq 1 ]]; then
-  echo FAIL
+if [[ $FAIL -ne 0 ]]; then
+  echo "[GPU POWER] FAIL"
+else
+  echo "[GPU POWER] SUCCESS"
 fi
 echo $RESULT
