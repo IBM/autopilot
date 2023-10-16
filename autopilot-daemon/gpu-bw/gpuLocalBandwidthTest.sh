@@ -78,9 +78,9 @@ if [[ "$F" -eq "1" ]]; then
   echo "FAIL"
   exit 1
 fi
-errors="$(grep 802 $FN)"
+errors="$(grep -i '802\|error' $FN)"
 if [[ -n $errors ]]; then
-  echo "CRITICAL ERROR WITH GPU - DEVICE NOT READY"
+  echo "CRITICAL ERROR WITH GPUs - DEVICE NOT READY"
   echo "ABORT"
   cat $FN
 else
