@@ -33,18 +33,19 @@ The toolkit currently provides health checks for pre-flight and post-flight phas
 
 ![image](https://media.github.ibm.com/user/96687/files/4a7c81ba-857a-43d4-bc82-0784ef81b270)
 
-## Health Checks
+# Health Checks
 The current status of Autopilot includes:
 
-- The PCIe NVidia bandwidth test to check host-to-device connection on each node
-- GPUs remapped rows evaluation
-- NVidia DCGM (Data Center GPU Manager) diagnostics
-- Ping to evaluate hosts reachability 
-- Iperf3 to evaluate network bandwidth and hosts connectivity 
+- **GPU PCIe Link Bandwidth**: The PCIe NVidia bandwidth test to check host-to-device connection on each node
+- **GPU Memory**: GPUs remapped rows evaluation through `nvidia-smi`
+- **GPU Diagnostics**: NVidia DCGM (Data Center GPU Manager) diagnostics through `dcgmi diag`
+- **GPU Power Slowdown**: verify if power throttle is active through `nvidia-smi`
+- **Network Reachability**: `ping` to evaluate hosts reachability 
+- **Network Bandwidth**: `iperf3` to evaluate network bandwidth and hosts connectivity 
 
 All test except `iperf3` are executed periodically every hour by default. The time frame can be customized during installation.
 
-### Query the Autopilot Service
+## Query the Autopilot Service
 
 Autopilot provides a `/status` handler that can be queried to get the entire system status, meaning that it will run all the tests on all the nodes. Autopilot is reachable by service name `autopilot-healthchecks.autopilot.svc` in-cluster only, meaning it can be reached from a pod running in the cluster, or through port forwarding (see below).
 
@@ -64,12 +65,12 @@ All tests can be tailored by a combination of:
 
 Some health checks provide further customization.
 
-#### DCGM
+### DCGM
 This test runs `dcgmi diag`, and we support only `r` as (parameter)[https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/dcgm-diagnostics.html#command-line-options]. 
 
 The default is `1`, but can customize it by `/status?check=dcgm&r=2`.
 
-#### IPERF 
+### IPERF 
 This tests runs from a client node, which
 
 - Issues several RPCs to start remote `iperf3` servers
@@ -94,7 +95,7 @@ Health checks can be executed through a utility tool provided with a Helm chart,
 Results can be visualized by either checking the logs of the utility tool/service query, or by looking at the data in a Grafana dashboard.
 A very basic `json` for a Grafana Dasnhboard can be found [here](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/blob/main/utility-tools/Autopilot-Grafana-Dashboard.json).
 
-#### Query with Port-Forward
+### Query with Port-Forward
 
 Alternatively, it is possible to port-forward the autopilot healthchecks Service and `curl` from localhost. 
 
@@ -160,7 +161,7 @@ Processes (randomly ordered) and the nodes they ran (process:[nodes]):
 runtime: 31.845192193984985 sec
 ```
 
-#### Query from a pod
+### Query from a pod
 In the example below, we create a utility `nginx` pod from which we can run `curl` commands against the `autopilot-healthchecks` service.
 We run the PCIe bandwidth test on all nodes, and we can see it is failing on one node.
 
@@ -176,15 +177,10 @@ Then run an health check:
 kubectl exec jobs/curl-pod -- curl "http://autopilot-healthchecks.autopilot.svc:3333/status?check=pciebw"
 ```
 
-#### Helm Chart
-
-Users and admins can create a single pod that can run the desired health checks.
-Please refer to the [dedicated page](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/utility-tools/system-check) for more details and customization.
-
-## Install autopilot (Admin)
+# Install autopilot (Admin)
 **Installation**: Autopilot can be installed through Helm and need admin privileges to create objects like services, serviceaccounts, namespaces and relevant RBAC.
 
-### Requirements
+## Requirements
 - A basic system requirement is that an image pull secret to IBM Cloud Container Registry `us.icr.io` is available.
 - `ssh` keys must be available on the system, to be able to clone this repository. If not, you can contact Claudia Misale [c.misale@ibm.com] to have your Deploy Key added to this repository.
 - Need to install `helm-git` plugin on all hosts 
@@ -192,7 +188,7 @@ Please refer to the [dedicated page](https://github.ibm.com/hybrid-cloud-infrast
 helm plugin install https://github.com/aslafy-z/helm-git --version 0.15.1
 ```
 
-### Helm Chart customization
+## Helm Chart customization
 
 Helm charts values can be found [here](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/autopilot-daemon/helm-charts/autopilot).
 
@@ -245,8 +241,6 @@ namespace:
 
 image:
   repository: us.icr.io/cil15-shared-registry/autopilot/autopilot
-  tag: v1.3.2
-
 
 pullSecrets:
   create: true
@@ -257,7 +251,7 @@ annotations:
   k8s.v1.cni.cncf.io/networks: multi-nic-config
 ```
 
-### Install
+## Install
 
 1) Add autopilot repo, here is where it checks for ssh keys
 
@@ -285,7 +279,7 @@ autopilot-daemon-autopilot-x6h8d   1/1     Running   0          70m
 autopilot-daemon-autopilot-xhntv   1/1     Running   0          70m
 ```
 
-### Uninstall
+## Uninstall
 
 ```bash
  helm uninstall autopilot % -n <namespace-where-chart-resides>
