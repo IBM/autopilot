@@ -59,17 +59,25 @@ async def main():
     print("Creating a list of interfaces and IPs")
     for pod in autopilot_pods.items:
         if pod.spec.node_name != nodename_self and (allnodes or (pod.spec.node_name in nodemap.keys())):
-            node={}
-            nodes[pod.spec.node_name] = node
-            entrylist = json.loads(pod.metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
-            for entry in entrylist:
-                iface=entry['interface']
-                ifaces = ifaces | {iface}
-                node[iface] = {
-                    'ips': entry['ips'], 
-                    'pod': pod.metadata.name
-                }
+            try:
+                entrylist = json.loads(pod.metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
+            except KeyError:
+                print("Key k8s.v1.cni.cncf.io/network-status not found on pod", pod.metadata.name, "- Skipping node", pod.spec.node_name)
+                continue
+            else:
+                node={}
+                nodes[pod.spec.node_name] = node
+                for entry in entrylist:
+                    iface=entry['interface']
+                    ifaces = ifaces | {iface}
+                    node[iface] = {
+                        'ips': entry['ips'],
+                        'pod': pod.metadata.name
+                    }
 
+    if len(nodes.keys()) == 0:
+        print("[PING] No nodes found. ABORT")
+        exit(0)
     # run ping tests to each pod on each interface
     print("[PING] Running ping tests for every interface")
     conn_dict = dict()
