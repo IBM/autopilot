@@ -122,6 +122,9 @@ def get_node_status(responses):
                     node_status_list.append('DCGM Failed')
                 elif('GPU POWER' in line):
                     node_status_list.append('GPU POWER Failed')
+                elif('PING' in line):
+                    node_status_list.append('PING Failed')
+
     if len(node_status_list) < 1:
         node_status_list.append('Ok')
     return node_status_list

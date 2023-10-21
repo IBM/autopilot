@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gpu-power-alert
+  namespace: openshift-monitoring
+  labels:
+    remapped: autopilot
+spec:
+  groups:
+  - name: gpupower
+    rules:
+    - alert: GPUPowerSlowdownAlert
+      annotations:
+        description: GPU device {{ $labels.deviceid }} on node {{ $labels.node }} has power slowdown enabled
+        summary: A GPU has power slowdown enabled
+      expr: sum (autopilot_health_checks{health="power-slowdown"}==1) by (node, deviceid)
+      for: 1m
+      labels:
+        severity: critical
+        gpupower: autopilot
