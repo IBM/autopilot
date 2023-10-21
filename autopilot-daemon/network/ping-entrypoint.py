@@ -89,21 +89,31 @@ async def main():
             # ip=nodes[nodename][iface]['ips']
             # r = ping(ip, timeout=1, count=1, verbose=False)
             # conn_dict[nodename][iface] = r.success()
-                command = ['ping',ip,'-t','1','-c','1']
+                command = ['ping',ip,'-t','45','-c','10']
                 clients.append((subprocess.Popen(command, start_new_session=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE), nodename, ip))
     # [c[0].wait() for c in clients]
     for c in clients:
         try:
-            c[0].wait(30)
+            c[0].wait(50)
         except:
             print("Timeout while waiting for", c[2], "on node", c[1])
             continue
+    fail = False
     for c in clients:
         stdout, stderr = c[0].communicate()
         if stderr:
-            print("[PING] output parse exited with error: " + stderr + " FAIL")
+            print("[PING] output parse exited with error: " + stderr)
+            print("FAIL")
         else:
-            print("Node", c[1], c[2], "1") if "Unreachable" in stdout or "0 received" in stdout else print("Node", c[1], c[2], "0")
+            if "Unreachable" in stdout or "100% packet loss" in stdout:
+                print("Node", c[1], c[2], "1")
+                fail =True
+            else:
+                print("Node", c[1], c[2], "0")
+    if fail:
+        print("[PING] At least one node unreachable. FAIL")
+    else:
+        print("[PING] all nodes reachable. success")
             
 def get_job_nodes(nodelist):
     v1 = client.CoreV1Api()
