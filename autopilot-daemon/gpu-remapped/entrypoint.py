@@ -12,16 +12,16 @@ def main():
         result = output.read()
         if "FAIL" not in result:
             print("[[ REMAPPED ROWS ]] SUCCESS")
-            # print(result)
         else:
             print("[[ REMAPPED ROWS ]] FAIL")
             print("Host ", os.getenv("NODE_NAME"))
+            print(result.strip())
             return 0
         print("Host ", os.getenv("NODE_NAME"))
         print(result.strip())
     else:
         print("[[ REMAPPED ROWS ]] ABORT")
-        print(result)
+        print(result.strip())
 
 if __name__ == '__main__':
     main()
