@@ -254,12 +254,11 @@ func runPing(nodelist string, jobName string) (error, *[]byte) {
 					klog.Info("Observation: ", entry[1], " ", entry[2], " ", entry[3], " Unreachable")
 					unreach_nodes[entry[1]] = append(unreach_nodes[entry[1]], entry[2])
 				} else {
-					// 	utils.HchecksGauge.WithLabelValues("ping", entry[1], entry[2]).Set(0)
+					utils.HchecksGauge.WithLabelValues("ping", entry[1], entry[2]).Set(0)
 					reach_nodes[entry[1]] = append(reach_nodes[entry[1]], entry[2])
 				}
 			}
 		}
-		klog.Info("Unreachable ", unreach_nodes)
 		klog.Info("Observation: ", len(reach_nodes)-len(unreach_nodes), "/", len(reach_nodes)+len(unreach_nodes), " remote nodes are reachable")
 	}
 	return nil, &out
