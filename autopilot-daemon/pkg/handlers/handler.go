@@ -10,6 +10,11 @@ import (
 
 func SystemStatusHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
+		nodelabel := r.URL.Query().Get("nodelabel")
+		if nodelabel == "" {
+			nodelabel = "None"
+		}
+
 		hosts := r.URL.Query().Get("host")
 		if hosts == "" {
 			hosts = "all"
@@ -50,22 +55,12 @@ func SystemStatusHandler() http.Handler {
 			if sourceNode == "" {
 				sourceNode = "None"
 			}
-			err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode)
+			err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode, nodelabel)
 			if err != nil {
 				klog.Error(err.Error())
 			}
 			w.Write(*out)
 		}
-		// if strings.Contains(checks, "ping") {
-		// 	klog.Info("Ping hosts ", hosts, " or job ", jobName)
-		// 	w.Write([]byte("Ping hosts " + hosts + " or job " + jobName + "\n"))
-		// 	checks = strings.Trim(checks, "ping")
-		// 	err, out := runPing(hosts, jobName)
-		// 	if err != nil {
-		// 		klog.Error(err.Error())
-		// 	}
-		// 	w.Write(*out)
-		// }
 		if checks != "" {
 			if hosts == os.Getenv("NODE_NAME") {
 				klog.Info("Checking system status of host " + hosts + " (localhost)")
@@ -76,9 +71,9 @@ func SystemStatusHandler() http.Handler {
 				}
 				w.Write(*out)
 			} else {
-				klog.Info("Asking to run on remote node(s) ", hosts)
-				w.Write([]byte("Asking to run on remote node(s) " + hosts + "\n\n"))
-				err, out := runAllTestsRemote(hosts, checks, batch, jobName, dcgmR)
+				klog.Info("Asking to run on remote node(s) ", hosts, " or with node label ", nodelabel)
+				w.Write([]byte("Asking to run on remote node(s) " + hosts + " or with node label " + nodelabel + "\n\n"))
+				err, out := runAllTestsRemote(hosts, checks, batch, jobName, dcgmR, nodelabel)
 				if err != nil {
 					klog.Error(err.Error())
 				}
@@ -169,7 +164,11 @@ func IperfHandler() http.Handler {
 		if plane == "" {
 			plane = "data"
 		}
-		err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode)
+		nodelabel := r.URL.Query().Get("nodelabel")
+		if nodelabel == "" {
+			nodelabel = "None"
+		}
+		err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode, nodelabel)
 		if err != nil {
 			klog.Error(err.Error())
 		}

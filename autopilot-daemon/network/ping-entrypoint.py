@@ -46,14 +46,13 @@ async def main():
             print("[PING] Reached max retries of 100. ABORT")
             exit()
 
-        # print("Expecting ", daemonset_size, " pods, got ", len(autopilot_pods.items))
     except ApiException as e:
         print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
         exit()
 
     for pod in autopilot_pods.items:
         if not 'k8s.v1.cni.cncf.io/network-status' in pod.metadata.annotations:
-            print("[PING] Pod", pod.metadata.name, "misses network annotation. ABORT.")
+            print("[PING] Pod", pod.metadata.name, "misses network annotation. Skip node", pod.spec.node_name)
 
     # run through all pods and create a map of all interfaces
     print("Creating a list of interfaces and IPs")
@@ -68,7 +67,11 @@ async def main():
                 node={}
                 nodes[pod.spec.node_name] = node
                 for entry in entrylist:
-                    iface=entry['interface']
+                    try:
+                        iface=entry['interface']
+                    except KeyError:
+                        print("Interface key not found, assigning default.")
+                        iface = "default"
                     ifaces = ifaces | {iface}
                     node[iface] = {
                         'ips': entry['ips'],
@@ -85,13 +88,14 @@ async def main():
     for nodename in nodes.keys():
         conn_dict[nodename] = {}
         for iface in ifaces:
-            for ip in nodes[nodename][iface]['ips']:
-            # ip=nodes[nodename][iface]['ips']
-            # r = ping(ip, timeout=1, count=1, verbose=False)
-            # conn_dict[nodename][iface] = r.success()
+            try:
+                ips = nodes[nodename][iface]['ips']
+            except KeyError:
+                print("Interface", iface, "not found, skipping.")
+                continue
+            for ip in ips:
                 command = ['ping',ip,'-t','45','-c','10']
                 clients.append((subprocess.Popen(command, start_new_session=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE), nodename, ip))
-    # [c[0].wait() for c in clients]
     for c in clients:
         try:
             c[0].wait(50)
