@@ -23,11 +23,14 @@ parser.add_argument('--servers', type=str, default='1', help='Number of iperf3 s
 
 parser.add_argument('--source', type=str, default='None', help='Number of iperf3 clients to connect to a remote server')
 
+parser.add_argument('--nodelabel', type=str, default='None', help='Node label to select nodes. Ex: \"label-key=label-value\". Default is set to None.')
+
 args = vars(parser.parse_args())
 
 async def main():
     nodelist = args['nodes'].replace(' ', '').split(',') # list of nodes
     job = args['job']
+    nodelabel = args['nodelabel']
     allnodes = False
     nodemap = {}
 
@@ -51,7 +54,7 @@ async def main():
                     print((page.text).strip())
                     exit()
 
-    if 'all' in nodelist and job == 'None':
+    if 'all' in nodelist and job == 'None' and nodelabel == 'None':
         allnodes = True
     else:
         nodemap = get_job_nodes(nodelist)
@@ -63,15 +66,16 @@ async def main():
     
     address_map= get_addresses(allnodes, nodemap)
     if len(address_map) == 0:
-        return 
+        print("[IPERF] No nodes selected. ABORT.")
+        exit() 
     
     print("[IPERF] Starting servers on all other nodes... ")
-    interfaces = netifaces.interfaces()
-    if len(interfaces)<3:
+    interfaces = [iface for iface in netifaces.interfaces() if "net" in iface] ## VERY TEMPORARY
+    if len(interfaces)==0:
         print("[IPERF] Cannot launch servers -- secondary nics not found ", os.getenv("POD_NAME"), ". ABORT")
-        return
+        exit()
 
-    secondary_nics_count = (len(interfaces)-2)# quite a lame bet.. excluding eth0 and lo assuming all the other ones are what we want.
+    secondary_nics_count = len(interfaces) # quite a lame bet.. excluding eth0 and lo assuming all the other ones are what we want.
     server_replicas = int(args['servers'])
     if server_replicas > secondary_nics_count:
         maxports = int(server_replicas/secondary_nics_count) 
@@ -96,11 +100,31 @@ def get_job_nodes(nodelist):
             job_pods = v1.list_namespaced_pod(namespace=job_ns, label_selector=job_label)
         except ApiException as e:
             print("[IPERF] Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
+            exit()
 
         print('[IPERF] Workload:', ': '.join(job))
+        if len(job_pods.items) == 0:
+            print ("No pod is labeled with", job_label, " - ABORT.")
+            exit()
+
         for pod in job_pods.items:
             if pod.spec.node_name != node_name_self:
                 nodemap[pod.spec.node_name] = True
+    
+    nodelabel = args['nodelabel']
+    if nodelabel != 'None':
+        try:
+            labeled_nodes = v1.list_node(label_selector=nodelabel)
+        except ApiException as e:
+            print("Exception when calling CoreV1Api->list_node: %s\n" % e)
+            exit()
+        if len(labeled_nodes.items) == 0:
+            print ("No node is labeled with", nodelabel, " - ABORT.")
+            exit()
+
+        for labeled_node in labeled_nodes.items:
+            if labeled_node.metadata.name != node_name_self:
+                nodemap[labeled_node.metadata.name] = True
     # get nodes from input list, if any
     if 'all' not in nodelist:
         for i in nodelist:
@@ -118,15 +142,21 @@ def get_addresses(allnodes, nodemap):
         autopilot_pods = v1.list_namespaced_pod(namespace=namespace_self, label_selector="app=autopilot")
     except ApiException as e:
         print("[IPERF] Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
+        exit()
 
     for pod in autopilot_pods.items:
         if pod.spec.node_name != node_name_self and (allnodes or (pod.spec.node_name in nodemap.keys())):
             entrylist = json.loads(pod.metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
             if len(entrylist) > 0:
                 for entry in entrylist:
-                    if address_map.get(entry['interface']) == None:
-                        address_map[entry['interface']] = []
-                    address_map.get(entry['interface']).append((entry['ips'],pod.spec.node_name))
+                    try:
+                        iface=entry['interface']
+                    except KeyError:
+                        print("Interface key not found, assigning default.")
+                        iface = "default"
+                    if address_map.get(iface) == None:
+                        address_map[iface] = []
+                    address_map.get(iface).append((entry['ips'],pod.spec.node_name))
     if len(address_map) == 0:
         print("[IPERF] No interfaces found. FAIL.")
 

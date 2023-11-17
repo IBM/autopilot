@@ -37,9 +37,10 @@ annotations:
   # k8s.v1.cni.cncf.io/networks: multi-nic-network
 
 nodeSelector:
-  nvidia.com/gpu.present: 'true'
+  # nvidia.com/gpu.present: 'true'
   # nvidia.com/mig.config: 'all-disabled'
-  # node-role.kubernetes.io/infra: ''
+
+gpuEnabled: true
 
 resources: 
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -71,6 +72,12 @@ additionalVolumeClaimTemplates:
   # - name: logdir
   #   persistentVolumeClaim:
   #     claimName: my-pvc
+  # - name: autopilot-tls-secret
+  #   secret:
+  #     secretName: autopilot-webhook
 additionalVolumeMounts:
+  # - name: autopilot-tls-secret
+  #   mountPath: "/etc/admission-webhook/tls"
+  #   readOnly: true
   # - mountPath: /data
   #   name: logdir
