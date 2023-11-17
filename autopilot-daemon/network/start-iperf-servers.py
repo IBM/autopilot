@@ -10,12 +10,13 @@ args = vars(parser.parse_args())
 server_replicas = args['replicas']
 
 def main():
-    interfaces = netifaces.interfaces()
-    if len(interfaces)<3:
+    # interfaces = netifaces.interfaces()
+    interfaces = [iface for iface in netifaces.interfaces() if "net" in iface] ## VERY TEMPORARY
+    if len(interfaces)==0:
         print("[IPERF] Cannot launch servers -- secondary nics not found ", os.getenv("POD_NAME"), ". ABORT")
         return
 
-    secondary_nics_count = (len(interfaces)-2) # quite a lame bet.. excluding eth0 and lo assuming all the other ones are what we want.
+    secondary_nics_count = len(interfaces) # quite a lame bet.. excluding eth0 and lo assuming all the other ones are what we want.
     if server_replicas > secondary_nics_count:
         subset = int(server_replicas/secondary_nics_count) 
     else:
@@ -26,7 +27,7 @@ def main():
             address = netifaces.ifaddresses(iface)
             ip = address[netifaces.AF_INET] 
             for r in range(subset):
-                if r < 9:
+                if r <= 9:
                     port = '510'+str(r)
                 else:
                     port = '51'+str(r)

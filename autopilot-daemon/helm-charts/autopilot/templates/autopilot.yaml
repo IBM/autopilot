@@ -16,11 +16,14 @@ spec:
       labels:
         app: autopilot
     spec:
+      {{- if .Values.nodeSelector }}
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end}}
       serviceAccountName: autopilot
       imagePullSecrets:
       - name: {{ .Values.pullSecrets.name }}
+      {{- if .Values.gpuEnabled }}
       initContainers:
         - args:
           - until [ -f /usr/bin/nvidia-smi ]; do echo waiting for nvidia device plug-in to be setup; sleep 5 && exit -1; done
@@ -30,6 +33,7 @@ spec:
           image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
           imagePullPolicy: Always
           name: device-plugin-validation
+      {{- end}}
       containers:
         - image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
           command:
@@ -65,16 +69,10 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            # - name: autopilot-tls-secret
-            #   mountPath: "/etc/admission-webhook/tls"
-            #   readOnly: true
             {{- if .Values.additionalVolumeMounts }}
             {{- toYaml .Values.additionalVolumeMounts | nindent 12 }}
             {{- end }}
       volumes:
-        # - name: autopilot-tls-secret
-        #   secret:
-        #     secretName: autopilot-webhook
         {{- if .Values.additionalVolumeClaimTemplates }}
         {{- toYaml .Values.additionalVolumeClaimTemplates | nindent 8 }}
         {{- end}}
