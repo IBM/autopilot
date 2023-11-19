@@ -124,40 +124,6 @@ func runAllTestsRemote(host string, check string, batch string, jobName string, 
 	return nil, &out
 }
 
-// deprecated
-func netReachability() (error, *[]byte) {
-	out, err := exec.Command("python3", "./network/metrics-entrypoint.py").CombinedOutput()
-	if err != nil {
-		klog.Info("Out:", string(out))
-		klog.Error(err.Error())
-		return err, nil
-	} else {
-		klog.Info("Secondary NIC health check test completed:")
-
-		if strings.Contains(string(out[:]), "FAIL") {
-			klog.Info("Multi-NIC CNI reachability test failed.", string(out[:]))
-		} else if strings.Contains(string(out[:]), "cannot") {
-			klog.Info("Unable to determine the reachability of the node.", string(out[:]))
-		} else {
-			output := strings.TrimSuffix(string(out[:]), "\n")
-			split := strings.Split(output, "\n")
-			lastline := split[len(split)-1]
-			final := strings.Split(lastline, " ")
-			var nicid1, nicid2 int = 1, 2
-			if reachable1, err := strconv.ParseFloat(final[1], 32); err == nil {
-				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(nicid1), " ", reachable1)
-				utils.HchecksGauge.WithLabelValues("net-reach", os.Getenv("NODE_NAME"), strconv.Itoa(nicid1)).Set(reachable1)
-			}
-			if reachable2, err := strconv.ParseFloat(final[2], 32); err == nil {
-				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(nicid2), " ", reachable2)
-				utils.HchecksGauge.WithLabelValues("net-reach", os.Getenv("NODE_NAME"), strconv.Itoa(nicid2)).Set(reachable2)
-			}
-		}
-
-	}
-	return nil, &out
-}
-
 func runRemappedRows() (error, *[]byte) {
 	out, err := exec.Command("python3", "./gpu-remapped/entrypoint.py").CombinedOutput()
 	if err != nil {
@@ -293,7 +259,7 @@ func runIperf(nodelist string, jobName string, plane string, clients string, ser
 					return err, nil
 				}
 				klog.Info("Observation: ", entries[0], " ", entries[1], " ", bw)
-				utils.HchecksGauge.WithLabelValues("iperf", entries[0], entries[1]).Set(bw)
+				// utils.HchecksGauge.WithLabelValues("iperf", entries[0], entries[1]).Set(bw)
 			}
 		}
 	}

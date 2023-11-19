@@ -25,9 +25,9 @@ def main():
 
         print("SUCCESS")
         print("Host ", os.getenv("NODE_NAME"))
-        fhand = open('./gpubw/gpuBandwidthTest.log')
+        splitres = result.split("\n")
         bws = ""
-        for line in fhand:
+        for line in splitres:
             if "Bandwidth =" in line:
                 x = line.split("= ", 2)
                 y = x[1].split(" GB/s")
