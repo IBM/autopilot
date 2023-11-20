@@ -18,20 +18,15 @@
 # Ver. 1.3
 
 PROG="/home/autopilot/gpubw/bandwidthTest"
-FN="/home/autopilot/gpubw/gpuBandwidthTest.log"
-T="7"
 
-echo "" > $FN
 
 while getopts t:f: flag
 do
     case "${flag}" in
         t) T=${OPTARG};;
-        f) FN=${OPTARG};;
     esac
 done
 echo "Threshold: $T";
-echo "Log filename: $FN";
 
 RES=$(ls -d /dev/nvidia* 2>1)
 numre='^[0-9]+$'
@@ -58,32 +53,18 @@ else
   echo "SKIP"
   exit 0
 fi
-# if [[ "$D" != "8" ]]; then
-#   echo "Not all 8 x NVIDIA GPU were detected. Skipping the bandwidth test to avoid inaccurate evaluation."
-#   echo "ABORT"
-#   exit 0
-# fi
 
 D=$((D-1))
 for i in $(seq 0 1 $D) ; do
-  EXEC=$($PROG --htod --memory=pinned --device=$i --csv | tee -a $FN |grep bandwidthTest-H2D-Pinned | awk -v T=$T -v C=$i '{if ($4 < T) print " GPU " C " has low memory bandwidth: " $4 " GB/s"; }')
-  if [[ "$EXEC" != "" ]]; then
-    F=1
-    echo $EXEC
-  fi
+  EXEC+="$($PROG --htod --memory=pinned --device=$i --csv)"
+  EXEC+="\n"
 done
-if [[ "$F" -eq "1" ]]; then
-  echo "Please attach this bandwidthTest report to Cloud Support:"
-  cat $FN
-  echo "FAIL"
-  exit 1
-fi
-errors="$(grep -i '802\|error' $FN)"
+errors="$(echo ${EXEC} | grep -i '802\|error')"
 if [[ -n $errors ]]; then
   echo "CRITICAL ERROR WITH GPUs - DEVICE NOT READY"
   echo "ABORT"
-  cat $FN
+  echo -e $EXEC
 else
-  cat $FN
+  echo -e $EXEC
   echo "SUCCESS"
 fi
