@@ -163,7 +163,7 @@ func runRemappedRows() (error, *[]byte) {
 }
 
 func runPCIeBw() (error, *[]byte) {
-	out, err := exec.Command("python3", "./gpubw/entrypoint.py", "-t", utils.UserConfig.BWThreshold).CombinedOutput()
+	out, err := exec.Command("python3", "./gpu-bw/entrypoint.py", "-t", utils.UserConfig.BWThreshold).CombinedOutput()
 	if err != nil {
 		klog.Info("Out:", string(out))
 		klog.Error(err.Error())

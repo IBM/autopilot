@@ -2,7 +2,7 @@ import os
 
 
 def main():
-    output = os.popen('bash ./gpu-remapped/briefings.sh')
+    output = os.popen('bash ./utils/briefings.sh')
     result = output.read()
     print(result)
 

@@ -17,7 +17,7 @@
 #
 # Ver. 1.3
 
-PROG="/home/autopilot/gpubw/bandwidthTest"
+PROG="/home/autopilot/gpu-bw/bandwidthTest"
 
 
 while getopts t:f: flag
