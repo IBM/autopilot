@@ -50,10 +50,9 @@ WORKDIR /home/autopilot
 COPY --from=gobuild /workspace/bin/autopilot /usr/local/bin/autopilot
 
 # PCIe tests files
-COPY --from=cudabuild /workspace/cuda-samples/Samples/1_Utilities/bandwidthTest/bandwidthTest /home/autopilot/gpubw/bandwidthTest
-COPY gpu-bw/gpuLocalBandwidthTest.sh /home/autopilot/gpubw/gpuLocalBandwidthTest.sh
-COPY gpu-bw/entrypoint.py /home/autopilot/gpubw/entrypoint.py
-COPY gpu-bw/briefings.sh /home/autopilot/gpubw/briefings.sh
+COPY --from=cudabuild /workspace/cuda-samples/Samples/1_Utilities/bandwidthTest/bandwidthTest /home/autopilot/gpu-bw/bandwidthTest
+COPY gpu-bw/gpuLocalBandwidthTest.sh /home/autopilot/gpu-bw/gpuLocalBandwidthTest.sh
+COPY gpu-bw/entrypoint.py /home/autopilot/gpu-bw/entrypoint.py
 
 # Network tests files
 # COPY network/metrics-entrypoint.py /home/autopilot/network/metrics-entrypoint.py
@@ -68,7 +67,6 @@ RUN cd network && wget https://raw.githubusercontent.com/foundation-model-stack/
 
 # Remapped Rows test files
 COPY gpu-remapped/entrypoint.py /home/autopilot/gpu-remapped/entrypoint.py
-COPY gpu-remapped/briefings.sh /home/autopilot/gpu-remapped/briefings.sh
 COPY gpu-remapped/remapped-rows.sh /home/autopilot/gpu-remapped/remapped-rows.sh
 
 COPY utils /home/autopilot/utils
@@ -78,7 +76,6 @@ COPY gpu-dcgm/entrypoint.py /home/autopilot/gpu-dcgm/entrypoint.py
 # RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/datacenter-gpu-manager_3.1.8_amd64.deb && dpkg --install datacenter-gpu-manager_3.1.8_amd64.deb
 
 # GPU Power cap
-COPY gpu-power/briefings.sh /home/autopilot/gpu-power/briefings.sh
 COPY gpu-power/power-throttle.sh /home/autopilot/gpu-power/power-throttle.sh
 
 # Last touches
