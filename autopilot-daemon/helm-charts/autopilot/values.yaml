@@ -37,7 +37,7 @@ annotations:
   # k8s.v1.cni.cncf.io/networks: multi-nic-network
 
 nodeSelector:
-  # nvidia.com/gpu.present: 'true'
+  nvidia.com/gpu.present: 'true'
   # nvidia.com/mig.config: 'all-disabled'
 
 gpuEnabled: true

@@ -8,7 +8,7 @@ def main():
     parser.add_argument('-r', '--run', type=str, default='1')
     args = parser.parse_args()
 
-    output = os.popen('bash ./gpu-remapped/briefings.sh')
+    output = os.popen('bash ./utils/briefings.sh')
     result = output.read()
     print(result)
 

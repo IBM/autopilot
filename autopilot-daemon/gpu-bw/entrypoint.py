@@ -7,13 +7,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--threshold', type=str, default='4')
     args = parser.parse_args()
-    output = os.popen('bash ./gpubw/briefings.sh')
+    output = os.popen('bash ./utils/briefings.sh')
     result = output.read()
     # print(result)
 
     if "ABORT" not in result:
         print("[[ PCIEBW ]] Briefings completed. Continue with PCIe Bandwidth evaluation.")
-        output = os.popen('./gpubw/gpuLocalBandwidthTest.sh -t ' + args.threshold)
+        output = os.popen('./gpu-bw/gpuLocalBandwidthTest.sh -t ' + args.threshold)
         result = output.read()
 
         if "FAIL" in result:
