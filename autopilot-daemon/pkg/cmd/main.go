@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -57,6 +58,7 @@ func main() {
 	}()
 
 	hcMux := http.NewServeMux()
+
 	hcMux.Handle("/pciebw", handlers.PCIeBWHandler(utils.UserConfig.BWThreshold))
 	hcMux.Handle("/remapped", handlers.RemappedRowsHandler())
 	hcMux.Handle("/status", handlers.SystemStatusHandler())
@@ -66,10 +68,31 @@ func main() {
 	hcMux.Handle("/ping", handlers.PingHandler())
 	hcMux.Handle("/gpupower", handlers.GpuPowerHandler())
 
+	s := &http.Server{
+		Addr:         ":" + *port,
+		Handler:      hcMux,
+		ReadTimeout:  30 * time.Minute,
+		WriteTimeout: 30 * time.Minute,
+		IdleTimeout:  30 * time.Minute,
+	}
+
 	go func() {
 		klog.Info("Serving Health Checks on port :", *port)
-		err := http.ListenAndServe(":"+*port, hcMux)
+		// err := http.ListenAndServe(":"+*port, hcMux)
+		err := s.ListenAndServe()
+		if errors.Is(err, http.ErrServerClosed) {
+			klog.Info("Server Closed")
+		} else if errors.Is(err, http.ErrAbortHandler) {
+			klog.Info("Server Aborted")
+		} else if errors.Is(err, http.ErrContentLength) {
+			klog.Info("Response size too large")
+		} else if errors.Is(err, http.ErrBodyReadAfterClose) {
+			klog.Info("Read after close")
+		} else if errors.Is(err, http.ErrHandlerTimeout) {
+			klog.Info("Handler timed out")
+		}
 		if err != nil {
+			klog.Info("EXITING")
 			klog.Error(err.Error())
 			os.Exit(1)
 		}
