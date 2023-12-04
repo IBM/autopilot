@@ -1,27 +1,17 @@
-.PHONY: gpu-bw-image
-gpu-bw-image:
-	docker build -t pcie-test:dev -f gpu-bw-test/Dockerfile gpu-bw-test/
+TAG=1.4.0
+IMAGE=hypervisorepo:5000/autopilot
 
-.PHONY: gpu-bw-minimal
-gpu-bw-minimal:
-	docker build -t pcie-mini:dev -f gpu-bw-test/Dockerfile.reduced gpu-bw-test/
+image:
+	@docker build -t ${IMAGE}:v${TAG} -f autopilot-daemon/Dockerfile autopilot-daemon/
+	@docker push ${IMAGE}:v${TAG}
 
-.PHONY: gpu-mem-image
-gpu-mem-image:
-	docker build -t gpu-memcheck:dev -f gpu-mem-test/Dockerfile gpu-mem-test/
-
-.PHONY: net-reach-image
-net-reach-image:
-	docker build -t network-test:dev -f network-reach-test/Dockerfile network-reach-test/
-
-.PHONY: install
-install:
-	helm install autopilot autopilot-daemon/helm-charts/autopilot
-
-.PHONY: uninstall
-uninstall:
-	helm uninstall autopilot
-
-.PHONY: submodule
-submodule-init:
-	git submodule update --init --recursive
+publish:
+	@git checkout gh-pages
+	@git merge main
+	@helm repo index --url https://raw.github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/gh-pages .
+	@helm package autopilot-daemon/helm-charts/*
+	@echo -e "User-Agent: *\nDisallow: /" > robots.txt
+	@git add robots.txt index.yaml autopilot-daemon-${TAG}.tgz
+	@git commit -m "update helm package"
+	@git push
+	@git checkout main

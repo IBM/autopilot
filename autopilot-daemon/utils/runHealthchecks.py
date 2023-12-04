@@ -152,9 +152,11 @@ def get_node_status(responses):
                     node_status_list.append('GPU POWER Failed')
                 elif('PING' in line):
                     node_status_list.append('PING Failed')
+                elif('Disconnected' in line):
+                    node_status_list.append('Connection to Server Failed')
 
     if len(node_status_list) < 1:
-        node_status_list.append('Ok')
+        node_status_list.append('OK')
     return node_status_list
 
 async def makeconnection(address):
@@ -164,9 +166,14 @@ async def makeconnection(address):
     output = '\nAutopilot Endpoint: {ip}\nNode: {daemon_node}\nurl(s): {url}'.format(ip=address.ip, daemon_node=daemon_node, url='\n        '.join(url))
     print(f"Initiated connection to {url}.")
     total_timeout=aiohttp.ClientTimeout(total=60*60*24)
-    async with aiohttp.ClientSession(timeout=total_timeout) as session:
-        async with session.get(url[0]) as resp:
-            reply = await resp.text()
+    try:
+        async with aiohttp.ClientSession(timeout=total_timeout) as session:
+            async with session.get(url[0]) as resp:
+                reply = await resp.text()
+    except aiohttp.client_exceptions.ServerDisconnectedError:
+        print("Server Disconnected")
+        reply = "Server Disconnected. ABORT"
+
     response=[reply]
     node_status_list = get_node_status(response)
     output += '\nResponse:\n{response}\nNode Status: {status}\n-------------------------------------\n'.format(response='~~\n'.join(response), status=', '.join(node_status_list))
