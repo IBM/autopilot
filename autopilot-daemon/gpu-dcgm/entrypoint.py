@@ -21,10 +21,24 @@ def main():
         print(result)
 
 def try_dcgm(command):
-    result = subprocess.run(command, check=True, text=True, capture_output=True)
+    try:
+        result = subprocess.run(command, check=True, text=True, capture_output=True)
+    except subprocess.CalledProcessError:
+        print("[[ DCGM ]] DCGM process terminated with errors. Other processes might be running on GPUs. ABORT")
+        command = ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv']
+        try:
+            proc = subprocess.run(command, check=True, text=True, capture_output=True)
+        except subprocess.CalledProcessError:
+            print("[[ DCGM ]] nvidia-smi check terminated with errors. ABORT")
+            exit()
+        if proc.stdout:
+            print("[[ DCGM ]] GPUs currently utilized:\n", proc.stdout)
+        exit()
+
     if result.stderr:
        print(result.stderr)
        print("[[ DCGM ]] exited with error: " + result.stderr + " ERR")
+       exit()
     else:
         dcgm_dict = json.loads(result.stdout)
         tests_dict = dcgm_dict['DCGM GPU Diagnostic']['test_categories']
