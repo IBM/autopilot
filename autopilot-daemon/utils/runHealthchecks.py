@@ -132,7 +132,17 @@ def create_url(address, daemon_node):
         if check == 'all':
             urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node)
             return urls
-    urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + args['check'] + '&r='+args['dcgmR'])
+    extra_params = ""
+    if "ping" in args['check']:
+        if args['wkload'] != 'None':
+            extra_params += "&job=" + args['wkload']
+        if nodelabel != 'None':
+            extra_params += "&nodelabel=" + nodelabel
+        if args['nodes'] != 'all' :
+            extra_params += "&pingnodes=" + args['nodes']
+    if "dcgm" in args['check']:
+        extra_params += "&r=" + args['dcgmR']
+    urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + args['check'] + extra_params)
     return urls
 
 # check and print status of each node
