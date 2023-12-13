@@ -14,7 +14,6 @@ func SystemStatusHandler() http.Handler {
 		if nodelabel == "" {
 			nodelabel = "None"
 		}
-
 		hosts := r.URL.Query().Get("host")
 		if hosts == "" {
 			hosts = "all"
@@ -55,7 +54,7 @@ func SystemStatusHandler() http.Handler {
 			if sourceNode == "" {
 				sourceNode = "None"
 			}
-			err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode, nodelabel)
+			out, err := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode, nodelabel)
 			if err != nil {
 				klog.Error(err.Error())
 			}
@@ -65,7 +64,7 @@ func SystemStatusHandler() http.Handler {
 			if hosts == os.Getenv("NODE_NAME") {
 				klog.Info("Checking system status of host " + hosts + " (localhost)")
 				w.Write([]byte("Checking system status of host " + hosts + " (localhost) \n\n"))
-				err, out := runAllTestsLocal(checks, dcgmR)
+				out, err := runAllTestsLocal(hosts, checks, dcgmR, jobName, nodelabel, r)
 				if err != nil {
 					klog.Error(err.Error())
 				}
@@ -73,7 +72,7 @@ func SystemStatusHandler() http.Handler {
 			} else {
 				klog.Info("Asking to run on remote node(s) ", hosts, " or with node label ", nodelabel)
 				w.Write([]byte("Asking to run on remote node(s) " + hosts + " or with node label " + nodelabel + "\n\n"))
-				err, out := runAllTestsRemote(hosts, checks, batch, jobName, dcgmR, nodelabel)
+				out, err := runAllTestsRemote(hosts, checks, batch, jobName, dcgmR, nodelabel)
 				if err != nil {
 					klog.Error(err.Error())
 				}
@@ -88,7 +87,7 @@ func SystemStatusHandler() http.Handler {
 func PCIeBWHandler(pciebw string) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Requesting pcie test with bw: " + pciebw + "\n"))
-		err, out := runPCIeBw()
+		out, err := runPCIeBw()
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -103,7 +102,7 @@ func PCIeBWHandler(pciebw string) http.Handler {
 func RemappedRowsHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Requesting Remapped Rows check on all GPUs\n"))
-		err, out := runRemappedRows()
+		out, err := runRemappedRows()
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -126,7 +125,11 @@ func PingHandler() http.Handler {
 		if jobName == "" {
 			jobName = "None"
 		}
-		err, out := runPing(hosts, jobName)
+		nodelabel := r.URL.Query().Get("nodelabel")
+		if nodelabel == "" {
+			nodelabel = "None"
+		}
+		out, err := runPing(hosts, jobName, nodelabel)
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -168,7 +171,7 @@ func IperfHandler() http.Handler {
 		if nodelabel == "" {
 			nodelabel = "None"
 		}
-		err, out := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode, nodelabel)
+		out, err := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode, nodelabel)
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -185,7 +188,7 @@ func StartIperfServersHandler() http.Handler {
 		if replicas == "" {
 			replicas = "1"
 		}
-		err, out := startIperfServers(replicas)
+		out, err := startIperfServers(replicas)
 
 		if err != nil {
 			klog.Error(err.Error())
@@ -204,7 +207,7 @@ func DCGMHandler() http.Handler {
 		if dcgmR == "" {
 			dcgmR = "1"
 		}
-		err, out := runDCGM(dcgmR)
+		out, err := runDCGM(dcgmR)
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -218,7 +221,7 @@ func DCGMHandler() http.Handler {
 func GpuPowerHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("GPU Power Measurement test"))
-		err, out := runGPUPower()
+		out, err := runGPUPower()
 		if err != nil {
 			klog.Error(err.Error())
 		}
