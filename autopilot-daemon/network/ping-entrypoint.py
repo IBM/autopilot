@@ -9,6 +9,7 @@ import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--job', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--job=namespace:label-key=label-value\". Default is set to None.')
+parser.add_argument('--nodelabel', type=str, default='None', help='Node label to select nodes. Ex: \"label-key=label-value\". Default is set to None.')
 parser.add_argument('--nodes', type=str, default='all', help='Node(s) running autopilot that will be reached out by ping. Can be a comma separated list. Default is \"all\". Servers are reached out sequentially')
 args = vars(parser.parse_args())
 
@@ -22,9 +23,10 @@ kubeapi = client.CoreV1Api()
 async def main():
     nodelist = args['nodes'].replace(' ', '').split(',') # list of nodes
     job = args['job']
+    nodelabel = args['nodelabel']
     nodemap = {}
     allnodes = False
-    if 'all' in nodelist and job == 'None':
+    if 'all' in nodelist and job == 'None' and nodelabel == 'None':
         allnodes = True
     else:
         nodemap = get_job_nodes(nodelist)
@@ -111,7 +113,7 @@ async def main():
         else:
             if "Unreachable" in stdout or "100% packet loss" in stdout:
                 print("Node", c[1], c[2], "1")
-                fail =True
+                fail = True
             else:
                 print("Node", c[1], c[2], "0")
     if fail:
@@ -138,6 +140,20 @@ def get_job_nodes(nodelist):
         for pod in job_pods.items:
             if pod.spec.node_name != node_name_self:
                 nodemap[pod.spec.node_name] = True
+
+    nodelabel = args['nodelabel']
+    if nodelabel != 'None':
+        try:
+            labeled_nodes = v1.list_node(label_selector=nodelabel)
+        except ApiException as e:
+            print("Exception when calling CoreV1Api->list_node: %s\n" % e)
+            exit()
+        if len(labeled_nodes.items) == 0:
+            print ("No node is labeled with", nodelabel, " - ABORT.")
+            exit()
+        for labeled_node in labeled_nodes.items:
+            if labeled_node.metadata.name != node_name_self:
+                nodemap[labeled_node.metadata.name] = True
     # get nodes from input list, if any
     if 'all' not in nodelist:
         for i in nodelist:
