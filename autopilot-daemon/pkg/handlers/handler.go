@@ -231,3 +231,17 @@ func GpuPowerHandler() http.Handler {
 	}
 	return http.HandlerFunc(fn)
 }
+
+func GpuMemHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("GPU Memory DGEMM+DAXPY test"))
+		out, err := runGPUPower()
+		if err != nil {
+			klog.Error(err.Error())
+		}
+		if out != nil {
+			w.Write(*out)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
