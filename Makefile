@@ -1,4 +1,4 @@
-TAG=1.4.0
+TAG=1.5.0
 IMAGE=hypervisorepo:5000/autopilot
 
 image:
