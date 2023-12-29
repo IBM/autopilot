@@ -76,6 +76,15 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 			}
 			out = append(out, *tmp...)
 
+		case "gpumem":
+			klog.Info("Running health check: ", check)
+			tmp, err = runGPUMem()
+			if err != nil {
+				klog.Error(err.Error())
+				return nil, err
+			}
+			out = append(out, *tmp...)
+
 		case "all":
 			klog.Info("Run all health checks\n")
 			tmp, err := runPCIeBw()
@@ -173,6 +182,32 @@ func runRemappedRows() (*[]byte, error) {
 				utils.HchecksGauge.WithLabelValues("remapped", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(rm)
 			}
 		}
+	}
+	return &out, nil
+}
+
+func runGPUMem() (*[]byte, error) {
+	out, err := exec.Command("python3", "./gpu-mem/entrypoint.py").CombinedOutput()
+	if err != nil {
+		klog.Info("Out:", string(out))
+		klog.Error(err.Error())
+		return nil, err
+	} else {
+		klog.Info("GPU Memory check completed:")
+
+		if strings.Contains(string(out[:]), "FAIL") {
+			klog.Info("GPU Memory check failed.", string(out[:]))
+			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "1")
+			utils.HchecksGauge.WithLabelValues("gpumem", os.Getenv("NODE_NAME"), "0").Set(1)
+		}
+
+		if strings.Contains(string(out[:]), "ABORT") {
+			klog.Info("GPU Memory check cannot be run. ", string(out[:]))
+			return &out, nil
+		}
+
+		klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "0")
+		utils.HchecksGauge.WithLabelValues("gpumem", os.Getenv("NODE_NAME"), "0").Set(0)
 	}
 	return &out, nil
 }

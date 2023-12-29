@@ -67,6 +67,7 @@ func main() {
 	hcMux.Handle("/dcgm", handlers.DCGMHandler())
 	hcMux.Handle("/ping", handlers.PingHandler())
 	hcMux.Handle("/gpupower", handlers.GpuPowerHandler())
+	hcMux.Handle("/gpumem", handlers.GpuMemHandler())
 
 	s := &http.Server{
 		Addr:         ":" + *port,
