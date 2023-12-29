@@ -1,4 +1,5 @@
-FROM pytorch/pytorch:1.12.1-cuda11.3-cudnn8-devel as cudabuild
+# FROM pytorch/pytorch:1.12.1-cuda11.3-cudnn8-devel as cudabuild
+FROM pytorch/pytorch:2.1.2-cuda12.1-cudnn8-devel as cudabuild
 
 RUN apt -y update && apt -y upgrade && apt -y clean && apt -y autoremove \
         && apt install -y --no-install-recommends build-essential git wget openssh-server && \
@@ -7,7 +8,13 @@ RUN apt -y update && apt -y upgrade && apt -y clean && apt -y autoremove \
 RUN git clone https://github.com/NVIDIA/cuda-samples.git
 WORKDIR cuda-samples/Samples/1_Utilities/bandwidthTest
 
-RUN make SMS="60 70 80 86" 
+RUN make SMS="80 86 90" 
+
+WORKDIR /workspace
+
+COPY gpu-mem/gpucheck.cu .
+
+RUN nvcc -gencode arch=compute_80,code=sm_80 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_90,code=sm_90 gpucheck.cu -o gpucheck -lcublas --linker-options -lnvidia-ml -O3
 
 FROM golang:1.19 AS gobuild
 
@@ -32,6 +39,7 @@ RUN  apt -y update && apt -y upgrade &&  DEBIAN_FRONTEND="noninteractive" TZ="Am
         wget \
         net-tools \
         software-properties-common \
+        git \
         && apt -y clean && apt -y autoremove
 
 # Add capabilities for ping
@@ -41,7 +49,13 @@ RUN add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/r
 # RUN apk update && apk --no-cache  add ca-certificates
 # RUN adduser -s /bin/bash -D -h /home/autopilot autopilot -G root 
 
-# FROM pytorch/pytorch:1.12.1-cuda11.3-cudnn8-runtime
+# RDMA ping utils
+# RUN apt -y update  && apt -y upgrade && apt -y install build-essential automake autoconf libtool libibverbs-dev librdmacm-dev libibumad-dev pciutils libpci-dev
+# RUN git clone https://github.com/linux-rdma/perftest.git && \
+#         cd perftest && \
+#         ./autogen.sh && ./configure && \
+#         make && make install
+
 RUN useradd -ms /bin/bash autopilot && usermod -g root autopilot 
 
 # set working directory
@@ -54,16 +68,18 @@ COPY --from=cudabuild /workspace/cuda-samples/Samples/1_Utilities/bandwidthTest/
 COPY gpu-bw/gpuLocalBandwidthTest.sh /home/autopilot/gpu-bw/gpuLocalBandwidthTest.sh
 COPY gpu-bw/entrypoint.py /home/autopilot/gpu-bw/entrypoint.py
 
+# DGEMM DAXPY test files
+
+COPY --from=cudabuild /workspace/gpucheck /home/autopilot/gpu-mem/gpucheck
+COPY gpu-mem/entrypoint.py /home/autopilot/gpu-mem/entrypoint.py
+
+
 # Network tests files
 # COPY network/metrics-entrypoint.py /home/autopilot/network/metrics-entrypoint.py
 COPY network/iperf3-entrypoint.py /home/autopilot/network/iperf3-entrypoint.py
 COPY network/ping-entrypoint.py /home/autopilot/network/ping-entrypoint.py
 COPY network/start-iperf-servers.py /home/autopilot/network/start-iperf-servers.py
 COPY network/iperf3-debrief.sh /home/autopilot/network/iperf3-debrief.sh
-
-# Copy Python script to read Multi-NIC Health Checker status
-RUN cd network && wget https://raw.githubusercontent.com/foundation-model-stack/multi-nic-cni/main/health-check/example-client/read_status.py
-
 
 # Remapped Rows test files
 COPY gpu-remapped/entrypoint.py /home/autopilot/gpu-remapped/entrypoint.py
