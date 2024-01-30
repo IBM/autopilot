@@ -3,7 +3,7 @@ This repository is part of the effort described in the IBM Research Challenge #5
 
 The goal of this challenge is to enable the OpenShift container platform to become the premier platform to orchestrate the full life cycle of Foundation Model workflows (pre-processing, training, adaptation/distillation, and inference) seamlessly across public, private, and on-prem cloud environments.
 
-From operation perspective, infrastucture stability is always important. We actually saw the various errors and anomaly states in GPU and Network, for instance, so it becomes crucial to provide a tool to detect, avoid, and handle the infrastructure issues while running the AI training job. 
+From operation perspective, infrastructure stability is always important. We actually saw the various errors and anomaly states in GPU and Network, for instance, so it becomes crucial to provide a tool to detect, avoid, and handle the infrastructure issues while running the AI training job. 
 
 We provide a collection of tools (named Autopilot) to steer and address these infrastructure issues automatically by pre-flight checks, in-flight checks, and also post-flight to learn or improve the issue detection logic. 
 
@@ -181,8 +181,6 @@ kubectl exec jobs/curl-pod -- curl "http://autopilot-healthchecks.autopilot.svc:
 **Installation**: Autopilot can be installed through Helm and need admin privileges to create objects like services, serviceaccounts, namespaces and relevant RBAC.
 
 ## Requirements
-- A basic system requirement is that an image pull secret to IBM Cloud Container Registry `us.icr.io` is available.
-- `ssh` keys must be available on the system, to be able to clone this repository. If not, you can contact Claudia Misale [c.misale@ibm.com] to have your Deploy Key added to this repository.
 - Need to install `helm-git` plugin on all hosts 
 ```bash
 helm plugin install https://github.com/aslafy-z/helm-git --version 0.15.1
@@ -190,7 +188,7 @@ helm plugin install https://github.com/aslafy-z/helm-git --version 0.15.1
 
 ## Helm Chart customization
 
-Helm charts values can be found [here](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/tree/main/autopilot-daemon/helm-charts/autopilot).
+Helm charts values can be found [here](https://www.github.com/IBM/autopilot/tree/main/autopilot-daemon/helm-charts/autopilot).
 
 By default, it will create a namespace named `autopilot` where to run the components. Users workloads do not run in the autopilot namespace. The creation of the namespace can be disabled by setting `create` to false in the namespace block of the `Values.yaml` file.
 
@@ -256,7 +254,7 @@ annotations:
 1) Add autopilot repo, here is where it checks for ssh keys
 
 ```bash
-helm repo add autopilot  git+ssh://git@github.ibm.com/hybrid-cloud-infrastructure-research/autopilot@autopilot-daemon/helm-charts/autopilot?ref=gh-pages
+helm repo add autopilot  git+ssh://git@github.com/IBM/autopilot@autopilot-daemon/helm-charts/autopilot?ref=gh-pages
 ```
 
 2) Install autopilot (idempotent command). The config file is for customizing the helm values. Namespace is where the helm chart will live, not the namespace where Autopilot runs
