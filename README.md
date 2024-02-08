@@ -1,6 +1,4 @@
 # AI Training Autopilot
-This repository is part of the effort described in the IBM Research Challenge #5160.
-
 The goal of this challenge is to enable the OpenShift container platform to become the premier platform to orchestrate the full life cycle of Foundation Model workflows (pre-processing, training, adaptation/distillation, and inference) seamlessly across public, private, and on-prem cloud environments.
 
 From operation perspective, infrastructure stability is always important. We actually saw the various errors and anomaly states in GPU and Network, for instance, so it becomes crucial to provide a tool to detect, avoid, and handle the infrastructure issues while running the AI training job. 
@@ -202,7 +200,7 @@ namespace:
 ```
 
 If you do not want to create a new namespace and use an existing one, then set `create: false` and specify the namespace name.
-Notice that you **must** label the namespace `oc label ns <namespace> openshift.io/cluster-monitoring=true` to have Prometheus scrape metrics from Autopilot.
+On OpenShift, please ntice that you **must** label the namespace `oc label ns <namespace> openshift.io/cluster-monitoring=true` to have Prometheus scrape metrics from Autopilot.
 
 - To pull the image from a private registry, the admin needs to add `imagePullSecret` data in one of the helm charts. It is possible to avoid the creation of the pull secret by setting the value `create` to false in the imagePullSecret block, and by setting the name of the one that will be used (i.e., `autopilot-pull-secret`).
 
@@ -280,7 +278,7 @@ helm repo add autopilot git+ssh://git@github.com/IBM/autopilot@autopilot-daemon/
 2) Install autopilot (idempotent command). The config file is for customizing the helm values. Namespace is where the helm chart will live, not the namespace where Autopilot runs
 
 ```bash
-helm upgrade autopilot autopilot/autopilot-daemon --install --namespace=<default> -f config.yml
+helm upgrade autopilot autopilot/autopilot-daemon --install --namespace=<default> -f your-config.yml
 ```
 
 The controllers should show up in the selected namespace
@@ -302,4 +300,3 @@ autopilot-daemon-autopilot-xhntv   1/1     Running   0          70m
 ```bash
  helm uninstall autopilot % -n <namespace-where-chart-resides>
 ```
-
