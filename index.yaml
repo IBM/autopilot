@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  autopilot-daemon:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2024-02-08T10:10:11.821604-05:00"
+    description: A Helm chart for Kubernetes
+    digest: 13980a4c36225ac63b83e0fe167a597a8f1830029c20fb4a1fdf8b57b7cd1020
+    name: autopilot-daemon
+    type: application
+    urls:
+    - https://ibm.github.io/autopilot/autopilot-daemon-1.5.0.tgz
+    version: 1.5.0
+generated: "2024-02-08T10:10:11.818433-05:00"
