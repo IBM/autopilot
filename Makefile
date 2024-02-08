@@ -8,7 +8,7 @@ image:
 publish:
 	@git checkout gh-pages
 	@git merge main
-	@helm repo index --url https://raw.github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/gh-pages .
+	@helm repo index --url https://ibm.github.io/autopilot/ .
 	@helm package autopilot-daemon/helm-charts/*
 	@echo -e "User-Agent: *\nDisallow: /" > robots.txt
 	@git add robots.txt index.yaml autopilot-daemon-${TAG}.tgz
