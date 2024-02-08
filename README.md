@@ -1,6 +1,4 @@
 # AI Training Autopilot
-This repository is part of the effort described in the IBM Research Challenge #5160.
-
 The goal of this challenge is to enable the OpenShift container platform to become the premier platform to orchestrate the full life cycle of Foundation Model workflows (pre-processing, training, adaptation/distillation, and inference) seamlessly across public, private, and on-prem cloud environments.
 
 From operation perspective, infrastructure stability is always important. We actually saw the various errors and anomaly states in GPU and Network, for instance, so it becomes crucial to provide a tool to detect, avoid, and handle the infrastructure issues while running the AI training job. 
