@@ -1,5 +1,5 @@
-TAG=1.5.0
-IMAGE=hypervisorepo:5000/autopilot
+TAG=dev
+IMAGE=registry.io/autopilot
 
 image:
 	@docker build -t ${IMAGE}:v${TAG} -f autopilot-daemon/Dockerfile autopilot-daemon/
