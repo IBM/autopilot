@@ -29,7 +29,7 @@ The toolkit currently provides health checks for pre-flight and post-flight phas
 
 - post-flight checks
 
-  -  validate infrastructure once the job ends
+  - validate infrastructure once the job ends
 
 ![image](https://media.github.ibm.com/user/96687/files/4a7c81ba-857a-43d4-bc82-0784ef81b270)
 
@@ -38,10 +38,11 @@ The current status of Autopilot includes:
 
 - **GPU PCIe Link Bandwidth**: The PCIe NVidia bandwidth test to check host-to-device connection on each node
 - **GPU Memory**: GPUs remapped rows evaluation through `nvidia-smi`
+- **GPU Memory Bandwith Performance**: GPUs memory bandwidth evaluation through DAXPY and DGEMM
 - **GPU Diagnostics**: NVidia DCGM (Data Center GPU Manager) diagnostics through `dcgmi diag`
 - **GPU Power Slowdown**: verify if power throttle is active through `nvidia-smi`
-- **Network Reachability**: `ping` to evaluate hosts reachability 
-- **Network Bandwidth**: `iperf3` to evaluate network bandwidth and hosts connectivity 
+- **Network Reachability**: `ping` to evaluate hosts reachability
+- **Network Bandwidth**: `iperf3` to evaluate network bandwidth and hosts connectivity
 
 All test except `iperf3` are executed periodically every hour by default. The time frame can be customized during installation.
 
@@ -60,7 +61,7 @@ curl "http://localhost:3333/status?check=pciebw&host=nodename1"
 All tests can be tailored by a combination of:
 
 - `host=<hostname1,hostname2,...>`, to run all tests on a specific node or on a comma separated list of nodes.
-- `check=<healthcheck1,healtcheck2,...>`, to run a single test (`pciebw`, `dcgm`, `remapped`, `ping`, `iperf` or `all`) or a list of comma separated tests. When no parameters are specified, `pciebw`, `dcgm`, `remapped`, `ping` tests are run.
+- `check=<healthcheck1,healtcheck2,...>`, to run a single test (`pciebw`, `dcgm`, `remapped`, `gpumem`, `ping`, `iperf` or `all`) or a list of comma separated tests. When no parameters are specified, only `pciebw`, `dcgm`, `remapped`, `ping` tests are run.
 - `batch=<#hosts>`, how many hosts to check at a single moment. Requests to the batch are run in parallel asynchronously. Batching is done to avoid running too many requests in parallel when the number of worker nodes increases. Defaults to all nodes.
 
 Some health checks provide further customization.
@@ -87,30 +88,35 @@ Another possible customization is to decide which network plane to test. By defa
 To test connection on `eth0`, that is, the management plane (`mgmt`), can use the `plane` parameter as follows `/status?check=iperf&plane=mgmt`.
 It will create only one client and there is a single server per node.
 
-
-
 ## Run Health Checks
 
 Health checks can be executed through a utility tool provided with a Helm chart, or by querying the Autopilot service.
-Results can be visualized by either checking the logs of the utility tool/service query, or by looking at the data in a Grafana dashboard.
-A very basic `json` for a Grafana Dasnhboard can be found [here](https://github.ibm.com/hybrid-cloud-infrastructure-research/autopilot/blob/main/utility-tools/Autopilot-Grafana-Dashboard.json).
+Results can be visualized by either checking the logs of the utility tool/service query, or by looking at the data in a Prometheus dashboard.
+Metrics are exposed through the `autopilot_health_checks` gauge, and health checks can be selected through the keyword `health` and any of the health checks provided (except from `iperf`).
+
+An example is:
+
+```bash
+autopilot_health_checks{health=~"pciebw"}
+```
 
 ### Query with Port-Forward
 
-Alternatively, it is possible to port-forward the autopilot healthchecks Service and `curl` from localhost. 
+Alternatively, it is possible to port-forward the autopilot healthchecks Service and `curl` from localhost.
 
 ```bash
 kubectl port-forward service/autopilot-healthchecks 3333:3333 -n autopilot
 ```
 
 Will print the following output:
+
 ```bash
 Forwarding from 127.0.0.1:3333 -> 3333
 Forwarding from [::1]:3333 -> 3333
 ```
 
 Then on another terminal, run the desired curl command. In this example, we target one node and check the pcie bandwidth.
-In this scenario, we have a value lower than `4GB/s`, which results in an alert. This error will be exported to the OpenShift web console and on Slack, if that is enabled by admins.
+In this scenario, we have a value lower than `8GB/s`, which results in an alert. This error will be exported to the OpenShift web console and on Slack, if that is enabled by admins.
 
 ```bash
 curl "http://127.0.0.1:3333/status?check=pciebw"
@@ -120,29 +126,29 @@ The output of the command above, will be similar to the following (edited to sav
 ```bash
 Checking status on all nodes
 Autopilot Endpoint: 10.128.6.187
-Node: dev-ppv5g-var-lib-containers-f4v6q
-url(s): http://10.128.6.187:3333/status?host=dev-ppv5g-var-lib-containers-f4v6q&check=pciebw
+Node: hostname
+url(s): http://10.128.6.187:3333/status?host=hostname&check=pciebw
 Response:
-Checking system status of host dev-ppv5g-var-lib-containers-f4v6q (localhost) 
+Checking system status of host hostname (localhost) 
 
 [[ PCIEBW ]] Briefings completed. Continue with PCIe Bandwidth evaluation.
 [[ PCIEBW ]] FAIL
-Host  dev-ppv5g-var-lib-containers-f4v6q
-12.3 12.3 12.3 12.3 3.3 12.3 12.3 12.3
+Host  hostname
+12.3 12.3 12.3 12.3 5.3 12.3 12.3 12.3
 
 Node Status: PCIE Failed
 -------------------------------------
 
 
 Autopilot Endpoint: 10.131.4.93
-Node: dev-ppv5g-var-lib-containers-pzccw
-url(s): http://10.131.4.93:3333/status?host=dev-ppv5g-var-lib-containers-pzccw&check=pciebw
+Node: hostname2
+url(s): http://10.131.4.93:3333/status?host=hostname2&check=pciebw
 Response:
-Checking system status of host dev-ppv5g-var-lib-containers-pzccw (localhost) 
+Checking system status of host hostname2 (localhost) 
 
 [[ PCIEBW ]] Briefings completed. Continue with PCIe Bandwidth evaluation.
 [[ PCIEBW ]] SUCCESS
-Host  dev-ppv5g-var-lib-containers-pzccw
+Host  hostname2
 12.1 12.0 12.3 12.3 11.9 11.5 12.1 12.1
 
 Node Status: Ok
@@ -150,13 +156,8 @@ Node Status: Ok
 
 Node Summary:
 
-{'dev-ppv5g-var-lib-containers-f4v6q': ['PCIE Failed'],
- 'dev-ppv5g-var-lib-containers-pzccw': ['Ok']}
-
-~~~DEBUGGING BELOW~~~
-Processes (randomly ordered) and the nodes they ran (process:[nodes]):
-{486: ['dev-ppv5g-var-lib-containers-f4v6q'],
- 487: ['dev-ppv5g-var-lib-containers-pzccw']}
+{'hostname': ['PCIE Failed'],
+ 'hostname2': ['Ok']}
 
 runtime: 31.845192193984985 sec
 ```
@@ -181,14 +182,16 @@ kubectl exec jobs/curl-pod -- curl "http://autopilot-healthchecks.autopilot.svc:
 **Installation**: Autopilot can be installed through Helm and need admin privileges to create objects like services, serviceaccounts, namespaces and relevant RBAC.
 
 ## Requirements
-- Need to install `helm-git` plugin on all hosts 
+
+- Need to install `helm-git` plugin on all hosts
+
 ```bash
 helm plugin install https://github.com/aslafy-z/helm-git --version 0.15.1
 ```
 
 ## Helm Chart customization
 
-Helm charts values can be found [here](https://www.github.com/IBM/autopilot/tree/main/autopilot-daemon/helm-charts/autopilot).
+Helm charts values can be found [here](https://github.com/IBM/autopilot/tree/main/autopilot-daemon/helm-charts/autopilot).
 
 By default, it will create a namespace named `autopilot` where to run the components. Users workloads do not run in the autopilot namespace. The creation of the namespace can be disabled by setting `create` to false in the namespace block of the `Values.yaml` file.
 
@@ -199,15 +202,15 @@ namespace:
 ```
 
 If you do not want to create a new namespace and use an existing one, then set `create: false` and specify the namespace name.
-Notice that you **must** label the namespace `oc label ns <namespace> openshift.io/cluster-monitoring=true` to have Prometheus scrape metrics from Autopilot.
+On OpenShift, please ntice that you **must** label the namespace `oc label ns <namespace> openshift.io/cluster-monitoring=true` to have Prometheus scrape metrics from Autopilot.
 
-- To pull the image from `cil15` registry, the admin needs to add `imagePullSecret` data in one of the helm charts. It is possible to avoid the creation of the pull secret by setting the value `create` to false in the imagePullSecret block, and by setting the name of the one that will be used (i.e., `all-icr-io`).
+- To pull the image from a private registry, the admin needs to add `imagePullSecret` data in one of the helm charts. It is possible to avoid the creation of the pull secret by setting the value `create` to false in the imagePullSecret block, and by setting the name of the one that will be used (i.e., `autopilot-pull-secret`).
 
 ```yaml
 pullSecrets:
   create: true
   name: autopilot-pull-secret
-  imagePullSecretData: 
+  imagePullSecretData: <encoded-key>
 ```
 
 - Autopilot runs tests periodically. The default is set to every hour, but it can be customized be changing the following
@@ -238,7 +241,8 @@ namespace:
   name: autopilot
 
 image:
-  repository: us.icr.io/cil15-shared-registry/autopilot/autopilot
+  repository: your-repo/autopilot/autopilot
+  tag: preferred-tag
 
 pullSecrets:
   create: true
@@ -249,18 +253,34 @@ annotations:
   k8s.v1.cni.cncf.io/networks: multi-nic-config
 ```
 
+## Build the container
+
+It is possible to build and push the image through 
+
+```bash
+make image
+```
+
+You will need to change the `IMAGE` and `TAG` environment variables to fit your needs.
+
 ## Install
 
 1) Add autopilot repo, here is where it checks for ssh keys
 
 ```bash
-helm repo add autopilot  git+ssh://git@github.com/IBM/autopilot@autopilot-daemon/helm-charts/autopilot?ref=gh-pages
+helm repo add autopilot git+https://github.com/IBM/autopilot.git@autopilot-daemon/helm-charts/autopilot?ref=gh-pages
+```
+
+or with ssh keys if preferred
+
+```bash
+helm repo add autopilot git+ssh://git@github.com/IBM/autopilot@autopilot-daemon/helm-charts/autopilot?ref=gh-pages
 ```
 
 2) Install autopilot (idempotent command). The config file is for customizing the helm values. Namespace is where the helm chart will live, not the namespace where Autopilot runs
 
 ```bash
-helm upgrade autopilot autopilot/autopilot-daemon --install --namespace=<default> -f config.yml
+helm upgrade autopilot autopilot/autopilot-daemon --install --namespace=<default> -f your-config.yml
 ```
 
 The controllers should show up in the selected namespace
@@ -282,4 +302,3 @@ autopilot-daemon-autopilot-xhntv   1/1     Running   0          70m
 ```bash
  helm uninstall autopilot % -n <namespace-where-chart-resides>
 ```
-
