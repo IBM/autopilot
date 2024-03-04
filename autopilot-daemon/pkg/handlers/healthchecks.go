@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.ibm.com/hybrid-cloud-infrastructure-research/autopilot-daemon/pkg/utils"
+	"github.com/IBM/autopilot/pkg/utils"
 	"k8s.io/klog/v2"
 )
 

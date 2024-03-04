@@ -1,4 +1,4 @@
-module github.ibm.com/hybrid-cloud-infrastructure-research/autopilot-daemon
+module github.com/IBM/autopilot
 
 go 1.19
 
