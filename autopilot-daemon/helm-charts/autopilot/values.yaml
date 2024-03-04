@@ -7,8 +7,8 @@ namespace:
   name: autopilot
 
 image:
-  repository:  us.icr.io/cil15-shared-registry/autopilot/autopilot
-  tag: v1.5.0
+  repository:  containerregistry/autopilot
+  tag: dev
   pullPolicy: Always
 
 PCIeBW: 4

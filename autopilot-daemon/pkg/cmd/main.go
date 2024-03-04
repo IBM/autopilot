@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.ibm.com/hybrid-cloud-infrastructure-research/autopilot-daemon/pkg/handlers"
-	"github.ibm.com/hybrid-cloud-infrastructure-research/autopilot-daemon/pkg/utils"
+	"github.com/IBM/autopilot/pkg/handlers"
+	"github.com/IBM/autopilot/pkg/utils"
 	"k8s.io/klog/v2"
 
 	"github.com/prometheus/client_golang/prometheus"
