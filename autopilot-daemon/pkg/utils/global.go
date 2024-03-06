@@ -1,7 +1,11 @@
 package utils
 
 import (
+	"sync"
+
 	"github.com/prometheus/client_golang/prometheus"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 type InitConfig struct {
@@ -9,6 +13,35 @@ type InitConfig struct {
 }
 
 var UserConfig InitConfig
+
+type K8sClientset struct {
+	Cset *kubernetes.Clientset
+}
+
+var k8sClientset *K8sClientset
+
+func GetClientsetInstance() *K8sClientset {
+	var lock = &sync.Mutex{}
+	if k8sClientset == nil {
+		// creates the in-cluster config
+		lock.Lock()
+		defer lock.Unlock()
+		if k8sClientset == nil {
+			k8sClientset = &K8sClientset{}
+			config, err := rest.InClusterConfig()
+			if err != nil {
+				panic(err.Error())
+			}
+			// creates the clientset
+			k8sClientset.Cset, err = kubernetes.NewForConfig(config)
+			if err != nil {
+				panic(err.Error())
+			}
+		}
+
+	}
+	return k8sClientset
+}
 
 var (
 	Requests = prometheus.NewCounter(
