@@ -16,7 +16,7 @@ COPY gpu-mem/gpucheck.cu .
 
 RUN nvcc -gencode arch=compute_80,code=sm_80 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_90,code=sm_90 gpucheck.cu -o gpucheck -lcublas --linker-options -lnvidia-ml -O3
 
-FROM golang:1.19 AS gobuild
+FROM golang:1.21 AS gobuild
 
 ENV GOOS=linux
 ENV GOARCH=amd64
