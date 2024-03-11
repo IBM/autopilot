@@ -21,6 +21,8 @@ pullSecrets:
   imagePullSecretData: 
   
 env:
+    - name: "PERIODIC_CHECKS"
+      value: "pciebw,remapped,dcgm,ping,gpupower"
   # - name: "CHECKER_URL"
   #   value:
   # - name: "CHECKER_NAMESPACE"

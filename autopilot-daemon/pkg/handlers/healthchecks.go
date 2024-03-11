@@ -12,9 +12,15 @@ import (
 	"k8s.io/klog/v2"
 )
 
+var defaultPeriodicChecks string = "pciebw,remapped,dcgm,ping,gpupower"
+
 func TimerRun() {
 	klog.Info("Running a periodic check")
-	runAllTestsLocal("all", "pciebw,remapped,dcgm,ping,gpupower", "1", "None", "None", nil)
+	checks, exists := os.LookupEnv("PERIODIC_CHECKS")
+	if !exists {
+		checks = defaultPeriodicChecks
+	}
+	runAllTestsLocal("all", checks, "1", "None", "None", nil)
 }
 
 func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string, nodelabel string, r *http.Request) (*[]byte, error) {
