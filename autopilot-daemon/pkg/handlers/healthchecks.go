@@ -12,9 +12,20 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func TimerRun() {
+func PeriodicCheckTimer() {
 	klog.Info("Running a periodic check")
+	utils.HealthcheckLock.Lock()
+	defer utils.HealthcheckLock.Unlock()
 	runAllTestsLocal("all", "pciebw,remapped,dcgm,ping,gpupower", "1", "None", "None", nil)
+}
+
+func IntrusiveCheckTimer() {
+	klog.Info("Trying to run an intrusive check")
+	utils.HealthcheckLock.Lock()
+	defer utils.HealthcheckLock.Unlock()
+	if utils.GPUsAvailability() {
+		utils.CreateJob("dcgm")
+	}
 }
 
 func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string, nodelabel string, r *http.Request) (*[]byte, error) {
@@ -309,7 +320,6 @@ func runIperf(nodelist string, jobName string, plane string, clients string, ser
 					return nil, err
 				}
 				klog.Info("Observation: ", entries[0], " ", entries[1], " ", bw)
-				// utils.HchecksGauge.WithLabelValues("iperf", entries[0], entries[1]).Set(bw)
 			}
 		}
 	}

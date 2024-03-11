@@ -2,6 +2,14 @@ import json
 import subprocess
 import os
 import argparse
+import datetime
+from kubernetes import client, config
+from kubernetes.client.rest import ApiException
+
+# load in cluster kubernetes config for access to cluster
+config.load_incluster_config()
+v1 = client.CoreV1Api()
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -33,12 +41,12 @@ def try_dcgm(command):
             exit()
         if proc.stdout:
             print("[[ DCGM ]] GPUs currently utilized:\n", proc.stdout)
-        exit()
+        # exit()
 
     if result.stderr:
        print(result.stderr)
        print("[[ DCGM ]] exited with error: " + result.stderr + " ERR")
-       exit()
+    #    exit()
     else:
         dcgm_dict = json.loads(result.stdout)
         tests_dict = dcgm_dict['DCGM GPU Diagnostic']['test_categories']
@@ -56,6 +64,20 @@ def try_dcgm(command):
             print("Host ", os.getenv("NODE_NAME"))
             print("[[ DCGM ]] FAIL")
             print(output.strip())
+
+def label_node(success):
+    now = datetime.datetime.now()
+    timestamp = now.strftime("%Y/%m/%d-%H:%M:%S")
+    try:
+        node = v1.list_node(field_selector=nodelabel)
+    except ApiException as e:
+        print("Exception when calling CoreV1Api->list_node: %s\n" % e)
+        exit()
+    if success:
+        print("labeling node with success")
+    else:
+        print("labeling node with dcgm issue")
+
 
 if __name__ == '__main__':
     main()

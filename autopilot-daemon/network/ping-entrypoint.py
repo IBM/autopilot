@@ -72,8 +72,8 @@ async def main():
                     try:
                         iface=entry['interface']
                     except KeyError:
-                        print("Interface key not found, assigning default.")
-                        iface = "default"
+                        print("Interface key name not found, assigning 'k8s-pod-network'.")
+                        iface = "k8s-pod-network"
                     ifaces = ifaces | {iface}
                     node[iface] = {
                         'ips': entry['ips'],
@@ -95,9 +95,9 @@ async def main():
             except KeyError:
                 print("Interface", iface, "not found, skipping.")
                 continue
-            for ip in ips:
+            for index, ip in enumerate(ips):
                 command = ['ping',ip,'-t','45','-c','10']
-                clients.append((subprocess.Popen(command, start_new_session=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE), nodename, ip))
+                clients.append((subprocess.Popen(command, start_new_session=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE), nodename, ip, "net-"+str(index)))
     for c in clients:
         try:
             c[0].wait(50)
@@ -112,10 +112,10 @@ async def main():
             print("FAIL")
         else:
             if "Unreachable" in stdout or "100% packet loss" in stdout:
-                print("Node", c[1], c[2], "1")
+                print("Node", c[1], c[2], c[3], "1")
                 fail = True
             else:
-                print("Node", c[1], c[2], "0")
+                print("Node", c[1], c[2], c[3], "0")
     if fail:
         print("[PING] At least one node unreachable. FAIL")
     else:

@@ -20,9 +20,9 @@ func main() {
 	port := flag.String("port", "3333", "Port for the webhook to listen to. Defaulted to 3333")
 	bwThreshold := flag.String("bw", "4", "Sets bandwidth threshold for the init container")
 	logFile := flag.String("logfile", "", "File where to save all the events")
-	devmode := flag.Bool("dev", false, "Dev mode disables the execution of health checks at pod startup. Default set to True, therefore health checks are executed at pod startup first, and then periodically.")
 	v := flag.String("loglevel", "2", "Log level")
-	repeat := flag.Int("w", 24, "Run all tests periodically on each node. Time set in hours. Defaults to 24h")
+	repeat := flag.Int("periodic-timer", 24, "Run all tests periodically on each node. Time set in hours. Defaults to 24h")
+	intrusive := flag.Int("intrusive-timer", 4, "Run intrusive checks (e.g., dcgmi level 3) on each node when GPUs are free. Time set in hours. Defaults to 4h.")
 
 	flag.Parse()
 
@@ -99,17 +99,21 @@ func main() {
 		}
 	}()
 
-	if !*devmode {
-		handlers.TimerRun()
-	}
+	// Run the health checks at startup, then start the timer
+	handlers.PeriodicCheckTimer()
 
-	testsTicker := time.NewTicker(time.Duration(*repeat) * time.Hour)
-	defer testsTicker.Stop()
+	periodicChecksTicker := time.NewTicker(time.Duration(*repeat) * time.Hour)
+	defer periodicChecksTicker.Stop()
+	intrusiveChecksTicker := time.NewTicker(time.Duration(*intrusive) * time.Hour)
+	defer periodicChecksTicker.Stop()
 	for {
 		select {
-		case <-testsTicker.C:
-			handlers.TimerRun()
+		case <-periodicChecksTicker.C:
+			handlers.PeriodicCheckTimer()
+		case <-intrusiveChecksTicker.C:
+			handlers.IntrusiveCheckTimer()
 		}
+
 	}
 
 	// cert := "/etc/admission-webhook/tls/tls.crt"
