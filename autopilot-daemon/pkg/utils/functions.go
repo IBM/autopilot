@@ -8,6 +8,7 @@ import (
 	"github.com/thanhpk/randstr"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
@@ -71,8 +72,10 @@ func CreateJob(healthcheck string) {
 	var cmd []string
 	switch healthcheck {
 	case "dcgm":
-		cmd = []string{"dcgmi"}
-		args = []string{"diag", "-r", "1"}
+		// cmd = []string{"dcgmi"}
+		// args = []string{"diag", "-r", "1"}
+		cmd = []string{"python3"}
+		args = []string{"gpu-dcgm/entrypoint.py", "-r", "3", "-l"}
 	}
 	cset := GetClientsetInstance()
 
@@ -89,7 +92,6 @@ func CreateJob(healthcheck string) {
 	autopilotPod := pods.Items[0]
 	var ttlsec int32
 	ttlsec = 4 * 60 * 60 // setting TTL to 4 hours
-
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      healthcheck + "-" + randstr.Hex(6),
@@ -118,7 +120,20 @@ func CreateJob(healthcheck string) {
 							ImagePullPolicy: "IfNotPresent",
 							Command:         cmd,
 							Args:            args,
-							Resources:       *autopilotPod.Spec.Containers[0].Resources.DeepCopy(),
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"nvidia.com/gpu": resource.MustParse("8"),
+								},
+								Requests: corev1.ResourceList{
+									"nvidia.com/gpu": resource.MustParse("8"),
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "NODE_NAME",
+									Value: os.Getenv("NODE_NAME"),
+								},
+							},
 						},
 					},
 				},
@@ -131,8 +146,4 @@ func CreateJob(healthcheck string) {
 	if err != nil {
 		klog.Info("Couldn't create Job ", err.Error())
 	}
-}
-
-func labelNode() {
-
 }

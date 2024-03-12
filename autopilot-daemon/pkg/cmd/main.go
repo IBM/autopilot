@@ -21,8 +21,8 @@ func main() {
 	bwThreshold := flag.String("bw", "4", "Sets bandwidth threshold for the init container")
 	logFile := flag.String("logfile", "", "File where to save all the events")
 	v := flag.String("loglevel", "2", "Log level")
-	repeat := flag.Int("periodic-timer", 24, "Run all tests periodically on each node. Time set in hours. Defaults to 24h")
-	intrusive := flag.Int("intrusive-timer", 4, "Run intrusive checks (e.g., dcgmi level 3) on each node when GPUs are free. Time set in hours. Defaults to 4h.")
+	repeat := flag.Int("w", 24, "Run all tests periodically on each node. Time set in hours. Defaults to 24h")
+	// intrusive := flag.Int("intrusive-timer", 4, "Run intrusive checks (e.g., dcgmi level 3) on each node when GPUs are free. Time set in hours. Defaults to 4h.")
 
 	flag.Parse()
 
@@ -104,7 +104,8 @@ func main() {
 
 	periodicChecksTicker := time.NewTicker(time.Duration(*repeat) * time.Hour)
 	defer periodicChecksTicker.Stop()
-	intrusiveChecksTicker := time.NewTicker(time.Duration(*intrusive) * time.Hour)
+	// intrusiveChecksTicker := time.NewTicker(time.Duration(*intrusive) * time.Hour)
+	intrusiveChecksTicker := time.NewTicker(1 * time.Hour)
 	defer periodicChecksTicker.Stop()
 	for {
 		select {
