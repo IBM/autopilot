@@ -3,7 +3,7 @@ import os
 
 
 def main():
-
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--threshold', type=str, default='4')
     args = parser.parse_args()
@@ -16,9 +16,7 @@ def main():
         output = os.popen('./gpu-bw/gpuLocalBandwidthTest.sh -t ' + args.threshold)
         result = output.read()
 
-        if "FAIL" in result:
-            print("[[ PCIEBW ]] FAIL")
-        elif "ABORT" in result:
+        if "ABORT" in result or "SKIP" in result:
             print("[[ PCIEBW ]] ABORT")
             print(result)
             exit()
