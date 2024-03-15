@@ -52,26 +52,25 @@ def try_dcgm(command):
         for category in tests_dict:
             for test in category['tests']:
                 if test['results'][0]['status'] == 'Fail':
+                    success = False
                     print(test['name'], ":", test['results'][0]['status'])
-                    output+=(test['name'].replace(" ","")+"_")
-                    for entry in test['results']:
-                        print(entry['warnings'][0]['warning'])
-                        output+=("."+entry['gpu_id'])
-                        success = False
+                    if test['name'] == "GPU Memory":
+                        output+=(test['name'].replace(" ","")+"_")
+                        for entry in test['results']:
+                            output+=("."+entry['gpu_id'])
         if success:
             print("[[ DCGM ]] SUCCESS")
         else:
             print("Host", nodename)
             print("[[ DCGM ]] FAIL")
-            # print(output.strip())
         if args.label_node:
             patch_node(success, output)
     
 
 def patch_node(success, output):
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.timezone.utc)
     #  ADD UTC
-    timestamp = now.strftime("%Y-%m-%d_%H.%M.%S")
+    timestamp = now.strftime("%Y-%m-%d_%H.%M.%SUTC")
     result = ""
     if success:
         result = "PASS_"+timestamp

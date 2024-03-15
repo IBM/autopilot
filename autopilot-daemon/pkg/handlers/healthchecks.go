@@ -189,7 +189,6 @@ func runRemappedRows() (*[]byte, error) {
 				return nil, err
 			} else {
 				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", rm)
-				// utils.Hchecks.WithLabelValues("remapped", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Observe(rm)
 				utils.HchecksGauge.WithLabelValues("remapped", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(rm)
 			}
 		}
@@ -272,7 +271,6 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 		output := strings.TrimSuffix(string(out[:]), "\n")
 		lines := strings.Split(output, "\n")
 		unreach_nodes := make(map[string][]string)
-		reach_nodes := make(map[string][]string)
 		for _, line := range lines {
 			if strings.HasPrefix(line, "Node") {
 				entry := strings.Split(line, " ")
@@ -282,11 +280,10 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 					unreach_nodes[entry[1]] = append(unreach_nodes[entry[1]], entry[2])
 				} else {
 					utils.HchecksGauge.WithLabelValues("ping", entry[1], entry[2]).Set(0)
-					reach_nodes[entry[1]] = append(reach_nodes[entry[1]], entry[2])
 				}
 			}
 		}
-		klog.Info("Observation: ", len(reach_nodes)-len(unreach_nodes), "/", len(reach_nodes)+len(unreach_nodes), " remote nodes are reachable")
+		klog.Info("Unreachable nodes count: ", len(unreach_nodes))
 	}
 	return &out, nil
 }

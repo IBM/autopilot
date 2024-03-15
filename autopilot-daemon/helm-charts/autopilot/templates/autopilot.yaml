@@ -45,7 +45,7 @@ spec:
            - -c
            - |
              iperf3 -s -p 6310 -D 
-             /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }} --intrusive-timer {{ .Values.intrusive }}
+             /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }} --intrusive-check-timer {{ .Values.intrusive }}
           imagePullPolicy: {{ .Values.image.pullPolicy }} 
           name: autopilot
           env:

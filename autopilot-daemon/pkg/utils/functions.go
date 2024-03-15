@@ -90,8 +90,8 @@ func CreateJob(healthcheck string) {
 		klog.Info("Cannot get pod:", err.Error())
 	}
 	autopilotPod := pods.Items[0]
-	var ttlsec int32
-	ttlsec = 4 * 60 * 60 // setting TTL to 4 hours
+	ttlsec := int32(4 * 60 * 60) // setting TTL to 4 hours
+	backofflimits := int32(0)
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      healthcheck + "-" + randstr.Hex(6),
@@ -99,6 +99,7 @@ func CreateJob(healthcheck string) {
 		},
 		Spec: batchv1.JobSpec{
 			TTLSecondsAfterFinished: &ttlsec,
+			BackoffLimit:            &backofflimits,
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					RestartPolicy:      "Never",
