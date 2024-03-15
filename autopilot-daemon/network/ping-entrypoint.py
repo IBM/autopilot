@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import subprocess
 import time
+import netifaces
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--job', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--job=namespace:label-key=label-value\". Default is set to None.')
@@ -26,6 +27,7 @@ async def main():
     nodelabel = args['nodelabel']
     nodemap = {}
     allnodes = False
+    check_local_ifaces()
     if 'all' in nodelist and job == 'None' and nodelabel == 'None':
         allnodes = True
     else:
@@ -121,6 +123,28 @@ async def main():
     else:
         print("[PING] all nodes reachable. success")
             
+def check_local_ifaces():
+    podname = os.getenv("POD_NAME")
+    pod_list = kubeapi.list_namespaced_pod(namespace=namespace_self, field_selector="metadata.name="+podname)
+    ips = []
+    pod_self = pod_list.items[0] 
+    try:
+        entrylist = json.loads(pod_self.metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
+    except KeyError:
+        print("Key k8s.v1.cni.cncf.io/network-status not found on pod", pod_self.metadata.name, "- Skipping node", pod_self.spec.node_name)
+    for entry in entrylist:
+        try:
+            iface=entry['interface']
+        except KeyError:
+            continue
+        ips.append(entry['ips'])
+    ifaces = netifaces.interfaces()
+    ifaces.remove('lo')
+    ifaces.remove('eth0')
+    if len(ips) > 0 and len(ifaces) == 0 :
+        print("[PING] IFACES count inconsistent. Pod annotation reports", ips, ", not found in the pod among", netifaces.interfaces(),"ABORT")
+        exit()
+
 def get_job_nodes(nodelist):
     v1 = client.CoreV1Api()
     # get nodes from job is specified
