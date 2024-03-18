@@ -42,7 +42,6 @@ func GPUsAvailability() bool {
 	cset := GetClientsetInstance()
 
 	fieldselector, err := fields.ParseSelector("spec.nodeName=" + os.Getenv("NODE_NAME") + ",status.phase!=" + string(corev1.PodSucceeded))
-	// + ",status.phase!=" + string(corev1.PodFailed)
 	if err != nil {
 		klog.Info("Error in creating the field selector", err.Error())
 		return false
@@ -72,8 +71,6 @@ func CreateJob(healthcheck string) {
 	var cmd []string
 	switch healthcheck {
 	case "dcgm":
-		// cmd = []string{"dcgmi"}
-		// args = []string{"diag", "-r", "1"}
 		cmd = []string{"python3"}
 		args = []string{"gpu-dcgm/entrypoint.py", "-r", "3", "-l"}
 	}
