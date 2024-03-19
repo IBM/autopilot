@@ -56,12 +56,12 @@ fi
 
 D=$((D-1))
 for i in $(seq 0 1 $D) ; do
-  EXEC+="$($PROG --htod --memory=pinned --device=$i --csv)"
+  EXEC+="$($PROG --htod --memory=pinned --device=$i --csv 2>&1)"
   EXEC+="\n"
 done
 errors="$(echo ${EXEC} | grep -i '802\|error')"
 if [[ -n $errors ]]; then
-  echo "CRITICAL ERROR WITH GPUs - DEVICE NOT READY"
+  echo "CRITICAL ERROR WITH GPUs"
   echo "ABORT"
   echo -e $EXEC
 else

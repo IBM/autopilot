@@ -14,6 +14,7 @@ image:
 PCIeBW: 4
 
 repeat: 1
+intrusive: 4
 
 pullSecrets:
   create: true

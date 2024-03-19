@@ -6,3 +6,5 @@ image-build:
 
 image-push:
 	@docker push ${IMAGE}:v${TAG}
+
+all: image-build image-push
