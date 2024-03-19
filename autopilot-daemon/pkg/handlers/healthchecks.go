@@ -12,11 +12,17 @@ import (
 	"k8s.io/klog/v2"
 )
 
+var defaultPeriodicChecks string = "pciebw,remapped,dcgm,ping,gpupower"
 func PeriodicCheckTimer() {
 	klog.Info("Running a periodic check")
 	utils.HealthcheckLock.Lock()
 	defer utils.HealthcheckLock.Unlock()
-	runAllTestsLocal("all", "pciebw,remapped,dcgm,ping,gpupower", "1", "None", "None", nil)
+  checks, exists := os.LookupEnv("PERIODIC_CHECKS")
+	if !exists {
+		klog.Info("Run all periodic health checks\n")
+		checks = defaultPeriodicChecks
+	}
+	runAllTestsLocal("all", checks, "1", "None", "None", nil)
 }
 
 func IntrusiveCheckTimer() {
@@ -33,6 +39,9 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 	var tmp *[]byte
 	var err error
 	start := time.Now()
+	if strings.Contains(checks, "all") {
+		checks = defaultPeriodicChecks
+	}
 	for _, check := range strings.Split(checks, ",") {
 		switch check {
 		case "ping":
@@ -96,45 +105,6 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 			}
 			out = append(out, *tmp...)
 
-		case "all":
-			klog.Info("Run all health checks\n")
-			tmp, err := runPCIeBw()
-			if err != nil {
-				klog.Error(err.Error())
-				return tmp, err
-			}
-			out = append(out, *tmp...)
-			tmp, err = runRemappedRows()
-			if err != nil {
-				klog.Error(err.Error())
-				return nil, err
-			}
-			out = append(out, *tmp...)
-			tmp, err = runDCGM(dcgmR)
-			if err != nil {
-				klog.Error(err.Error())
-				return tmp, err
-			}
-			out = append(out, *tmp...)
-			pingnodes := "all"
-			if r != nil {
-				pingnodes = r.URL.Query().Get("pingnodes")
-				if pingnodes == "" {
-					pingnodes = "all"
-				}
-			}
-			tmp, err = runPing(pingnodes, jobName, nodelabel)
-			if err != nil {
-				klog.Error(err.Error())
-				return tmp, err
-			}
-			out = append(out, *tmp...)
-			tmp, err = runGPUPower()
-			if err != nil {
-				klog.Error(err.Error())
-				return tmp, err
-			}
-			out = append(out, *tmp...)
 		default:
 			notsupported := "check not supported: " + check
 			out = append(out, []byte(notsupported)...)
