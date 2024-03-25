@@ -28,10 +28,11 @@ def main():
         print(result)
 
 
+# translate key-strings into lowercase and strip spaces
+def unify_string_format(key: str) -> str:
+    return key.strip().lower().replace(' ','_')
 
-
-# TODO actually parse all results and collect the failures
-def parse_all_results(result: str) -> tuple[bool,str]:
+def parse_all_results(result: str):
     dcgm_dict = json.loads(result)
     tests_dict = dcgm_dict['DCGM GPU Diagnostic']['test_categories']
     success = True
@@ -41,15 +42,14 @@ def parse_all_results(result: str) -> tuple[bool,str]:
             if test['results'][0]['status'] == 'Fail':
                 success = False
                 print(test['name'], ":", test['results'][0]['status'])
-                if test['name'] == "GPU Memory":
-                    output+=(test['name'].replace(" ","")+"_")
-                    for entry in test['results']:
-                        output+=("."+entry['gpu_id'])
-    return success,output
+                output+=f'{unify_string_format(test["name"])}'
+                for entry in test['results']:
+                    output+=f'{"."+entry["gpu_id"]}'
+    return success, output
 
 
 # parsing the json result string based on a comma-separated list of paths (levels separated by '.')
-def parse_selected_results(result: str, testpaths: str) -> tuple[bool,str]:
+def parse_selected_results(result: str, testpaths: str):
     '''
     follow the list of selected paths down the dcgm json tree
 
@@ -85,9 +85,6 @@ def parse_selected_results(result: str, testpaths: str) -> tuple[bool,str]:
         ("name","results")
     ]
 
-    # tranlate key-strings into lowercase and strip spaces
-    def unify_string_format(key: str) -> str:
-        return key.strip().lower().replace(' ','_')
 
     # scan the dictionary and recursively transform all keys using key_update
     def normalize_json_keys(data) -> dict:
@@ -200,9 +197,8 @@ def try_dcgm(command):
        print(result.stderr)
        print("[[ DCGM ]] exited with error: " + result.stderr + " ERR")
     else:
-        try:
-            testpaths = os.environ["AUTOPILOT_DCGM_RESULT_PATHS"]
-        except KeyError:
+        testpaths = os.getenv("AUTOPILOT_DCGM_RESULT_PATHS")
+        if testpaths == None:
             success, output = parse_all_results(result.stdout)
         if success:
             print("[[ DCGM ]] SUCCESS")
@@ -215,7 +211,6 @@ def try_dcgm(command):
 
 def patch_node(success, output):
     now = datetime.datetime.now(datetime.timezone.utc)
-    #  ADD UTC
     timestamp = now.strftime("%Y-%m-%d_%H.%M.%SUTC")
     result = ""
     if success:
