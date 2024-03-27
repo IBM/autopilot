@@ -37,6 +37,12 @@ spec:
           image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
           imagePullPolicy: Always
           name: device-plugin-validation
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
       {{- end}}
       containers:
         - image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
@@ -48,6 +54,12 @@ spec:
              /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }} --intrusive-check-timer {{ .Values.intrusive }}
           imagePullPolicy: {{ .Values.image.pullPolicy }} 
           name: autopilot
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
           env:
           {{- range .Values.env }}
             - name: {{ .name }}
