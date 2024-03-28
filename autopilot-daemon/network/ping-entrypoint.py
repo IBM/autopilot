@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import subprocess
 import time
+import netifaces
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--job', type=str, default='None', help='Workload node discovery w/ given namespace and label. Ex: \"--job=namespace:label-key=label-value\". Default is set to None.')
@@ -26,6 +27,7 @@ async def main():
     nodelabel = args['nodelabel']
     nodemap = {}
     allnodes = False
+    check_local_ifaces()
     if 'all' in nodelist and job == 'None' and nodelabel == 'None':
         allnodes = True
     else:
@@ -72,8 +74,8 @@ async def main():
                     try:
                         iface=entry['interface']
                     except KeyError:
-                        print("Interface key not found, assigning default.")
-                        iface = "default"
+                        print("Interface key name not found, assigning 'k8s-pod-network'.")
+                        iface = "k8s-pod-network"
                     ifaces = ifaces | {iface}
                     node[iface] = {
                         'ips': entry['ips'],
@@ -95,9 +97,9 @@ async def main():
             except KeyError:
                 print("Interface", iface, "not found, skipping.")
                 continue
-            for ip in ips:
+            for index, ip in enumerate(ips):
                 command = ['ping',ip,'-t','45','-c','10']
-                clients.append((subprocess.Popen(command, start_new_session=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE), nodename, ip))
+                clients.append((subprocess.Popen(command, start_new_session=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE), nodename, ip, "net-"+str(index)))
     for c in clients:
         try:
             c[0].wait(50)
@@ -112,15 +114,37 @@ async def main():
             print("FAIL")
         else:
             if "Unreachable" in stdout or "100% packet loss" in stdout:
-                print("Node", c[1], c[2], "1")
+                print("Node", c[1], c[2], c[3], "1")
                 fail = True
             else:
-                print("Node", c[1], c[2], "0")
+                print("Node", c[1], c[2], c[3], "0")
     if fail:
         print("[PING] At least one node unreachable. FAIL")
     else:
         print("[PING] all nodes reachable. success")
             
+def check_local_ifaces():
+    podname = os.getenv("POD_NAME")
+    pod_list = kubeapi.list_namespaced_pod(namespace=namespace_self, field_selector="metadata.name="+podname)
+    ips = []
+    pod_self = pod_list.items[0] 
+    try:
+        entrylist = json.loads(pod_self.metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
+    except KeyError:
+        print("Key k8s.v1.cni.cncf.io/network-status not found on pod", pod_self.metadata.name, "- Skipping node", pod_self.spec.node_name)
+    for entry in entrylist:
+        try:
+            iface=entry['interface']
+        except KeyError:
+            continue
+        ips.append(entry['ips'])
+    ifaces = netifaces.interfaces()
+    ifaces.remove('lo')
+    ifaces.remove('eth0')
+    if len(ips) > 0 and len(ifaces) == 0 :
+        print("[PING] IFACES count inconsistent. Pod annotation reports", ips, ", not found in the pod among", netifaces.interfaces(),"ABORT")
+        exit()
+
 def get_job_nodes(nodelist):
     v1 = client.CoreV1Api()
     # get nodes from job is specified

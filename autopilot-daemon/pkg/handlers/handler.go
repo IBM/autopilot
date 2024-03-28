@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/IBM/autopilot/pkg/utils"
 	"k8s.io/klog/v2"
 )
 
@@ -64,6 +65,8 @@ func SystemStatusHandler() http.Handler {
 			if hosts == os.Getenv("NODE_NAME") {
 				klog.Info("Checking system status of host " + hosts + " (localhost)")
 				w.Write([]byte("Checking system status of host " + hosts + " (localhost) \n\n"))
+				utils.HealthcheckLock.Lock()
+				defer utils.HealthcheckLock.Unlock()
 				out, err := runAllTestsLocal(hosts, checks, dcgmR, jobName, nodelabel, r)
 				if err != nil {
 					klog.Error(err.Error())

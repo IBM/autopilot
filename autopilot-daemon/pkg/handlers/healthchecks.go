@@ -8,13 +8,30 @@ import (
 	"strings"
 	"time"
 
-	"github.ibm.com/hybrid-cloud-infrastructure-research/autopilot-daemon/pkg/utils"
+	"github.com/IBM/autopilot/pkg/utils"
 	"k8s.io/klog/v2"
 )
 
-func TimerRun() {
+var defaultPeriodicChecks string = "pciebw,remapped,dcgm,ping,gpupower"
+func PeriodicCheckTimer() {
 	klog.Info("Running a periodic check")
-	runAllTestsLocal("all", "pciebw,remapped,dcgm,ping,gpupower", "1", "None", "None", nil)
+	utils.HealthcheckLock.Lock()
+	defer utils.HealthcheckLock.Unlock()
+  checks, exists := os.LookupEnv("PERIODIC_CHECKS")
+	if !exists {
+		klog.Info("Run all periodic health checks\n")
+		checks = defaultPeriodicChecks
+	}
+	runAllTestsLocal("all", checks, "1", "None", "None", nil)
+}
+
+func IntrusiveCheckTimer() {
+	klog.Info("Trying to run an intrusive check")
+	utils.HealthcheckLock.Lock()
+	defer utils.HealthcheckLock.Unlock()
+	if utils.GPUsAvailability() {
+		utils.CreateJob("dcgm")
+	}
 }
 
 func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string, nodelabel string, r *http.Request) (*[]byte, error) {
@@ -22,6 +39,9 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 	var tmp *[]byte
 	var err error
 	start := time.Now()
+	if strings.Contains(checks, "all") {
+		checks = defaultPeriodicChecks
+	}
 	for _, check := range strings.Split(checks, ",") {
 		switch check {
 		case "ping":
@@ -85,45 +105,6 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 			}
 			out = append(out, *tmp...)
 
-		case "all":
-			klog.Info("Run all health checks\n")
-			tmp, err := runPCIeBw()
-			if err != nil {
-				klog.Error(err.Error())
-				return tmp, err
-			}
-			out = append(out, *tmp...)
-			tmp, err = runRemappedRows()
-			if err != nil {
-				klog.Error(err.Error())
-				return nil, err
-			}
-			out = append(out, *tmp...)
-			tmp, err = runDCGM(dcgmR)
-			if err != nil {
-				klog.Error(err.Error())
-				return tmp, err
-			}
-			out = append(out, *tmp...)
-			pingnodes := "all"
-			if r != nil {
-				pingnodes = r.URL.Query().Get("pingnodes")
-				if pingnodes == "" {
-					pingnodes = "all"
-				}
-			}
-			tmp, err = runPing(pingnodes, jobName, nodelabel)
-			if err != nil {
-				klog.Error(err.Error())
-				return tmp, err
-			}
-			out = append(out, *tmp...)
-			tmp, err = runGPUPower()
-			if err != nil {
-				klog.Error(err.Error())
-				return tmp, err
-			}
-			out = append(out, *tmp...)
 		default:
 			notsupported := "check not supported: " + check
 			out = append(out, []byte(notsupported)...)
@@ -178,7 +159,6 @@ func runRemappedRows() (*[]byte, error) {
 				return nil, err
 			} else {
 				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", rm)
-				// utils.Hchecks.WithLabelValues("remapped", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Observe(rm)
 				utils.HchecksGauge.WithLabelValues("remapped", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(rm)
 			}
 		}
@@ -261,7 +241,6 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 		output := strings.TrimSuffix(string(out[:]), "\n")
 		lines := strings.Split(output, "\n")
 		unreach_nodes := make(map[string][]string)
-		reach_nodes := make(map[string][]string)
 		for _, line := range lines {
 			if strings.HasPrefix(line, "Node") {
 				entry := strings.Split(line, " ")
@@ -271,11 +250,10 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 					unreach_nodes[entry[1]] = append(unreach_nodes[entry[1]], entry[2])
 				} else {
 					utils.HchecksGauge.WithLabelValues("ping", entry[1], entry[2]).Set(0)
-					reach_nodes[entry[1]] = append(reach_nodes[entry[1]], entry[2])
 				}
 			}
 		}
-		klog.Info("Observation: ", len(reach_nodes)-len(unreach_nodes), "/", len(reach_nodes)+len(unreach_nodes), " remote nodes are reachable")
+		klog.Info("Unreachable nodes count: ", len(unreach_nodes))
 	}
 	return &out, nil
 }
@@ -309,7 +287,6 @@ func runIperf(nodelist string, jobName string, plane string, clients string, ser
 					return nil, err
 				}
 				klog.Info("Observation: ", entries[0], " ", entries[1], " ", bw)
-				// utils.HchecksGauge.WithLabelValues("iperf", entries[0], entries[1]).Set(bw)
 			}
 		}
 	}
@@ -347,16 +324,16 @@ func runDCGM(dcgmR string) (*[]byte, error) {
 		}
 		output := strings.TrimSuffix(string(out[:]), "\n")
 		split := strings.Split(output, "\n")
-		dcgmtests := split[len(split)-1]
+		// dcgmtests := split[len(split)-1]
 		var res float64
 		res = 0
 		if strings.Contains(split[len(split)-1], "SUCCESS") {
-			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "result", " ", res)
-		} else if strings.Contains(split[len(split)-2], "FAIL") {
+			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "result ", res)
+		} else if strings.Contains(split[len(split)-1], "FAIL") {
 			res = 1
-			for _, v := range strings.Split(dcgmtests, " ") {
-				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "Fail ", v, " ", res)
-			}
+			// for _, v := range strings.Split(dcgmtests, " ") {
+			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "Fail ", res)
+			// }
 		}
 		utils.HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), "").Set(res)
 	}

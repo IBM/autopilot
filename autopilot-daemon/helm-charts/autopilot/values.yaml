@@ -7,28 +7,29 @@ namespace:
   name: autopilot
 
 image:
-  repository:  us.icr.io/cil15-shared-registry/autopilot/autopilot
-  tag: v1.5.0
+  repository:  quay.io/autopilot/autopilot
+  tag: v1.6.0
   pullPolicy: Always
 
+# Bandwidth threshold below which PCIe links are considered broken (Gb/s)
 PCIeBW: 4
 
+# Timer for periodic checks, in hours
 repeat: 1
 
+# Timer for periodic invasive checks, in hours (e.g., dcgmi diag -r 3)
+intrusive: 4
+
+# Image pull secret if the image is in a private repository
 pullSecrets:
-  create: true
+  create: false
   name: autopilot-pull-secret
   imagePullSecretData: 
   
+# List of periodic checks to be executed every `repeat` hours
 env:
-  # - name: "CHECKER_URL"
-  #   value:
-  # - name: "CHECKER_NAMESPACE"
-  #   value: ""
-  # - name: "MULTI_NIC_HEALTH_CHECKER_ENDPOINT"
-  #   value:
-  # - name: "MULTI_NIC_HEALTH_CHECKER_TIMEOUT"
-  #   value:
+    - name: "PERIODIC_CHECKS"
+      value: "pciebw,remapped,dcgm,ping,gpupower"
 
 service:
   port: 3333
@@ -45,21 +46,14 @@ affinity:
 gpuEnabled: true
 
 resources: 
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # We advice to not set cpu and memory limits. DCGM requires several GB of memory to run and it may OOMKill the pod
   limits:
-    # cpu: 2
-    # memory: 1Gi
     nvidia.com/gpu: 0
   requests:
-#    cpu: 500m
-#    memory: 1Gi
     nvidia.com/gpu: 0
 
 # serviceAnnotations:
-#    service.beta.openshift.io/serving-cert-secret-name: autopilot-webhook
+#    service.beta.openshift.io/serving-cert-secret-name: autopilot
 
 
 # configAnnotations: 
@@ -79,7 +73,7 @@ additionalVolumeClaimTemplates:
   #     secretName: autopilot-webhook
 additionalVolumeMounts:
   # - name: autopilot-tls-secret
-  #   mountPath: "/etc/admission-webhook/tls"
+  #   mountPath: "/etc/autopilot-tls-secret/tls"
   #   readOnly: true
   # - mountPath: /data
   #   name: logdir
