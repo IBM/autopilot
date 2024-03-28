@@ -2,6 +2,7 @@ import json
 import subprocess
 import os
 import argparse
+import re
 import datetime
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
@@ -30,7 +31,9 @@ def main():
 
 # translate key-strings into lowercase and strip spaces
 def unify_string_format(key: str) -> str:
-    return key.strip().lower().replace(' ','_')
+    to_lower = key.strip().lower()
+    res, _ = re.subn('[\/|\s]', '_', to_lower)
+    return res
 
 def parse_all_results(result: str):
     dcgm_dict = json.loads(result)
@@ -44,7 +47,7 @@ def parse_all_results(result: str):
                 print(test['name'], ":", test['results'][0]['status'])
                 output+=f'{unify_string_format(test["name"])}'
                 for entry in test['results']:
-                    output+=f'{"."+entry["gpu_id"]}'
+                    output+=f'{"."+entry["gpu_id"] if "gpu_id" in entry else "NoGPUid"}'
     return success, output
 
 
