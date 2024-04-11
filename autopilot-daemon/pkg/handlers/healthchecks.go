@@ -13,11 +13,12 @@ import (
 )
 
 var defaultPeriodicChecks string = "pciebw,remapped,dcgm,ping,gpupower"
+
 func PeriodicCheckTimer() {
 	klog.Info("Running a periodic check")
 	utils.HealthcheckLock.Lock()
 	defer utils.HealthcheckLock.Unlock()
-  checks, exists := os.LookupEnv("PERIODIC_CHECKS")
+	checks, exists := os.LookupEnv("PERIODIC_CHECKS")
 	if !exists {
 		klog.Info("Run all periodic health checks\n")
 		checks = defaultPeriodicChecks
@@ -324,16 +325,13 @@ func runDCGM(dcgmR string) (*[]byte, error) {
 		}
 		output := strings.TrimSuffix(string(out[:]), "\n")
 		split := strings.Split(output, "\n")
-		// dcgmtests := split[len(split)-1]
 		var res float64
 		res = 0
 		if strings.Contains(split[len(split)-1], "SUCCESS") {
-			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "result ", res)
-		} else if strings.Contains(split[len(split)-1], "FAIL") {
+			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " Pass ", res)
+		} else {
 			res = 1
-			// for _, v := range strings.Split(dcgmtests, " ") {
-			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "Fail ", res)
-			// }
+			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " Fail ", res)
 		}
 		utils.HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), "").Set(res)
 	}

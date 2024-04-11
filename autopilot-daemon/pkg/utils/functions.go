@@ -2,6 +2,7 @@ package utils
 
 import (
 	"os"
+	"strings"
 
 	"context"
 
@@ -35,6 +36,20 @@ func GetClientsetInstance() *K8sClientset {
 
 	}
 	return k8sClientset
+}
+
+func OnNodeUpdate(labels map[string]string, key string) {
+	if val, found := labels[key]; found {
+		var res float64
+		res = 0
+		if strings.Contains(val, "PASS") {
+			klog.Info("[DCGM level 3] Update observation: ", os.Getenv("NODE_NAME"), " Pass")
+		} else {
+			res = 1
+			klog.Info("[DCGM level 3] Update observation: ", os.Getenv("NODE_NAME"), " Error found")
+		}
+		HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), "").Set(res)
+	}
 }
 
 // Returns true if GPUs are not currently requested by any workload
@@ -87,7 +102,7 @@ func CreateJob(healthcheck string) {
 		klog.Info("Cannot get pod:", err.Error())
 	}
 	autopilotPod := pods.Items[0]
-	ttlsec := int32(4 * 60 * 60) // setting TTL to 4 hours
+	ttlsec := int32(30) // setting TTL to 30 sec
 	backofflimits := int32(0)
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
