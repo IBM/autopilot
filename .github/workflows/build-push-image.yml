@@ -6,7 +6,7 @@ on:
     branches:
       - 'main'
     tags:
-      - 'v*'
+      - 'v*.*.*'
   pull_request:
     branches:
       - 'main'
@@ -28,7 +28,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: quay.io/autopilot/autopilot
-          tags: test
+          tags: ${{ steps.meta.outputs.tags }}
       
       - name: Log into registry 
         if: github.event_name != 'pull_request'
