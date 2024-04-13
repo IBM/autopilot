@@ -2,16 +2,13 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "test-action" ]
-  pull_request:
-    branches: [ "test-action" ]
+    branches:
+      - 'main'
+      - 'test-action'
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
       name: Check out code
