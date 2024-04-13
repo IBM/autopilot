@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'master'
+      - 'main'
     tags:
       - 'v*'
   pull_request:
     branches:
-      - 'master'
+      - 'main'
 
 jobs:
   docker:
@@ -21,12 +21,6 @@ jobs:
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - name: Checkout
         uses: actions/checkout@v4
-        
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: autopilot/autopilot
       
       - name: Log into registry 
         if: github.event_name != 'pull_request'
@@ -41,6 +35,4 @@ jobs:
         with:
           context: autopilot-daemon
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-        
+          tags: test        
