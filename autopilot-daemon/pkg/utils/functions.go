@@ -2,7 +2,6 @@ package utils
 
 import (
 	"os"
-	"strings"
 
 	"context"
 
@@ -36,20 +35,6 @@ func GetClientsetInstance() *K8sClientset {
 
 	}
 	return k8sClientset
-}
-
-func OnNodeUpdate(labels map[string]string, key string) {
-	if val, found := labels[key]; found {
-		var res float64
-		res = 0
-		if strings.Contains(val, "PASS") {
-			klog.Info("[DCGM level 3] Update observation: ", os.Getenv("NODE_NAME"), " Pass")
-		} else {
-			res = 1
-			klog.Info("[DCGM level 3] Update observation: ", os.Getenv("NODE_NAME"), " Error found")
-		}
-		HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), "").Set(res)
-	}
 }
 
 // Returns true if GPUs are not currently requested by any workload

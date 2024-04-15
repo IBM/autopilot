@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/IBM/autopilot/pkg/handlers"
@@ -22,7 +23,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func watchNodes() {
+func watchNode() {
 
 	watchFunc := func(options metav1.ListOptions) (watch.Interface, error) {
 		timeout := int64(60)
@@ -42,8 +43,19 @@ func watchNodes() {
 		switch event.Type {
 		case watch.Modified:
 			{
-				klog.Info("Node modified ", item.GetName())
-				utils.OnNodeUpdate(item.GetLabels(), "autopilot/dcgm.level.3")
+				key := "autopilot/dcgm.level.3"
+				labels := item.GetLabels()
+				if val, found := labels[key]; found {
+					var res float64
+					res = 0
+					if strings.Contains(val, "PASS") {
+						klog.Info("[DCGM level 3] Update observation: ", os.Getenv("NODE_NAME"), " Pass")
+					} else {
+						res = 1
+						klog.Info("[DCGM level 3] Update observation: ", os.Getenv("NODE_NAME"), " Error found")
+					}
+					utils.HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), "").Set(res)
+				}
 			}
 		}
 	}
