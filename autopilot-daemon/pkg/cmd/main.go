@@ -146,7 +146,7 @@ func main() {
 	}()
 
 	// Create a Watcher over nodes. Needed to export metrics from data created by external jobs (i.e., dcgm Jobs or PytorchJob NCCL tests)
-	go watchNodes()
+	go watchNode()
 	// Run the health checks at startup, then start the timer
 	handlers.PeriodicCheckTimer()
 
