@@ -1,20 +1,66 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/IBM/autopilot/pkg/handlers"
 	"github.com/IBM/autopilot/pkg/utils"
-	"k8s.io/klog/v2"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/tools/cache"
+	toolswatch "k8s.io/client-go/tools/watch"
+	"k8s.io/klog/v2"
 )
+
+func watchNode() {
+
+	watchFunc := func(options metav1.ListOptions) (watch.Interface, error) {
+		timeout := int64(60)
+		fieldselector, err := fields.ParseSelector("metadata.name=" + os.Getenv("NODE_NAME"))
+		if err != nil {
+			klog.Info("Error in creating the field selector", err.Error())
+			return nil, err
+		}
+		return utils.GetClientsetInstance().Cset.CoreV1().Nodes().Watch(context.Background(), metav1.ListOptions{TimeoutSeconds: &timeout, FieldSelector: fieldselector.String()})
+	}
+
+	watcher, _ := toolswatch.NewRetryWatcher("1", &cache.ListWatch{WatchFunc: watchFunc})
+
+	for event := range watcher.ResultChan() {
+		item := event.Object.(*corev1.Node)
+
+		switch event.Type {
+		case watch.Modified:
+			{
+				key := "autopilot/dcgm.level.3"
+				labels := item.GetLabels()
+				if val, found := labels[key]; found {
+					var res float64
+					res = 0
+					if strings.Contains(val, "PASS") {
+						klog.Info("[DCGM level 3] Update observation: ", os.Getenv("NODE_NAME"), " Pass")
+					} else {
+						res = 1
+						klog.Info("[DCGM level 3] Update observation: ", os.Getenv("NODE_NAME"), " Error found")
+					}
+					utils.HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), "").Set(res)
+				}
+			}
+		}
+	}
+
+}
 
 func main() {
 	port := flag.String("port", "3333", "Port for the webhook to listen to. Defaulted to 3333")
@@ -99,6 +145,8 @@ func main() {
 		}
 	}()
 
+	// Create a Watcher over nodes. Needed to export metrics from data created by external jobs (i.e., dcgm Jobs or PytorchJob NCCL tests)
+	go watchNode()
 	// Run the health checks at startup, then start the timer
 	handlers.PeriodicCheckTimer()
 
