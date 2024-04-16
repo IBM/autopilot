@@ -1,0 +1,43 @@
+name: Build and Push Container Image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+    paths-ignore:
+      - '.github/**'
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove unnecessary files
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: quay.io/autopilot/autopilot
+          tags: ${{ steps.meta.outputs.tags }}
+      
+      - name: Log into registry 
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+     
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: autopilot-daemon
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}        
