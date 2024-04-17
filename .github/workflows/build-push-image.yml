@@ -7,8 +7,6 @@ on:
       - 'main'
     paths-ignore:
       - '.github/**'
-    paths:
-      - 'autopilot-daemon/**'
 
 jobs:
   docker:
