@@ -3,15 +3,15 @@ exists=`which nvidia-smi`
 if [[ -z $exists ]]
 then
 	echo !! nvidia-smi not present. ABORT.
-	exit 
+	killall5 
 fi
 
 CMD="$(nvidia-smi)"
-errors="$(echo ${CMD} | grep ERR)"
+errors="$(echo ${CMD} | grep -i err)"
 if [[ -n $errors ]]
 then
 	echo !! nvidia-smi failed to start. ABORT.
-	exit 
+	killall5
 fi
 
 CMD="$(nvidia-smi --query-gpu=mig.mode.current --format=csv)"
