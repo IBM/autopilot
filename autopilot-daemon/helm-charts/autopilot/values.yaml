@@ -42,7 +42,7 @@ env:
   - name: "NCCL_POD_RESOURCE_LIMIT_RDMA_DEVICES"
     value: "2"
   - name: "NCCL_POD_IMAGE_URI"
-    value: "quay.io/autopilot/nccl"
+    value: "quay.io/autopilot/nccl-allreduce"
 
 service:
   port: 3333

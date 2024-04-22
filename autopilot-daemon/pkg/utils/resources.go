@@ -73,7 +73,7 @@ func CheckLimitCapacity(new_amount string, res corev1.ResourceName) bool {
 		panic(err)
 	}
 
-	_, node_lim := getNodeResourceUsage() // Hmm.. we may want to call this each time...
+	_, node_lim := getNodeResourceUsage() // Hmm.. we may not want to call this each time...
 	node_cap := getNodeResourceCapacity()
 
 	res_cap := node_cap[res]
@@ -83,7 +83,7 @@ func CheckLimitCapacity(new_amount string, res corev1.ResourceName) bool {
 		return false
 	}
 
-	return false
+	return true
 }
 
 func getNodeResourceCapacity() map[corev1.ResourceName]resource.Quantity {
@@ -98,13 +98,14 @@ func getNodeResourceCapacity() map[corev1.ResourceName]resource.Quantity {
 }
 
 func PrintResourceUsageHeader() string {
-	line1 := "Resource\t Requests\t Limits\n"
-	line2 := "________\t ________\t ______\n"
+	line1 := "Resource\t Requests\t Limits\t Capacity\n"
+	line2 := "________\t ________\t ______\t ________\n"
 	return line1 + line2
 }
 
 func PrintResourceUsage() string {
 	reqs, lims := getNodeResourceUsage()
+	cap := getNodeResourceCapacity()
 	output := ""
 	for _, r := range resources {
 		output += r.String() + "\t"
@@ -114,6 +115,10 @@ func PrintResourceUsage() string {
 		}
 		if _, ok := lims[r]; ok {
 			tmp := lims[r]
+			output += tmp.String() + "\t"
+		}
+		if _, ok := cap[r]; ok {
+			tmp := cap[r]
 			output += tmp.String()
 		}
 		output += "\n"
@@ -122,12 +127,13 @@ func PrintResourceUsage() string {
 }
 
 // Returns true if GPUs are not currently requested by any workload
-func GPUsAvailability() bool {
-	reqs, lims := getNodeResourceUsage()
-	gpu_req := reqs[gpu_type]
-	gpu_lim := lims[gpu_type]
-	if gpu_req.Value() > 0 || gpu_lim.Value() > 0 {
-		return false
-	}
-	return true
-}
+// TODO: CONFIRM THAT THIS CAN REPLACE WHATS IN functions.go
+//func GPUsAvailability() bool {
+//	reqs, lims := getNodeResourceUsage()
+//	gpu_req := reqs[gpu_type]
+//	gpu_lim := lims[gpu_type]
+//	if gpu_req.Value() > 0 || gpu_lim.Value() > 0 {
+//		return false
+//	}
+//	return true
+//}

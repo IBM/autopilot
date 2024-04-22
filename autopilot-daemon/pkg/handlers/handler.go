@@ -252,6 +252,20 @@ func CoordinationHandler() http.Handler {
 		if jobName == "" {
 			jobName = "None"
 		}
+		if checks == "nccl-test" { // XXX THIS IS A TEMPORARY CHANGE TO FORCE A TWO-NODE NCCL TEST
+			klog.Info("Attempting NCCL Test ")
+			w.Write([]byte("Attempting NCCL Test \n"))
+			if !utils.ConfirmNCCLSupport() {
+				w.Write([]byte("NCCL Test Not Supported. Check logs\n"))
+			}
+			w.Write([]byte("Running NCCL Test \n"))
+			job_name, err := utils.CreateNCCLPyTorchJob()
+			if err != nil {
+				w.Write([]byte("NCCL Test Failed Launch. Check logs\n"))
+			} else {
+				w.Write([]byte("NCCL Test Launch!!! Job Name is " + job_name + "\n"))
+			}
+		}
 		if checks == "resources" {
 			if hosts == os.Getenv("NODE_NAME") {
 				klog.Info("Checking resources of node " + hosts + " (localhost)")
@@ -259,11 +273,16 @@ func CoordinationHandler() http.Handler {
 				utils.HealthcheckLock.Lock()
 				defer utils.HealthcheckLock.Unlock()
 
-				output := "Allocated resources:\n"
+				output := "Hardware Details:\n"
+				output += "CPU: " + utils.CPUModel
+				output += "\n"
+				output += "GPU: " + utils.GPUModel
+				output += "\n\n"
+				output += "Allocated resources:\n"
 				output += utils.PrintResourceUsageHeader()
 				output += utils.PrintResourceUsage()
-
-				output += "\nNCCL TEST: "
+				output += "\n"
+				output += "NCCL Test: "
 				if utils.ConfirmNCCLSupport() {
 					output += "AVAILABLE \n"
 				} else {

@@ -51,8 +51,6 @@ func InvasiveCheck() {
 		`
 			utils.PatchNode(label, os.Getenv("NODE_NAME"))
 		}
-	} else {
-		klog.Info("Cannot run invasive health checks. GPUs are busy or an error has occurred")
 	}
 }
 

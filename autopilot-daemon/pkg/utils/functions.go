@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
-	//resourcehelper "k8s.io/kubectl/pkg/util/resource"
+	resourcehelper "k8s.io/kubectl/pkg/util/resource"
 )
 
 func GetClientsetInstance() *K8sClientset {
@@ -101,43 +101,42 @@ func GPUsAvailability() bool {
 	return true
 }
 
-// Returns the daemonset of this pod
-func GetDaemonset() string {
-	if value, ok := os.LookupEnv("DAEMONSET"); ok {
-		return value
-	} else {
-		cset := GetClientsetInstance()
-		pod, err := cset.Cset.CoreV1().Pods(os.Getenv("NAMESPACE")).Get(context.TODO(), os.Getenv("POD_NAME"), metav1.GetOptions{})
-		if err == nil {
-			for _, ownerRef := range pod.OwnerReferences {
-				if ownerRef.Kind == "DaemonSet" {
-					os.Setenv("DAEMONSET", ownerRef.Name)
-					return ownerRef.Name
-				}
-			}
-		}
-		return ""
-	}
-}
+//// Returns the daemonset of this pod
+//func GetDaemonset() string {
+//	if value, ok := os.LookupEnv("DAEMONSET"); ok {
+//		return value
+//	} else {
+//		cset := GetClientsetInstance()
+//		pod, err := cset.Cset.CoreV1().Pods(os.Getenv("NAMESPACE")).Get(context.TODO(), os.Getenv("POD_NAME"), metav1.GetOptions{})
+//		if err == nil {
+//			for _, ownerRef := range pod.OwnerReferences {
+//				if ownerRef.Kind == "DaemonSet" {
+//					os.Setenv("DAEMONSET", ownerRef.Name)
+//					return ownerRef.Name
+//				}
+//			}
+//		}
+//		return ""
+//	}
+//}
+//
+//// Returns the service account of this pod
+//func GetServiceAccount() string {
+//	if value, ok := os.LookupEnv("SERVICE_ACCOUNT"); ok {
+//		return value
+//	} else {
+//		cset := GetClientsetInstance()
+//		pod, err := cset.Cset.CoreV1().Pods(os.Getenv("NAMESPACE")).Get(context.TODO(), os.Getenv("POD_NAME"), metav1.GetOptions{})
+//		if err != nil {
+//			return ""
+//		} else {
+//			os.Setenv("SERVICE_ACCOUNT", pod.Spec.ServiceAccountName)
+//			return pod.Spec.ServiceAccountName
+//		}
+//	}
+//}
 
-// Returns the service account of this pod
-func GetServiceAccount() string {
-	if value, ok := os.LookupEnv("SERVICE_ACCOUNT"); ok {
-		return value
-	} else {
-		cset := GetClientsetInstance()
-		pod, err := cset.Cset.CoreV1().Pods(os.Getenv("NAMESPACE")).Get(context.TODO(), os.Getenv("POD_NAME"), metav1.GetOptions{})
-		if err != nil {
-			return ""
-		} else {
-			os.Setenv("SERVICE_ACCOUNT", pod.Spec.ServiceAccountName)
-			return pod.Spec.ServiceAccountName
-		}
-	}
-}
-
-// Creates a new job on this node, returns job name
-func CreateJob(healthcheck string) string {
+func CreateJob(healthcheck string) error {
 	var args []string
 	var cmd []string
 	switch healthcheck {
@@ -152,12 +151,12 @@ func CreateJob(healthcheck string) string {
 		klog.Info("Error in creating the field selector", err.Error())
 		return err
 	}
-	pods, err := cset.Cset.CoreV1().Pods(os.Getenv("NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+	pods, err := cset.Cset.CoreV1().Pods("autopilot").List(context.TODO(), metav1.ListOptions{
 		FieldSelector: fieldselector.String(),
 	})
 	if err != nil {
 		klog.Info("Cannot get pod:", err.Error())
-		return ""
+		return err
 	}
 	autopilotPod := pods.Items[0]
 	ttlsec := int32(30) // setting TTL to 30 sec
@@ -173,8 +172,8 @@ func CreateJob(healthcheck string) string {
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					RestartPolicy:      "Never",
-					ServiceAccountName: GetServiceAccount(),
-					NodeName:           os.Getenv("NODE_NAME"), // TODO: Make a parameter???
+					ServiceAccountName: "autopilot",
+					NodeName:           os.Getenv("NODE_NAME"),
 					InitContainers: []corev1.Container{
 						{
 							Name:            "init",
@@ -212,14 +211,14 @@ func CreateJob(healthcheck string) string {
 		},
 	}
 	klog.Info("Try create Job")
-	new_job, err := cset.Cset.BatchV1().Jobs(os.Getenv("NAMESPACE")).Create(context.TODO(), job,
+	_, err = cset.Cset.BatchV1().Jobs("autopilot").Create(context.TODO(), job,
 		metav1.CreateOptions{})
 	if err != nil {
 		klog.Info("Couldn't create Job ", err.Error())
-		return ""
+		return err
 	}
 	klog.Info("Created")
-	return new_job.Name
+	return nil
 }
 
 func CreatePVC() error {
