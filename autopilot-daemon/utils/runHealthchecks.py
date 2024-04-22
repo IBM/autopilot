@@ -19,6 +19,9 @@ from multiprocessing import Pool
 config.load_incluster_config()
 v1 = client.CoreV1Api()
 
+# url parameters 
+url_port="3333"
+
 # get arguments for service, namespace, node(s), and check (test type)
 parser = argparse.ArgumentParser()
 parser.add_argument('--service', type=str, default='autopilot-healthchecks', help='Autopilot healthchecks service name. Default is \"autopilot-healthchecks\".')
@@ -37,6 +40,8 @@ parser.add_argument('--dcgmR', type=str, default='1', help='Run a diagnostic in 
 
 parser.add_argument('--nodelabel', type=str, default='None', help='Node label to select nodes. Ex: \"label-key=label-value\". Default is set to None.')
 
+parser.add_argument('--handle', type=str, default='status', help='URL handle to invoke. Default is set to \"status\".')
+
 args = vars(parser.parse_args())
 service = args['service']
 namespace = args['namespace']
@@ -44,6 +49,7 @@ node = args['nodes'].replace(' ', '').split(',') # list of nodes
 checks = args['check'].replace(' ', '').split(',') # list of checks
 batch_size = int(args['batchSize'])
 nodelabel = args['nodelabel']
+url_handle=args['handle']
 wkload = args['wkload']
 if wkload != 'None':
     wkload = args['wkload'].split(':') 
@@ -130,7 +136,7 @@ def create_url(address, daemon_node):
     urls = []
     for check in checks:
         if check == 'all':
-            urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node)
+            urls.append('http://' + str(address.ip) + ':' + str(url_port) + '/' + str(url_handle) + '?host=' + daemon_node)
             return urls
     extra_params = ""
     if "ping" in args['check']:
@@ -142,7 +148,7 @@ def create_url(address, daemon_node):
             extra_params += "&pingnodes=" + args['nodes']
     if "dcgm" in args['check']:
         extra_params += "&r=" + args['dcgmR']
-    urls.append('http://' + str(address.ip) + ':3333/status?host=' + daemon_node + '&check=' + args['check'] + extra_params)
+    urls.append('http://' + str(address.ip) + ':' + str(url_port) + '/' + str(url_handle) + '?host=' + daemon_node + '&check=' + args['check'] + extra_params)
     return urls
 
 # check and print status of each node
