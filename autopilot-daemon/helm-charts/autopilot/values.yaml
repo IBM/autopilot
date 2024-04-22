@@ -33,6 +33,16 @@ env:
     value: "pciebw,remapped,dcgm,ping,gpupower"
   - name: "PVC_TEST_STORAGE_CLASS"
     value: ""
+  - name: "NCCL_POD_RESOURCE_LIMIT_CPU"
+    value: "72"
+  - name: "NCCL_POD_RESOURCE_LIMIT_GPU"
+    value: "8"
+  - name: "NCCL_POD_RESOURCE_LIMIT_MEMORY"
+    value: "1000Gi"
+  - name: "NCCL_POD_RESOURCE_LIMIT_RDMA_DEVICES"
+    value: "2"
+  - name: "NCCL_POD_IMAGE_URI"
+    value: "quay.io/autopilot/nccl"
 
 service:
   port: 3333

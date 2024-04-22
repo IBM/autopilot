@@ -51,6 +51,8 @@ func InvasiveCheck() {
 		`
 			utils.PatchNode(label, os.Getenv("NODE_NAME"))
 		}
+	} else {
+		klog.Info("Cannot run invasive health checks. GPUs are busy or an error has occurred")
 	}
 }
 
@@ -187,10 +189,10 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 	return &out, nil
 }
 
-func runAllTestsRemote(host string, check string, batch string, jobName string, dcgmR string, nodelabel string) (*[]byte, error) {
-	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName, " --dcgmR="+dcgmR, " --nodelabel="+nodelabel)
+func runAllTestsRemote(host string, check string, batch string, jobName string, dcgmR string, nodelabel string, handle string) (*[]byte, error) {
+	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName, " --dcgmR="+dcgmR, " --nodelabel="+nodelabel, "--handle="+handle)
 
-	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--nodes="+host, "--check="+check, "--batchSize="+batch, "--wkload="+jobName, "--dcgmR="+dcgmR, "--nodelabel="+nodelabel).Output()
+	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--nodes="+host, "--check="+check, "--batchSize="+batch, "--wkload="+jobName, "--dcgmR="+dcgmR, "--nodelabel="+nodelabel, "--handle="+handle).Output()
 	if err != nil {
 		klog.Info(string(out))
 		klog.Error(err.Error())

@@ -69,7 +69,7 @@ func SystemStatusHandler() http.Handler {
 			} else {
 				klog.Info("Asking to run on remote node(s) ", hosts, " or with node label ", nodelabel)
 				w.Write([]byte("Asking to run on remote node(s) " + hosts + " or with node label " + nodelabel + "\n\n"))
-				out, err := runAllTestsRemote(hosts, checks, batch, jobName, dcgmR, nodelabel)
+				out, err := runAllTestsRemote(hosts, checks, batch, jobName, dcgmR, nodelabel, "status")
 				if err != nil {
 					klog.Error(err.Error())
 				}
@@ -224,6 +224,64 @@ func DCGMHandler() http.Handler {
 		}
 		if out != nil {
 			w.Write(*out)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
+
+func CoordinationHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Start Coordination Handler\n"))
+		nodelabel := r.URL.Query().Get("nodelabel")
+		if nodelabel == "" {
+			nodelabel = "None"
+		}
+		hosts := r.URL.Query().Get("host")
+		if hosts == "" {
+			hosts = "all"
+		}
+		checks := r.URL.Query().Get("check")
+		if checks == "" {
+			checks = "all"
+		}
+		batch := r.URL.Query().Get("batch")
+		if batch == "" {
+			batch = "0"
+		}
+		jobName := r.URL.Query().Get("job")
+		if jobName == "" {
+			jobName = "None"
+		}
+		if checks == "resources" {
+			if hosts == os.Getenv("NODE_NAME") {
+				klog.Info("Checking resources of node " + hosts + " (localhost)")
+				w.Write([]byte("Checking resources of node " + hosts + " (localhost) \n\n"))
+				utils.HealthcheckLock.Lock()
+				defer utils.HealthcheckLock.Unlock()
+
+				output := "Allocated resources:\n"
+				output += utils.PrintResourceUsageHeader()
+				output += utils.PrintResourceUsage()
+
+				output += "\nNCCL TEST: "
+				if utils.ConfirmNCCLSupport() {
+					output += "AVAILABLE \n"
+				} else {
+					output += "UNAVAILABLE \n"
+				}
+
+				return_str := []byte(output)
+				w.Write(return_str)
+
+			} else {
+				klog.Info("Asking to run on remote node(s) ", hosts, " or with node label ", nodelabel)
+				w.Write([]byte("Asking to run on remote node(s) " + hosts + " or with node label " + nodelabel + "\n\n"))
+				out, err := runAllTestsRemote(hosts, checks, batch, jobName, "", nodelabel, "coordinate")
+				if err != nil {
+					klog.Error(err.Error())
+				}
+				w.Write(*out)
+			}
 		}
 	}
 	return http.HandlerFunc(fn)
