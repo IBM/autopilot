@@ -14,7 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
-	resourcehelper "k8s.io/kubectl/pkg/util/resource"
+	//resourcehelper "k8s.io/kubectl/pkg/util/resource"
 )
 
 func GetClientsetInstance() *K8sClientset {
@@ -37,36 +37,43 @@ func GetClientsetInstance() *K8sClientset {
 	return k8sClientset
 }
 
-// Returns true if GPUs are not currently requested by any workload
-func GPUsAvailability() bool {
-	cset := GetClientsetInstance()
-
-	fieldselector, err := fields.ParseSelector("spec.nodeName=" + os.Getenv("NODE_NAME") + ",status.phase!=" + string(corev1.PodSucceeded))
-	if err != nil {
-		klog.Info("Error in creating the field selector", err.Error())
-		return false
-	}
-	pods, err := cset.Cset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{
-		FieldSelector: fieldselector.String(),
-	})
-	if err != nil {
-		klog.Info("Cannot list pods:", err.Error())
-		return false
-	}
-	for _, pod := range pods.Items {
-		podReqs, podLimits := resourcehelper.PodRequestsAndLimits(&pod)
-		gpuReq := podReqs["nvidia.com/gpu"]
-		gpuLim := podLimits["nvidia.com/gpu"]
-		if gpuReq.Value() > 0 || gpuLim.Value() > 0 {
-			klog.Info("Pod ", pod.Name, " with requests ", gpuReq.Value(), " and limits ", gpuLim.Value(), ". Cannot run invasive health checks.")
-			return false
+// Returns the daemonset of this pod
+func GetDaemonset() string {
+	if value, ok := os.LookupEnv("DAEMONSET"); ok {
+		return value
+	} else {
+		cset := GetClientsetInstance()
+		pod, err := cset.Cset.CoreV1().Pods(os.Getenv("NAMESPACE")).Get(context.TODO(), os.Getenv("POD_NAME"), metav1.GetOptions{})
+		if err == nil {
+			for _, ownerRef := range pod.OwnerReferences {
+				if ownerRef.Kind == "DaemonSet" {
+					os.Setenv("DAEMONSET", ownerRef.Name)
+					return ownerRef.Name
+				}
+			}
 		}
+		return ""
 	}
-	klog.Info("GPUs are free. Can run invasive health checks.")
-	return true
 }
 
-func CreateJob(healthcheck string) {
+// Returns the service account of this pod
+func GetServiceAccount() string {
+	if value, ok := os.LookupEnv("SERVICE_ACCOUNT"); ok {
+		return value
+	} else {
+		cset := GetClientsetInstance()
+		pod, err := cset.Cset.CoreV1().Pods(os.Getenv("NAMESPACE")).Get(context.TODO(), os.Getenv("POD_NAME"), metav1.GetOptions{})
+		if err != nil {
+			return ""
+		} else {
+			os.Setenv("SERVICE_ACCOUNT", pod.Spec.ServiceAccountName)
+			return pod.Spec.ServiceAccountName
+		}
+	}
+}
+
+// Creates a new job on this node, returns job name
+func CreateJob(healthcheck string) string {
 	var args []string
 	var cmd []string
 	switch healthcheck {
@@ -80,11 +87,12 @@ func CreateJob(healthcheck string) {
 	if err != nil {
 		klog.Info("Error in creating the field selector", err.Error())
 	}
-	pods, err := cset.Cset.CoreV1().Pods("autopilot").List(context.TODO(), metav1.ListOptions{
+	pods, err := cset.Cset.CoreV1().Pods(os.Getenv("NAMESPACE")).List(context.TODO(), metav1.ListOptions{
 		FieldSelector: fieldselector.String(),
 	})
 	if err != nil {
 		klog.Info("Cannot get pod:", err.Error())
+		return ""
 	}
 	autopilotPod := pods.Items[0]
 	ttlsec := int32(4 * 60 * 60) // setting TTL to 4 hours
@@ -100,8 +108,8 @@ func CreateJob(healthcheck string) {
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					RestartPolicy:      "Never",
-					ServiceAccountName: "autopilot",
-					NodeName:           os.Getenv("NODE_NAME"),
+					ServiceAccountName: GetServiceAccount(),
+					NodeName:           os.Getenv("NODE_NAME"), // TODO: Make a parameter???
 					InitContainers: []corev1.Container{
 						{
 							Name:            "init",
@@ -139,9 +147,11 @@ func CreateJob(healthcheck string) {
 		},
 	}
 	klog.Info("Try create Job")
-	_, err = cset.Cset.BatchV1().Jobs("autopilot").Create(context.TODO(), job,
+	new_job, err := cset.Cset.BatchV1().Jobs(os.Getenv("NAMESPACE")).Create(context.TODO(), job,
 		metav1.CreateOptions{})
 	if err != nil {
 		klog.Info("Couldn't create Job ", err.Error())
+		return ""
 	}
+	return new_job.Name
 }

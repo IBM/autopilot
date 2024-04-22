@@ -59,15 +59,16 @@ func main() {
 
 	hcMux := http.NewServeMux()
 
-	hcMux.Handle("/pciebw", handlers.PCIeBWHandler(utils.UserConfig.BWThreshold))
-	hcMux.Handle("/remapped", handlers.RemappedRowsHandler())
-	hcMux.Handle("/status", handlers.SystemStatusHandler())
+	hcMux.Handle("/dcgm", handlers.DCGMHandler())
+	hcMux.Handle("/gpumem", handlers.GpuMemHandler())
+	hcMux.Handle("/gpupower", handlers.GpuPowerHandler())
 	hcMux.Handle("/iperf", handlers.IperfHandler())
 	hcMux.Handle("/iperfservers", handlers.StartIperfServersHandler())
-	hcMux.Handle("/dcgm", handlers.DCGMHandler())
+	hcMux.Handle("/coordinate", handlers.CoordinationHandler())
+	hcMux.Handle("/pciebw", handlers.PCIeBWHandler(utils.UserConfig.BWThreshold))
 	hcMux.Handle("/ping", handlers.PingHandler())
-	hcMux.Handle("/gpupower", handlers.GpuPowerHandler())
-	hcMux.Handle("/gpumem", handlers.GpuMemHandler())
+	hcMux.Handle("/remapped", handlers.RemappedRowsHandler())
+	hcMux.Handle("/status", handlers.SystemStatusHandler())
 
 	s := &http.Server{
 		Addr:         ":" + *port,
