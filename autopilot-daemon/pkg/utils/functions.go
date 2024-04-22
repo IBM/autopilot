@@ -14,7 +14,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
-	//resourcehelper "k8s.io/kubectl/pkg/util/resource"
 )
 
 func GetClientsetInstance() *K8sClientset {
