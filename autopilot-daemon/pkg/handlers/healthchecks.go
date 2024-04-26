@@ -160,7 +160,7 @@ func runRemappedRows() (*[]byte, error) {
 				return nil, err
 			} else {
 				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", rm)
-				utils.HchecksGauge.WithLabelValues("remapped", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(rm)
+				utils.HchecksGauge.WithLabelValues("remapped", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(rm)
 			}
 		}
 	}
@@ -179,7 +179,7 @@ func runGPUMem() (*[]byte, error) {
 		if strings.Contains(string(out[:]), "FAIL") {
 			klog.Info("GPU Memory check failed.", string(out[:]))
 			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "1")
-			utils.HchecksGauge.WithLabelValues("gpumem", os.Getenv("NODE_NAME"), "0").Set(1)
+			utils.HchecksGauge.WithLabelValues("gpumem", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, "0").Set(1)
 		}
 
 		if strings.Contains(string(out[:]), "ABORT") {
@@ -188,7 +188,7 @@ func runGPUMem() (*[]byte, error) {
 		}
 
 		klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "0")
-		utils.HchecksGauge.WithLabelValues("gpumem", os.Getenv("NODE_NAME"), "0").Set(0)
+		utils.HchecksGauge.WithLabelValues("gpumem", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, "0").Set(0)
 	}
 	return &out, nil
 }
@@ -224,7 +224,7 @@ func runPCIeBw() (*[]byte, error) {
 				return nil, err
 			} else {
 				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", bw)
-				utils.HchecksGauge.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(bw)
+				utils.HchecksGauge.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(bw)
 			}
 		}
 	}
@@ -246,11 +246,11 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 			if strings.HasPrefix(line, "Node") {
 				entry := strings.Split(line, " ")
 				if entry[len(entry)-1] == "1" {
-					utils.HchecksGauge.WithLabelValues("ping", entry[1], entry[2]).Set(1)
+					utils.HchecksGauge.WithLabelValues("ping", entry[1], utils.CPUModel, utils.GPUModel, entry[2]).Set(1)
 					klog.Info("Observation: ", entry[1], " ", entry[2], " ", entry[3], " Unreachable")
 					unreach_nodes[entry[1]] = append(unreach_nodes[entry[1]], entry[2])
 				} else {
-					utils.HchecksGauge.WithLabelValues("ping", entry[1], entry[2]).Set(0)
+					utils.HchecksGauge.WithLabelValues("ping", entry[1], utils.CPUModel, utils.GPUModel, entry[2]).Set(0)
 				}
 			}
 		}
@@ -333,7 +333,7 @@ func runDCGM(dcgmR string) (*[]byte, error) {
 			res = 1
 			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " Fail ", res)
 		}
-		utils.HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), "").Set(res)
+		utils.HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, "").Set(res)
 	}
 	return &out, nil
 }
@@ -367,7 +367,7 @@ func runGPUPower() (*[]byte, error) {
 				return nil, err
 			} else {
 				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", pw)
-				utils.HchecksGauge.WithLabelValues("power-slowdown", os.Getenv("NODE_NAME"), strconv.Itoa(gpuid)).Set(pw)
+				utils.HchecksGauge.WithLabelValues("power-slowdown", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(pw)
 			}
 		}
 	}
