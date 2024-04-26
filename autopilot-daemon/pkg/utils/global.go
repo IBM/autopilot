@@ -20,3 +20,6 @@ var k8sClientset *K8sClientset
 var csetLock sync.Mutex
 
 var HealthcheckLock sync.Mutex
+
+var CPUModel string
+var GPUModel string

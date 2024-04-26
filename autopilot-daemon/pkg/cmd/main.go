@@ -54,7 +54,7 @@ func watchNode() {
 						res = 1
 						klog.Info("[DCGM level 3] Update observation: ", os.Getenv("NODE_NAME"), " Error found")
 					}
-					utils.HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), "").Set(res)
+					utils.HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, "").Set(res)
 				}
 			}
 		}
@@ -88,7 +88,9 @@ func main() {
 	}
 
 	reg := prometheus.NewRegistry()
-	utils.Initmetrics(reg)
+	utils.InitMetrics(reg)
+
+	utils.InitHardwareMetrics()
 
 	pMux := http.NewServeMux()
 	promHandler := promhttp.HandlerFor(reg, promhttp.HandlerOpts{})
