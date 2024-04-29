@@ -1,8 +1,6 @@
 name: Publish Release
 on:
 # For now, we issue new or updated releases manually or when files in the helm chart folder are changed
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
