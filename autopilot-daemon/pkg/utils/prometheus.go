@@ -37,7 +37,7 @@ func InitHardwareMetrics() {
 	cpu := "N/A"
 
 	cmd := "cat /proc/cpuinfo | egrep '^model name' | uniq | awk '{print substr($0, index($0,$4))}'"
-	out, err := exec.Command("bash", "-c", cmd).Output()
+	out, err := exec.Command("bash", "-c", cmd).CombinedOutput()
 	if err != nil {
 		klog.Info("Error retrieving cpu model info", err.Error())
 	} else {
