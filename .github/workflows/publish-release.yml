@@ -1,6 +1,7 @@
 name: Publish Release
 on:
-# For now, we issue new or updated releases manually or when files in the helm chart folder are changed
+  push:
+    tags: '*'
   workflow_dispatch:
 
 jobs:
@@ -28,6 +29,9 @@ jobs:
         uses: helm/chart-releaser-action@v1.6.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_SKIP_EXISTING: true
         with:
+          pages_branch: gh-pages
           charts_dir: helm-charts
           packages_with_index: true
+          token: ${{ secrets.GITHUB_TOKEN }}
