@@ -27,7 +27,7 @@ parser.add_argument('--namespace', type=str, default='autopilot', help='Namespac
 
 parser.add_argument('--nodes', type=str, default='all', help='Node(s) that will run a healthcheck. Can be a comma separated list. Default is \"all\" unless --wkload is provided, then set to None. Specific nodes can be provided in addition to --wkload.')
 
-parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"dcgm\", \"remapped\", \"ping\" \"gpumem\" or \"gpupower\". Default is \"all\". Can be a comma separated list.')
+parser.add_argument('--check', type=str, default='all', help='The specific test(s) that will run: \"all\", \"pciebw\", \"dcgm\", \"remapped\", \"ping\", \"gpumem\", \"pvc\" or \"gpupower\". Default is \"all\". Can be a comma separated list.')
 
 parser.add_argument('--batchSize', default='0', type=str, help='Number of nodes to check in parallel. Default is set to the number of the worker nodes.')
 
@@ -164,6 +164,8 @@ def get_node_status(responses):
                     node_status_list.append('PING Failed')
                 elif('GPU-MEM' in line):
                     node_status_list.append("GPU MEM Test Failed")
+                elif('PVC' in line):
+                    node_status_list.append("PVC Create-Delete Test Failed")
                 elif('Disconnected' in line):
                     node_status_list.append('Connection to Server Failed')
 

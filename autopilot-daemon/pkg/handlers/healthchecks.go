@@ -12,17 +12,11 @@ import (
 	"k8s.io/klog/v2"
 )
 
-var defaultPeriodicChecks string = "pciebw,remapped,dcgm,ping,gpupower"
-
 func PeriodicCheckTimer() {
 	klog.Info("Running a periodic check")
 	utils.HealthcheckLock.Lock()
 	defer utils.HealthcheckLock.Unlock()
-	checks, exists := os.LookupEnv("PERIODIC_CHECKS")
-	if !exists {
-		klog.Info("Run all periodic health checks\n")
-		checks = defaultPeriodicChecks
-	}
+	checks := utils.GetPeriodicChecks()
 	runAllTestsLocal("all", checks, "1", "None", "None", nil)
 }
 
@@ -41,8 +35,9 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 	var err error
 	start := time.Now()
 	if strings.Contains(checks, "all") {
-		checks = defaultPeriodicChecks
+		checks = utils.GetPeriodicChecks()
 	}
+	klog.Info("Health checks ", checks)
 	for _, check := range strings.Split(checks, ",") {
 		switch check {
 		case "ping":
@@ -84,7 +79,7 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 			tmp, err = runRemappedRows()
 			if err != nil {
 				klog.Error(err.Error())
-				return nil, err
+				return tmp, err
 			}
 			out = append(out, *tmp...)
 
@@ -93,7 +88,7 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 			tmp, err = runGPUPower()
 			if err != nil {
 				klog.Error(err.Error())
-				return nil, err
+				return tmp, err
 			}
 			out = append(out, *tmp...)
 
@@ -102,7 +97,16 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 			tmp, err = runGPUMem()
 			if err != nil {
 				klog.Error(err.Error())
-				return nil, err
+				return tmp, err
+			}
+			out = append(out, *tmp...)
+
+		case "pvc":
+			klog.Info("Running health check: ", check)
+			tmp, err = runCreateDeletePVC()
+			if err != nil {
+				klog.Error(err.Error())
+				return tmp, err
 			}
 			out = append(out, *tmp...)
 
@@ -178,7 +182,7 @@ func runGPUMem() (*[]byte, error) {
 
 		if strings.Contains(string(out[:]), "FAIL") {
 			klog.Info("GPU Memory check failed.", string(out[:]))
-			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "1")
+			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " 1")
 			utils.HchecksGauge.WithLabelValues("gpumem", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, "0").Set(1)
 		}
 
@@ -187,7 +191,7 @@ func runGPUMem() (*[]byte, error) {
 			return &out, nil
 		}
 
-		klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", "0")
+		klog.Info("Observation: ", os.Getenv("NODE_NAME"), " 0")
 		utils.HchecksGauge.WithLabelValues("gpumem", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, "0").Set(0)
 	}
 	return &out, nil
@@ -343,33 +347,52 @@ func runGPUPower() (*[]byte, error) {
 	if err != nil {
 		klog.Error(err.Error())
 		return nil, err
-	} else {
-		klog.Info("Power Throttle check test completed:")
+	}
+	klog.Info("Power Throttle check test completed:")
 
-		if strings.Contains(string(out[:]), "FAIL") {
-			klog.Info("Power Throttle test failed.", string(out[:]))
+	if strings.Contains(string(out[:]), "FAIL") {
+		klog.Info("Power Throttle test failed.", string(out[:]))
+	}
+
+	if strings.Contains(string(out[:]), "ABORT") {
+		klog.Info("Power Throttle cannot be run. ", string(out[:]))
+		return &out, nil
+	}
+
+	output := strings.TrimSuffix(string(out[:]), "\n")
+	split := strings.Split(output, "\n")
+	pwrs := split[len(split)-1]
+	final := strings.Split(pwrs, " ")
+
+	for gpuid, v := range final {
+		pw, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			klog.Error(err.Error())
+			return nil, err
 		}
+		klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", pw)
+		utils.HchecksGauge.WithLabelValues("power-slowdown", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(pw)
 
-		if strings.Contains(string(out[:]), "ABORT") {
-			klog.Info("Power Throttle cannot be run. ", string(out[:]))
-			return &out, nil
-		}
-
-		output := strings.TrimSuffix(string(out[:]), "\n")
-		split := strings.Split(output, "\n")
-		pwrs := split[len(split)-1]
-		final := strings.Split(pwrs, " ")
-
-		for gpuid, v := range final {
-			pw, err := strconv.ParseFloat(v, 64)
-			if err != nil {
-				klog.Error(err.Error())
-				return nil, err
-			} else {
-				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", pw)
-				utils.HchecksGauge.WithLabelValues("power-slowdown", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(pw)
-			}
-		}
 	}
 	return &out, nil
+}
+
+func runCreateDeletePVC() (*[]byte, error) {
+	err := utils.CreatePVC()
+	if err != nil {
+		klog.Error(err.Error())
+		b := []byte("Create PVC Failed. ABORT")
+		return &b, err
+	}
+	// Wait a few seconds before start checking
+	waitonpvc := time.NewTicker(30 * time.Second)
+	defer waitonpvc.Stop()
+	<-waitonpvc.C
+	out, err := utils.ListPVC()
+	if err != nil {
+		klog.Error(err.Error())
+
+	}
+	b := []byte(out)
+	return &b, nil
 }

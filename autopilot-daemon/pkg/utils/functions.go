@@ -2,6 +2,7 @@ package utils
 
 import (
 	"os"
+	"time"
 
 	"context"
 
@@ -18,9 +19,8 @@ import (
 )
 
 func GetClientsetInstance() *K8sClientset {
+	csetLock.Lock()
 	if k8sClientset == nil {
-		csetLock.Lock()
-		defer csetLock.Unlock()
 		if k8sClientset == nil {
 			k8sClientset = &K8sClientset{}
 			config, err := rest.InClusterConfig()
@@ -34,7 +34,19 @@ func GetClientsetInstance() *K8sClientset {
 		}
 
 	}
+	csetLock.Unlock()
 	return k8sClientset
+}
+
+func GetPeriodicChecks() string {
+	defaultPeriodicChecks := "pciebw,remapped,dcgm,ping,gpupower"
+
+	checks, exists := os.LookupEnv("PERIODIC_CHECKS")
+	if !exists {
+		klog.Info("Run all periodic health checks\n")
+		return defaultPeriodicChecks
+	}
+	return checks
 }
 
 // Returns true if GPUs are not currently requested by any workload
@@ -144,4 +156,51 @@ func CreateJob(healthcheck string) {
 	if err != nil {
 		klog.Info("Couldn't create Job ", err.Error())
 	}
+	klog.Info("Created")
+}
+
+func CreatePVC() error {
+	cset := GetClientsetInstance()
+	storageclass := os.Getenv("STORAGE_CLASS")
+	pvcTemplate := corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: os.Getenv("POD_NAME"),
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			StorageClassName: &storageclass,
+			AccessModes: []corev1.PersistentVolumeAccessMode{
+				corev1.ReadWriteMany,
+			},
+			Resources: corev1.VolumeResourceRequirements{
+				Requests: corev1.ResourceList{
+					"storage": resource.MustParse("100Mi"),
+				},
+			},
+		},
+	}
+	// Check if any previous instance exists, cleanup if so
+	pvc, _ := GetClientsetInstance().Cset.CoreV1().PersistentVolumeClaims(os.Getenv("NAMESPACE")).Get(context.Background(), os.Getenv("POD_NAME"), metav1.GetOptions{})
+
+	if pvc.Name != "" {
+		klog.Info("[PVC Create] Found pre-existing instance. Cleanup ", pvc.Name)
+		DeletePVC(os.Getenv("POD_NAME"))
+		waitDelete := time.NewTimer(30 * time.Second)
+		<-waitDelete.C
+	}
+
+	_, err := cset.Cset.CoreV1().PersistentVolumeClaims(os.Getenv("NAMESPACE")).Create(context.TODO(), &pvcTemplate, metav1.CreateOptions{})
+
+	if err != nil {
+		klog.Info("[PVC Create] Failed. ABORT. ", err.Error())
+	}
+	return err
+}
+
+func DeletePVC(pvc string) error {
+	cset := GetClientsetInstance()
+	err := cset.Cset.CoreV1().PersistentVolumeClaims(os.Getenv("NAMESPACE")).Delete(context.TODO(), pvc, metav1.DeleteOptions{})
+	if err != nil {
+		klog.Info("[PVC Delete] Failed. ABORT. ", err.Error())
+	}
+	return err
 }
