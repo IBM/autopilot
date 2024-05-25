@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"os/exec"
@@ -378,6 +379,11 @@ func runGPUPower() (*[]byte, error) {
 }
 
 func runCreateDeletePVC() (*[]byte, error) {
+	_, exists := os.LookupEnv("STORAGE_CLASS")
+	if !exists {
+		b := []byte("Storage class not set. Cannot run. ABORT")
+		return &b, errors.New("storage class not set")
+	}
 	err := utils.CreatePVC()
 	if err != nil {
 		klog.Error(err.Error())
