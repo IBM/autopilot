@@ -11,10 +11,11 @@ spec:
     rules:
     - alert: PVCAlert
       annotations:
-        description: PVC creation from node node {{ $labels.node }} failed
+        description: PVC creation from node {{ $labels.node }} failed
         summary: PVC cannot be created
       expr: sum (autopilot_health_checks{health="pvc"}==1) by (node)
       for: 1m
       labels:
         severity: critical
         dcgm: autopilot
+        

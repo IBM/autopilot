@@ -30,7 +30,7 @@ pullSecrets:
 env:
     - name: "PERIODIC_CHECKS"
       value: "pciebw,remapped,dcgm,ping,gpupower"
-    - name: "STORAGE_CLASS"
+    - name: "PVC_TEST_STORAGE_CLASS"
       value: ""
 
 service:

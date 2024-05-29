@@ -161,7 +161,7 @@ func CreateJob(healthcheck string) {
 
 func CreatePVC() error {
 	cset := GetClientsetInstance()
-	storageclass := os.Getenv("STORAGE_CLASS")
+	storageclass := os.Getenv("PVC_TEST_STORAGE_CLASS")
 	pvcTemplate := corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: os.Getenv("POD_NAME"),
