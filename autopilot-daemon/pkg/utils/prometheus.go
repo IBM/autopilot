@@ -23,7 +23,7 @@ var (
 			Name:      "health_checks",
 			Help:      "Summary of the health checks measurements on compute nodes. Gauge Vector version",
 		},
-		[]string{"health", "node", "cpu", "gpu", "deviceid"},
+		[]string{"health", "node", "cpumodel", "gpumodel", "deviceid"},
 	)
 )
 

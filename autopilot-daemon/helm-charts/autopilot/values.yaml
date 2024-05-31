@@ -30,6 +30,8 @@ pullSecrets:
 env:
     - name: "PERIODIC_CHECKS"
       value: "pciebw,remapped,dcgm,ping,gpupower"
+    - name: "PVC_TEST_STORAGE_CLASS"
+      value: ""
 
 service:
   port: 3333

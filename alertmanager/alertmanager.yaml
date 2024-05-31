@@ -27,45 +27,13 @@ receivers:
   - name: Critical
   - name: 'null'
   - name: autopilot-pcie
-    slack_configs:
-      - channel: slack-channel-name
-        api_url: >-
-          https://hooks.slack.com/services/...
-        text: 'summary: {{ .CommonAnnotations.summary }}'
-        send_resolved: true
-        username: Autopilot
   - name: autopilot-ping
-    slack_configs:
-      - channel: slack-channel-name
-        api_url: >-
-          https://hooks.slack.com/services/...
-        text: 'summary: {{ .CommonAnnotations.summary }}'
-        send_resolved: true
-        username: Autopilot
   - name: autopilot-remapped
-    slack_configs:
-      - channel: slack-channel-name
-        api_url: >-
-          https://hooks.slack.com/services/...
-        text: 'summary: {{ .CommonAnnotations.summary }}'
-        send_resolved: true
-        username: Autopilot
   - name: autopilot-dcgm
-    slack_configs:
-      - channel: slack-channel-name
-        api_url: >-
-          https://hooks.slack.com/services/...
-        text: 'summary: {{ .CommonAnnotations.summary }}'
-        send_resolved: true
-        username: Autopilot
   - name: autopilot-cordon
-    slack_configs:
-      - channel: slack-channel-name
-        api_url: >-
-          https://hooks.slack.com/services/...
-        text: 'summary: {{ .CommonAnnotations.summary }}'
-        send_resolved: true
-        username: Autopilot
+  - name: autopilot-gpupower
+  - name: autopilot-pvc
+  - name: autopilot-dcgm3
 route:
   group_by:
     - namespace
@@ -95,3 +63,12 @@ route:
     - receiver: autopilot-cordon
       match:
         cordon: autopilot
+    - receiver: autopilot-gpupower
+      match:
+        gpupower: autopilot
+    - receiver: autopilot-pvc
+      match:
+        pvc: autopilot
+    - receiver: autopilot-dcgm3
+      match:
+        dcgm3: autopilot
