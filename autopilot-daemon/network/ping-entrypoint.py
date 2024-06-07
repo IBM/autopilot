@@ -140,8 +140,8 @@ def check_local_ifaces():
         ips.append(entry['ips'])
     ifaces = netifaces.interfaces()
     ifaces.remove('lo')
-    ifaces.remove('eth0')
-    if len(ips) > 0 and len(ifaces) == 0 :
+
+    if len(ips) != len(ifaces) :
         print("[PING] IFACES count inconsistent. Pod annotation reports", ips, ", not found in the pod among", netifaces.interfaces(),"ABORT")
         exit()
 

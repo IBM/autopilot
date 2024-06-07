@@ -244,6 +244,17 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 		klog.Error(err.Error())
 		return nil, err
 	} else {
+		klog.Info("Ping test completed:")
+
+		if strings.Contains(string(out[:]), "FAIL") {
+			klog.Info("Ping test failed.", string(out[:]))
+		}
+
+		if strings.Contains(string(out[:]), "ABORT") {
+			klog.Info("Ping cannot be run. ", string(out[:]))
+			return &out, nil
+		}
+
 		output := strings.TrimSuffix(string(out[:]), "\n")
 		lines := strings.Split(output, "\n")
 		unreach_nodes := make(map[string][]string)
