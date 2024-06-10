@@ -390,7 +390,7 @@ func runGPUPower() (*[]byte, error) {
 }
 
 func runCreateDeletePVC() (*[]byte, error) {
-	_, exists := os.LookupEnv("STORAGE_CLASS")
+	_, exists := os.LookupEnv("PVC_TEST_STORAGE_CLASS")
 	if !exists {
 		b := []byte("Storage class not set. Cannot run. ABORT")
 		return &b, errors.New("storage class not set")
