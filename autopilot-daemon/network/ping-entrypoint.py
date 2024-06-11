@@ -127,6 +127,7 @@ def check_local_ifaces():
     podname = os.getenv("POD_NAME")
     pod_list = kubeapi.list_namespaced_pod(namespace=namespace_self, field_selector="metadata.name="+podname)
     ips = []
+    iface_count = 0
     pod_self = pod_list.items[0] 
     try:
         entrylist = json.loads(pod_self.metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
@@ -138,11 +139,12 @@ def check_local_ifaces():
         except KeyError:
             continue
         ips.append(entry['ips'])
+        iface_count += len(entry['ips'])
     ifaces = netifaces.interfaces()
     ifaces.remove('lo')
-
-    if len(ips) != len(ifaces) :
-        print("[PING] IFACES count inconsistent. Pod annotation reports", ips, ", not found in the pod among", netifaces.interfaces(),"ABORT")
+    
+    if iface_count != len(ifaces) :
+        print("[PING] IFACES count inconsistent. Pod annotation reports", ips, ", not found in the pod among", ifaces, "ABORT")
         exit()
 
 def get_job_nodes(nodelist):
