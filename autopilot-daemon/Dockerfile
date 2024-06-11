@@ -5,7 +5,7 @@ RUN apt -y update && apt -y upgrade && apt -y clean && apt -y autoremove \
         && apt install -y --no-install-recommends build-essential git wget openssh-server && \
         apt -y clean && apt -y autoremove
 
-RUN git clone https://github.com/NVIDIA/cuda-samples.git
+RUN git clone --depth 1 --branch v12.4.1 https://github.com/NVIDIA/cuda-samples.git
 WORKDIR cuda-samples/Samples/1_Utilities/bandwidthTest
 
 RUN make SMS="80 86 90" 

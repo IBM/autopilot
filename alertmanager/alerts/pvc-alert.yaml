@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pvc-alert
+  namespace: openshift-monitoring
+  labels:
+    dcgm: autopilot
+spec:
+  groups:
+  - name: pvc
+    rules:
+    - alert: PVCAlert
+      annotations:
+        description: PVC creation from node {{ $labels.node }} failed
+        summary: PVC cannot be created
+      expr: sum (autopilot_health_checks{health="pvc"}==1) by (node)
+      for: 1m
+      labels:
+        severity: critical
+        dcgm: autopilot
+        

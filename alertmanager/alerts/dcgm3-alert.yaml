@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dcgm-3-alert
+  namespace: openshift-monitoring
+  labels:
+    cordon: autopilot
+spec:
+  groups:
+  - name: autopilot
+    rules:
+    - alert: DCGM3Alert
+      annotations:
+        description: A node reported errors after running DCGM level 3 - check health of nodes
+        summary: Node {{ $labels.node }} has GPU errors
+      expr: kube_node_labels{label_autopilot_dcgm_level_3=~"ERR.*"}
+      for: 1m
+      labels:
+        severity: critical
+        cordon: autopilot

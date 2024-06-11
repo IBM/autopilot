@@ -8,7 +8,7 @@ namespace:
 
 image:
   repository:  quay.io/autopilot/autopilot
-  tag: v1.6.0
+  tag: v1.7.0
   pullPolicy: Always
 
 # Bandwidth threshold below which PCIe links are considered broken (Gb/s)
@@ -28,8 +28,10 @@ pullSecrets:
   
 # List of periodic checks to be executed every `repeat` hours
 env:
-    - name: "PERIODIC_CHECKS"
-      value: "pciebw,remapped,dcgm,ping,gpupower"
+  - name: "PERIODIC_CHECKS"
+    value: "pciebw,remapped,dcgm,ping,gpupower"
+  - name: "PVC_TEST_STORAGE_CLASS"
+    value: ""
 
 service:
   port: 3333

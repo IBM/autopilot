@@ -36,7 +36,7 @@ The current status of Autopilot includes:
 
 - **GPU PCIe Link Bandwidth**: The PCIe NVidia bandwidth test to check host-to-device connection on each node
 - **GPU Memory**: GPUs remapped rows evaluation through `nvidia-smi`
-- **GPU Memory Bandwith Performance**: GPUs memory bandwidth evaluation through DAXPY and DGEMM
+- **GPU Memory Bandwidth Performance**: GPUs memory bandwidth evaluation through DAXPY and DGEMM
 - **GPU Diagnostics**: NVidia DCGM (Data Center GPU Manager) diagnostics through `dcgmi diag`
 - **GPU Power Slowdown**: verify if power throttle is active through `nvidia-smi`
 - **Network Reachability**: `ping` to evaluate hosts reachability

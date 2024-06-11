@@ -248,3 +248,17 @@ func GpuMemHandler() http.Handler {
 	}
 	return http.HandlerFunc(fn)
 }
+
+func PVCHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("PVC create-delete test\n"))
+		out, err := runCreateDeletePVC()
+		if err != nil {
+			klog.Error(err.Error())
+		}
+		if out != nil {
+			w.Write(*out)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
