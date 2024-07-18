@@ -52,10 +52,26 @@ func GetPeriodicChecks() string {
 // Returns true if GPUs are not currently requested by any workload
 func GPUsAvailability() bool {
 	cset := GetClientsetInstance()
-
-	fieldselector, err := fields.ParseSelector("spec.nodeName=" + os.Getenv("NODE_NAME") + ",status.phase!=" + string(corev1.PodSucceeded))
+	fieldselector, err := fields.ParseSelector("metadata.name=" + os.Getenv("NODE_NAME"))
 	if err != nil {
-		klog.Info("Error in creating the field selector", err.Error())
+		klog.Info("Error in creating the field selector ", err.Error())
+		return false
+	}
+	instance, err := cset.Cset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{FieldSelector: fieldselector.String()})
+	if err != nil {
+		klog.Info("Error in creating the watcher ", err.Error())
+		return false
+	}
+
+	nodelabels := instance.Items[0].Labels
+	if _, found := nodelabels["nvidia.com/gpu.present"]; !found {
+		klog.Info("GPUs not found on node ", os.Getenv("NODE_NAME"), ". Cannot run invasive health checks.")
+		return false
+	}
+	// Once cleared, list pods using gpus and abort the check if gpus are in use
+	fieldselector, err = fields.ParseSelector("spec.nodeName=" + os.Getenv("NODE_NAME") + ",status.phase!=" + string(corev1.PodSucceeded))
+	if err != nil {
+		klog.Info("Error in creating the field selector ", err.Error())
 		return false
 	}
 	pods, err := cset.Cset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{
@@ -74,7 +90,7 @@ func GPUsAvailability() bool {
 			return false
 		}
 	}
-	klog.Info("GPUs are free. Can run invasive health checks.")
+	klog.Info("GPUs are free. Will run invasive health checks.")
 	return true
 }
 
