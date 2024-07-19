@@ -1,4 +1,5 @@
 # AI Training Autopilot
+
 Autopilot is a Kubernetes-native daemon that continuously monitors and evaluates GPUs, network and storage health, designed to detect and report infrastructure-level issues during the lifetime of AI workloads. It is an open-source project developed by IBM Research.
 
 In AI training jobs, which may run for weeks or months, anomalies in the GPUs and network can happen anytime and often go undetected. In this case, performance degrades suddenly and a deep diagnostic is needed to identify the root cause, delaying or deleting the current job. Similarly, hardware anomalies can greatly disrupt the throughput and latency of an AI inference server.
@@ -7,15 +8,13 @@ The role of Autopilot is to detect and report any problems that are detected dur
 
 It implements a set of health checks evaluating the status of the system. These health checks focus mainly on subtle/software issues (i.e., row-remapping or PCIe link degradation), but also run connectivity tests (i.e., ping, iperf) to verify that secondary NICs are reachable. It can also verify that persistent volume claims (PVC) creation is functional for a given storage class.
 
-
 ![image](https://media.github.ibm.com/user/96687/files/0d466863-a19e-459d-a492-e2275377d4b9)
-
 
 Autopilot is deployed as a Kubernetes DaemonSet on all worker nodes that have GPUs. Each pod exposes a Service that can be accessed through RESTful API to request the execution of health checks. Therefore, each health check has its own entry point, but also a generic “status” entry point is provided.
 
 The DaemonSet does not run as privileged and requires access to GPUs without requesting them as resources. Therefore, the GPUs are seen as available by the scheduler.
 
-The main code is written in Go, while health checks are written in a combination of Python, Go, bash and CUDA. Each Autopilot pod runs health checks only on the node it resides. A pod can request other pods to run health checks on their nodes, and in that case, results are gathered and showed by the requestor pod. 
+The main code is written in Go, while health checks are written in a combination of Python, Go, bash and CUDA. Each Autopilot pod runs health checks only on the node it resides. A pod can request other pods to run health checks on their nodes, and in that case, results are gathered and showed by the requestor pod.
 
 If Autopilot requires full access to GPUs to run more invasive workloads, it will spawn a separate job with resources requests and limits set.
 
@@ -39,7 +38,8 @@ The toolkit currently provides health checks for pre-flight and post-flight phas
 
   - validate infrastructure once the job ends
 
-# Health Checks
+## Health Checks
+
 The current status of Autopilot includes:
 
 - **GPU PCIe Link Bandwidth**: The PCIe NVidia bandwidth test to check host-to-device connection on each node
@@ -60,14 +60,15 @@ Health checks can an also run them manually if needed.
 Results from health checks are exported as Prometheus Gauges, so that users and admins can easily check the status of the system on Grafana.
 
 ## Deep Diagnostics and Node Labeling
-Autopilot runs health checks periodically and labels the nodes with `autopilot.ibm.com/gpuhealth: ERR` is any of the GPU health checks returns an error.
+
+Autopilot runs health checks periodically and labels the nodes with `autopilot.ibm.com/gpuhealth: ERR` is any of the GPU health checks returns an error. Otherwise, health is set as `PASS`.
 
 Also, more extensive tests, namely DCGM diagnostics level 3, are also executed automatically only on nodes that have free GPUs. This deeper analysis is needed to reveal problems in the GPUs that can be found only after running level 3 DCGM diagnostic.
-This type of diagnostics can help deciding if the worker node should be used for running workloads or not. To facilitate this task, Autopilot will label nodes with key `autopilot/dcgm.level.3`. 
+This type of diagnostics can help deciding if the worker node should be used for running workloads or not. To facilitate this task, Autopilot will label nodes with key `autopilot/dcgm.level.3`.
 
-If errors are found, the label `autopilot/dcgm.level.3` will contain the value `ERR`, a timestamp, the test(s) that failed and the GPU id(s) if available. Otherwise, the value is set to `PASS_timestamp`.
+If errors are found, the label `autopilot.ibm.com/dcgm.level.3` will contain the value `ERR`, a timestamp, the test(s) that failed and the GPU id(s) if available. Otherwise, the value is set to `PASS_timestamp`.
 
-## Logs and Metrics
+### Logs and Metrics
 
 All health checks results are exported through Prometheus, but they can be also found in each pod's logs.
 
@@ -78,10 +79,11 @@ All metrics are accessible through Prometheus and Grafana dashboards. The gauge 
 - `cpumodel` and `gpumodel`, for heterogeneous clusters
 - `deviceid` to select specific GPUs, when available
 
-# Install Autopilot 
+## Install Autopilot 
+
 Autopilot can be installed through Helm and need admin privileges to create objects like services, serviceaccounts, namespaces and relevant RBAC.
 
-## Requirements
+### Requirements
 
 - Need to install `helm-git` plugin on all hosts
 
@@ -89,12 +91,11 @@ Autopilot can be installed through Helm and need admin privileges to create obje
 helm plugin install https://github.com/aslafy-z/helm-git --version 0.15.1
 ```
 
-## Helm Chart customization
+### Helm Chart customization
 
 Helm charts values and how-to for customization can be found [here](https://github.com/IBM/autopilot/tree/main/autopilot-daemon/helm-charts/autopilot).
 
-
-## Install
+### Install
 
 1) Add autopilot repo
 
@@ -122,14 +123,13 @@ autopilot-daemon-autopilot-x6h8d   1/1     Running   0          70m
 autopilot-daemon-autopilot-xhntv   1/1     Running   0          70m
 ```
 
-## Uninstall
+### Uninstall
 
 ```bash
  helm uninstall autopilot # -n <default>
 ```
 
-
-# Manually Query the Autopilot Service
+## Manually Query the Autopilot Service
 
 Autopilot provides a `/status` handler that can be queried to get the entire system status, meaning that it will run all the tests on all the nodes. Autopilot is reachable by service name `autopilot-healthchecks.autopilot.svc` in-cluster only, meaning it can be reached from a pod running in the cluster, or through port forwarding (see below).
 
@@ -154,7 +154,6 @@ Alternatively, retrieve the route with `kubectl get routes autopilot-healthcheck
 curl "<route-name>/status?check=pciebw&host=nodename1"
 ```
 
-
 All tests can be tailored by a combination of:
 
 - `host=<hostname1,hostname2,...>`, to run all tests on a specific node or on a comma separated list of nodes.
@@ -164,17 +163,20 @@ All tests can be tailored by a combination of:
 Some health checks provide further customization.
 
 ### DCGM
+
 This test runs `dcgmi diag`, and we support only `r` as [parameter](https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/dcgm-diagnostics.html#command-line-options). 
 
 The default is `1`, but can customize it by `/status?check=dcgm&r=2`.
 
-### IPERF 
+### IPERF
+
 This tests runs from a client node, which
 
 - Issues several RPCs to start remote `iperf3` servers
 - Launches a certain number of clients towards each of those servers
 
 Both can be customized.
+
 - `serverspernode` can be used to create a certain number of servers on each remote node.
   - if the value is lower than the number of secondary network interfaces, it will create the minimum number of `1` server per interface (excludes `eth0` and `lo`). Each server runs on a separate port.
   - otherwise, it will divide that value by the number of network interfaces existing in the cluster.
@@ -195,6 +197,7 @@ curl "http://127.0.0.1:3333/status?check=pciebw"
 ```
 
 The output of the command above, will be similar to the following (edited to save space):
+
 ```bash
 Checking status on all nodes
 Autopilot Endpoint: 10.128.6.187

@@ -40,7 +40,7 @@ func WatchNode() {
 		switch event.Type {
 		case watch.Modified:
 			{
-				key := "autopilot/dcgm.level.3"
+				key := "autopilot.ibm.com/dcgm.level.3"
 				labels := item.GetLabels()
 				if val, found := labels[key]; found {
 					var res float64
