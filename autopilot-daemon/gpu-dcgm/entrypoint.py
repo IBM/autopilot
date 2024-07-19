@@ -224,7 +224,7 @@ def patch_node(success, output):
     label = {
         "metadata": {
             "labels": {
-                "autopilot/dcgm.level.3": result}
+                "autopilot.ibm.com/dcgm.level.3": result}
         }
     }
     print("label: ", result)
