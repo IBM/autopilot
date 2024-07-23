@@ -11,7 +11,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -49,15 +51,36 @@ func GetPeriodicChecks() string {
 	return checks
 }
 
+func GetNode(nodename string) (*corev1.Node, error) {
+	cset := GetClientsetInstance()
+	fieldselector, err := fields.ParseSelector("metadata.name=" + nodename)
+	if err != nil {
+		klog.Info("Error in creating the field selector ", err.Error())
+		return nil, err
+	}
+	instance, err := cset.Cset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{FieldSelector: fieldselector.String()})
+	if err != nil {
+		klog.Info("Error in creating the watcher ", err.Error())
+		return nil, err
+	}
+	return &instance.Items[0], nil
+}
+
 // Returns true if GPUs are not currently requested by any workload
 func GPUsAvailability() bool {
-	cset := GetClientsetInstance()
-
-	fieldselector, err := fields.ParseSelector("spec.nodeName=" + os.Getenv("NODE_NAME") + ",status.phase!=" + string(corev1.PodSucceeded))
-	if err != nil {
-		klog.Info("Error in creating the field selector", err.Error())
+	node, _ := GetNode(os.Getenv("NODE_NAME"))
+	nodelabels := node.Labels
+	if _, found := nodelabels["nvidia.com/gpu.present"]; !found {
+		klog.Info("GPUs not found on node ", os.Getenv("NODE_NAME"), ". Cannot run invasive health checks.")
 		return false
 	}
+	// Once cleared, list pods using gpus and abort the check if gpus are in use
+	fieldselector, err := fields.ParseSelector("spec.nodeName=" + os.Getenv("NODE_NAME") + ",status.phase!=" + string(corev1.PodSucceeded))
+	if err != nil {
+		klog.Info("Error in creating the field selector ", err.Error())
+		return false
+	}
+	cset := GetClientsetInstance()
 	pods, err := cset.Cset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{
 		FieldSelector: fieldselector.String(),
 	})
@@ -74,7 +97,7 @@ func GPUsAvailability() bool {
 			return false
 		}
 	}
-	klog.Info("GPUs are free. Can run invasive health checks.")
+	klog.Info("GPUs are free. Will run invasive health checks.")
 	return true
 }
 
@@ -203,4 +226,14 @@ func DeletePVC(pvc string) error {
 		klog.Info("[PVC Delete] Failed. ABORT. ", err.Error())
 	}
 	return err
+}
+
+func PatchNode(label string, nodename string) error {
+	cset := GetClientsetInstance()
+	_, err := cset.Cset.CoreV1().Nodes().Patch(context.TODO(), nodename, types.StrategicMergePatchType, []byte(label), v1.PatchOptions{})
+	if err != nil {
+		klog.Info("[Node Patch] Failed. ", err.Error())
+		return err
+	}
+	return nil
 }

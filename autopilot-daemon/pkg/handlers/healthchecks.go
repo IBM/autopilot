@@ -34,6 +34,7 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 	out := []byte("")
 	var tmp *[]byte
 	var err error
+	gpufailures := false
 	start := time.Now()
 	if strings.Contains(checks, "all") {
 		checks = utils.GetPeriodicChecks()
@@ -64,6 +65,10 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 				klog.Error(err.Error())
 				return tmp, err
 			}
+			if strings.Contains(string(*tmp), "FAIL") {
+				klog.Info("GPU failure reported, updating node label for node ", os.Getenv("NODE_NAME"))
+				gpufailures = true
+			}
 			out = append(out, *tmp...)
 
 		case "pciebw":
@@ -72,6 +77,10 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 			if err != nil {
 				klog.Error(err.Error())
 				return tmp, err
+			}
+			if strings.Contains(string(*tmp), "FAIL") {
+				klog.Info("GPU failure reported, updating node label for node ", os.Getenv("NODE_NAME"))
+				gpufailures = true
 			}
 			out = append(out, *tmp...)
 
@@ -82,6 +91,10 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 				klog.Error(err.Error())
 				return tmp, err
 			}
+			if strings.Contains(string(*tmp), "FAIL") {
+				klog.Info("GPU failure reported, updating node label for node ", os.Getenv("NODE_NAME"))
+				gpufailures = true
+			}
 			out = append(out, *tmp...)
 
 		case "gpupower":
@@ -90,6 +103,10 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 			if err != nil {
 				klog.Error(err.Error())
 				return tmp, err
+			}
+			if strings.Contains(string(*tmp), "FAIL") {
+				klog.Info("GPU failure reported, updating node label for node ", os.Getenv("NODE_NAME"))
+				gpufailures = true
 			}
 			out = append(out, *tmp...)
 
@@ -115,6 +132,30 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 			notsupported := "check not supported: " + check
 			out = append(out, []byte(notsupported)...)
 		}
+	}
+	label := ""
+	if gpufailures {
+		label = `
+		{
+			"metadata": {
+				"labels": {
+					"autopilot.ibm.com/gpuhealth": "ERR"
+					}
+			}
+		}
+		`
+	} else {
+		// In case a previous run failed but the current one succeeds, we can reset the label
+		label = `
+		{
+			"metadata": {
+				"labels": {
+					"autopilot.ibm.com/gpuhealth": "PASS"
+					}
+			}
+		}
+		`
+		utils.PatchNode(label, os.Getenv("NODE_NAME"))
 	}
 	end := time.Now()
 	diff := end.Sub(start)

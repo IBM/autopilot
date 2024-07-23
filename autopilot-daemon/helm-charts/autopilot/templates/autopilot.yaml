@@ -20,14 +20,19 @@ spec:
       affinity:
       {{- toYaml .Values.affinity | nindent 8 }}
       {{- end}}
-      {{- if .Values.nodeSelector }}
       nodeSelector:
+      {{- if .Values.nodeSelector }}
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end}}
+      {{- if .Values.onlyOnGPUNodes }}
+        nvidia.com/gpu.present: 'true'
+      {{- end}}
       serviceAccountName: autopilot
+      {{- if .Values.pullSecrets.create }}
       imagePullSecrets:
       - name: {{ .Values.pullSecrets.name }}
-      {{- if .Values.gpuEnabled }}
+      {{- end}}
+      {{- if .Values.onlyOnGPUNodes }}
       initContainers:
         - args:
           - until [ -f /usr/bin/nvidia-smi ]; do echo waiting for nvidia device plug-in to be setup; sleep 5 && exit -1; done
