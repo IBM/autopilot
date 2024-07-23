@@ -8,7 +8,7 @@ namespace:
 
 image:
   repository:  quay.io/autopilot/autopilot
-  tag: v1.7.0
+  tag: v1.8.0
   pullPolicy: Always
 
 # Bandwidth threshold below which PCIe links are considered broken (Gb/s)
