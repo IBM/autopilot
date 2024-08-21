@@ -303,11 +303,11 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 			if strings.HasPrefix(line, "Node") {
 				entry := strings.Split(line, " ")
 				if entry[len(entry)-1] == "1" {
-					utils.HchecksGauge.WithLabelValues("ping", entry[1], utils.CPUModel, utils.GPUModel, entry[2]).Set(1)
+					utils.HchecksGauge.WithLabelValues("ping", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, entry[1]).Set(1)
 					klog.Info("Observation: ", entry[1], " ", entry[2], " ", entry[3], " Unreachable")
 					unreach_nodes[entry[1]] = append(unreach_nodes[entry[1]], entry[2])
 				} else {
-					utils.HchecksGauge.WithLabelValues("ping", entry[1], utils.CPUModel, utils.GPUModel, entry[2]).Set(0)
+					utils.HchecksGauge.WithLabelValues("ping", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, entry[1]).Set(0)
 				}
 			}
 		}
