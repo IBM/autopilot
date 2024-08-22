@@ -21,7 +21,7 @@ func main() {
 	logFile := flag.String("logfile", "", "File where to save all the events")
 	v := flag.String("loglevel", "2", "Log level")
 	repeat := flag.Int("w", 24, "Run all tests periodically on each node. Time set in hours. Defaults to 24h")
-	intrusive := flag.Int("intrusive-check-timer", 4, "Run intrusive checks (e.g., dcgmi level 3) on each node when GPUs are free. Time set in hours. Defaults to 4h. Set to 0 to avoid intrusive checks")
+	invasive := flag.Int("invasive-check-timer", 4, "Run invasive checks (e.g., dcgmi level 3) on each node when GPUs are free. Time set in hours. Defaults to 4h. Set to 0 to avoid invasive checks")
 
 	flag.Parse()
 
@@ -52,6 +52,18 @@ func main() {
 	go func() {
 		klog.Info("Serving metrics on :8081")
 		err := http.ListenAndServe(":8081", pMux)
+		if err != nil {
+			klog.Error(err.Error())
+			os.Exit(1)
+		}
+	}()
+
+	readinessMux := http.NewServeMux()
+	readinessMux.Handle("/readinessprobe", handlers.ReadinessProbeHandler())
+
+	go func() {
+		klog.Info("Serving Readiness Probe on :8080")
+		err := http.ListenAndServe(":8080", readinessMux)
 		if err != nil {
 			klog.Error(err.Error())
 			os.Exit(1)
@@ -108,15 +120,15 @@ func main() {
 
 	periodicChecksTicker := time.NewTicker(time.Duration(*repeat) * time.Hour)
 	defer periodicChecksTicker.Stop()
-	intrusiveChecksTicker := time.NewTicker(time.Duration(*intrusive) * time.Hour)
-	defer intrusiveChecksTicker.Stop()
+	invasiveChecksTicker := time.NewTicker(time.Duration(*invasive) * time.Hour)
+	defer invasiveChecksTicker.Stop()
 	for {
 		select {
 		case <-periodicChecksTicker.C:
 			handlers.PeriodicCheckTimer()
-		case <-intrusiveChecksTicker.C:
-			if *intrusive > 0 {
-				handlers.IntrusiveCheckTimer()
+		case <-invasiveChecksTicker.C:
+			if *invasive > 0 {
+				handlers.InvasiveCheckTimer()
 			}
 		}
 	}
