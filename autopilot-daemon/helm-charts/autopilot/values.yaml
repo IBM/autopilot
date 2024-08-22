@@ -18,7 +18,7 @@ PCIeBW: 4
 repeat: 1
 
 # Timer for periodic invasive checks, in hours (e.g., dcgmi diag -r 3). Set to 0 to disable (for non nvidia gpu systems)
-intrusive: 4
+invasive: 4
 
 # Image pull secret if the image is in a private repository
 pullSecrets:

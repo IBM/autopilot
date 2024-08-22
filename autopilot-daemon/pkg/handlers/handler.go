@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -259,6 +260,16 @@ func PVCHandler() http.Handler {
 		if out != nil {
 			w.Write(*out)
 		}
+	}
+	return http.HandlerFunc(fn)
+}
+
+func ReadinessProbeHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		data := HealthResult{"readinessProbe", "ready"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(data)
 	}
 	return http.HandlerFunc(fn)
 }

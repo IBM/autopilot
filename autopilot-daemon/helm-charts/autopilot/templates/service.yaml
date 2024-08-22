@@ -8,10 +8,24 @@ metadata:
   annotations: 
     {{- toYaml .Values.serviceAnnotations | nindent 4 }}
 spec:
-  # type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
       protocol: TCP
       name: healthcheck
+  selector:
+    app: autopilot
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: autopilot
+  name: autopilot-readinessprobe
+  namespace: {{ .Values.namespace.name }}
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP 
+      name: readinessprobe
   selector:
     app: autopilot

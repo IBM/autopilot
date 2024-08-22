@@ -21,7 +21,7 @@ func PeriodicCheckTimer() {
 	runAllTestsLocal("all", checks, "1", "None", "None", nil)
 }
 
-func IntrusiveCheckTimer() {
+func InvasiveCheckTimer() {
 	klog.Info("Trying to run an intrusive check")
 	utils.HealthcheckLock.Lock()
 	defer utils.HealthcheckLock.Unlock()
