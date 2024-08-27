@@ -81,6 +81,7 @@ COPY network/iperf3_entrypoint.py /home/autopilot/network/iperf3_entrypoint.py
 COPY network/iperf3_utils.py /home/autopilot/network/iperf3_utils.py
 COPY network/network_workload.py /home/autopilot/network/network_workload.py
 COPY network/iperf3_start_servers.py /home/autopilot/network/iperf3_start_servers.py
+COPY network/iperf3_stop_servers.py /home/autopilot/network/iperf3_stop_servers.py
 COPY network/iperf3_start_clients.py /home/autopilot/network/iperf3_start_clients.py
 
 # Remapped Rows test files

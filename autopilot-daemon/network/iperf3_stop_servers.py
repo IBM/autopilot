@@ -14,15 +14,12 @@ def kill_all_iperf_servers():
 
     for process in processes:
         try:
+            # Don't combine the strings...this won't work if "-s" is placed in a different position...
             if "iperf3" in process and "-s" in process:
                 parts = process.split()
                 if len(parts) > 1:
                     pid = int(parts[1])
-                    # Not killing default iperf server spun up on entrypoint...
                     if pid > 1:
-                        log.info(
-                            f"Killing iperf3 server process (PID: {pid}) in {CURR_POD_NAME} on {CURR_WORKER_NODE_NAME}"
-                        )
                         try:
                             os.kill(pid, signal.SIGTERM)
                         except PermissionError:
@@ -40,10 +37,6 @@ def kill_all_iperf_servers():
                                 f"Failed to kill process with PID {pid}: {e} in {CURR_POD_NAME} on {CURR_WORKER_NODE_NAME}"
                             )
                             sys.exit(1)
-                    else:
-                        log.info(
-                            f"Nothing left to kill in {CURR_POD_NAME} on {CURR_WORKER_NODE_NAME} (Not killing default entrypoint iperf3 server)."
-                        )
                 else:
                     log.error(
                         f"Unexpected format in process line: {process} in {CURR_POD_NAME} on {CURR_WORKER_NODE_NAME}"
@@ -59,7 +52,9 @@ def kill_all_iperf_servers():
                 f"An unexpected error occurred: {e} in {CURR_POD_NAME} on {CURR_WORKER_NODE_NAME}"
             )
             sys.exit(1)
+    log.info(f"All iperf servers have been removed (not deleting default iperf server)")
 
 
 if __name__ == "__main__":
     kill_all_iperf_servers()
+

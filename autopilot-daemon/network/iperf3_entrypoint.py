@@ -54,7 +54,7 @@ async def makeconnection(event, address, handle):
     async with aiohttp.ClientSession(timeout=total_timeout) as session:
         async with session.get(url) as resp:
             reply = await resp.text()
-            log.info(f"Response from {url}:\n    {reply}")
+            log.info(f"Response from {url}:\n{reply}")
 
 
 async def iperf_start_servers(node_map, num_servers, port_start):
@@ -122,6 +122,24 @@ async def run_workload(workload_type, nodemap, workload, num_clients, port_start
         sys.exit(1)
 
 
+async def cleanup_iperf_servers(node_map):
+    """
+    Removes all started iperf servers across all nodes.
+
+    Args:
+    node_map (dict): A dictionary mapping worker-nodes to representation data.
+    """
+    tasks = [
+        makeconnection(
+            None,
+            node_map[node]["endpoint"],
+            f"/iperfstopservers",
+        )
+        for node in node_map
+    ]
+    await asyncio.gather(*tasks)
+
+
 async def main():
     type_of_workload = args["workload"].upper()
     num_parallel_clients = args["pclients"]
@@ -147,6 +165,8 @@ async def main():
                 num_parallel_clients,
                 port_start,
             )
+
+            await cleanup_iperf_servers(autopilot_node_map)
         else:
             #
             # TODO: Build other workloads...

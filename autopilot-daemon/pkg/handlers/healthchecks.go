@@ -356,7 +356,7 @@ func stopAllIperfServers() (*[]byte, error) {
 		klog.Error(err.Error())
 		return nil, err
 	} else {
-		klog.Info("iperf3 servers started.")
+		klog.Info("iperf3 servers stopped.")
 	}
 	return &out, nil
 }

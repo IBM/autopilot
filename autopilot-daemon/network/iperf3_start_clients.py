@@ -87,7 +87,7 @@ async def run_iperf_client(dstip, dstport, iteration, duration_seconds):
             "results": iperf_result,
         }
         log.info(
-            f"Completed iperf3 client number {iteration} on {dstip}:{dstport}. Full output saved to {output_filename}:\n{json.dumps(iperf_result, indent=4)}"
+            f"Completed iperf3 client number {iteration} on {dstip}:{dstport}. Full output saved to {output_filename}"
         )
         return iperf_result
     else:
