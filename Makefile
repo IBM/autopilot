@@ -1,5 +1,5 @@
-TAG=dev
-IMAGE=containerregistry:5000/autopilot
+TAG=tyler-dev
+IMAGE=quay.io/autopilot/autopilot
 
 image-build:
 	@docker build -t ${IMAGE}:v${TAG} -f autopilot-daemon/Dockerfile autopilot-daemon/

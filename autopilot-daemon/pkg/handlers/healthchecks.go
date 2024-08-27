@@ -316,50 +316,64 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 	return &out, nil
 }
 
-func runIperf(nodelist string, jobName string, plane string, clients string, servers string, sourceNode string, nodelabel string) (*[]byte, error) {
-	out, err := exec.Command("python3", "./network/iperf3-entrypoint.py", "--nodes", nodelist, "--job", jobName, "--plane", plane, "--clients", clients, "--servers", servers, "--source", sourceNode, "--nodelabel", nodelabel).CombinedOutput()
-	klog.Info("Running command: ./network/iperf3-entrypoint.py ", " --nodes ", nodelist, " --job ", jobName, " --plane ", plane, " --clients ", clients, " --servers ", servers, " --source ", sourceNode, " --nodelabel", nodelabel)
+func runIperf(workload string, pclients string, startport string) (*[]byte, error) {
+
+	if workload == "" || pclients == "" || startport == "" {
+		klog.Error("Must provide arguments \"workload\", \"pclients\" and \"startport\".")
+		return nil, nil
+	}
+
+	out, err := exec.Command("python3", "./network/iperf3_entrypoint.py", "--workload", workload, "--pclients", pclients, "--startport", startport).CombinedOutput()
 	if err != nil {
 		klog.Info(string(out))
 		klog.Error(err.Error())
 		return nil, err
-	} else {
-		klog.Info("iperf3 test completed:")
-		klog.Info("iperf3 result:\n", string(out))
-		if clients == "1" && servers == "1" {
-			output := strings.TrimSuffix(string(out[:]), "\n")
-			line := strings.Split(output, "\n")
-			var bw float64
-			for i := len(line) - 3; i > 0; i-- {
-				if strings.Contains(line[i], "Aggregate") {
-					break
-				}
-				entries := strings.Split(line[i], " ")
-				if len(entries) == 2 {
-					bw = 0
-				} else {
-					bw, err = strconv.ParseFloat(entries[2], 64)
-				}
-				if err != nil {
-					klog.Error(err.Error())
-					return nil, err
-				}
-				klog.Info("Observation: ", entries[0], " ", entries[1], " ", bw)
-			}
-		}
-	}
+	} 
+	klog.Info("iperf3 test completed:\n", string(out))
 	return &out, nil
 }
 
-func startIperfServers(replicas string) (*[]byte, error) {
-	out, err := exec.Command("python3", "./network/start-iperf-servers.py", "--replicas", replicas).CombinedOutput()
-	klog.Info("Running command: ./network/start-iperf-servers.py --replicas ", replicas)
+func startIperfServers(numservers string, startport string) (*[]byte, error) {
+	if numservers == "" || startport == "" {
+		klog.Error("Must provide arguments \"numservers\" and \"startport\".")
+		return nil, nil
+	}
+	out, err := exec.Command("python3", "./network/iperf3_start_servers.py", "--numservers", numservers, "--startport", startport).CombinedOutput()
 	if err != nil {
 		klog.Info(string(out))
 		klog.Error(err.Error())
 		return nil, err
 	} else {
 		klog.Info("iperf3 servers started.")
+	}
+	return &out, nil
+}
+
+func stopAllIperfServers() (*[]byte, error) {
+	out, err := exec.Command("python3", "./network/iperf3_stop_servers.py").CombinedOutput()
+	if err != nil {
+		klog.Info(string(out))
+		klog.Error(err.Error())
+		return nil, err
+	} else {
+		klog.Info("iperf3 servers started.")
+	}
+	return &out, nil
+}
+
+func startIperfClients(dstip string, dstport string, numclients string) (*[]byte, error) {
+	if dstip == "" || dstport == "" || numclients == "" {
+		klog.Error("Must provide arguments \"dstip\", \"dstport\", and \"startport\".")
+		return nil, nil
+	}
+
+	out, err := exec.Command("python3", "./network/iperf3_start_clients.py", "--dstip", dstip, "--dstport", dstport, "--numclients", numclients).CombinedOutput()
+	if err != nil {
+		klog.Info(string(out))
+		klog.Error(err.Error())
+		return nil, err
+	} else {
+		klog.Info("iperf3 clients started.")
 	}
 	return &out, nil
 }

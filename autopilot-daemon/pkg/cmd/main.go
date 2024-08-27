@@ -77,6 +77,8 @@ func main() {
 	hcMux.Handle("/status", handlers.SystemStatusHandler())
 	hcMux.Handle("/iperf", handlers.IperfHandler())
 	hcMux.Handle("/iperfservers", handlers.StartIperfServersHandler())
+	hcMux.Handle("/iperfstopservers", handlers.StopAllIperfServersHandler())
+	hcMux.Handle("/iperfclients", handlers.StartIperfClientsHandler())
 	hcMux.Handle("/dcgm", handlers.DCGMHandler())
 	hcMux.Handle("/ping", handlers.PingHandler())
 	hcMux.Handle("/gpupower", handlers.GpuPowerHandler())
