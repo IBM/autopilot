@@ -323,12 +323,15 @@ func runIperf(workload string, pclients string, startport string, cleanup string
 		return nil, nil
 	}
 
-	out, err := exec.Command("python3", "./network/iperf3_entrypoint.py", "--workload", workload, "--pclients", pclients, "--startport", startport, cleanup).CombinedOutput()
+	args := []string{"./network/iperf3_entrypoint.py", "--workload", workload, "--pclients", pclients, "--startport", startport}
+
+	if cleanup != "" {
+		args = append(args, cleanup)
+	}
+	out, err := exec.Command("python3", args...).CombinedOutput()
 	if err != nil {
-		klog.Info(string(out))
-		klog.Error(err.Error())
 		return nil, err
-	} 
+	}
 	klog.Info("iperf3 test completed:\n", string(out))
 	return &out, nil
 }

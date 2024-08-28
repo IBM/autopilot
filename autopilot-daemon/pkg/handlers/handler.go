@@ -43,9 +43,9 @@ func SystemStatusHandler() http.Handler {
 			workload := r.URL.Query().Get("workload")
 			pclients := r.URL.Query().Get("pclients")
 			startport := r.URL.Query().Get("startport")
-			cleanup := false
+			cleanup := ""
 			if r.URL.Query().Has("cleanup") {
-				cleanup = true
+				cleanup = "--cleanup"
 			}
 			out, err := runIperf(workload, pclients, startport, cleanup)
 			if err != nil {
