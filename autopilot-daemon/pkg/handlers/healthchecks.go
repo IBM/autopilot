@@ -316,14 +316,14 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 	return &out, nil
 }
 
-func runIperf(workload string, pclients string, startport string) (*[]byte, error) {
+func runIperf(workload string, pclients string, startport string, cleanup string) (*[]byte, error) {
 
 	if workload == "" || pclients == "" || startport == "" {
 		klog.Error("Must provide arguments \"workload\", \"pclients\" and \"startport\".")
 		return nil, nil
 	}
 
-	out, err := exec.Command("python3", "./network/iperf3_entrypoint.py", "--workload", workload, "--pclients", pclients, "--startport", startport).CombinedOutput()
+	out, err := exec.Command("python3", "./network/iperf3_entrypoint.py", "--workload", workload, "--pclients", pclients, "--startport", startport, cleanup).CombinedOutput()
 	if err != nil {
 		klog.Info(string(out))
 		klog.Error(err.Error())

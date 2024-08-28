@@ -96,6 +96,7 @@ async def run_iperf_client(dstip, dstport, iteration, duration_seconds):
         )
         with open(output_filename, "w") as f:
             f.write(stderr.decode())
+        sys.exit()
 
 
 async def main():

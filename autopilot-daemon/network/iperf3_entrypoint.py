@@ -32,6 +32,14 @@ parser.add_argument(
     ),
 )
 
+parser.add_argument(
+    '--cleanup',
+    action='store_true',
+    help=(
+        "When provided, this will kill ALL iperf servers on every node."
+    ),
+)
+
 args = vars(parser.parse_args())
 
 
@@ -144,15 +152,16 @@ async def main():
     type_of_workload = args["workload"].upper()
     num_parallel_clients = args["pclients"]
     port_start = args["startport"]
+    cleanup_iperf = args["cleanup"]
+
+    wl = NetworkWorkload()
+    autopilot_node_map = wl.gen_autopilot_node_map_json()
     if type_of_workload in (workload.value for workload in SupportedWorkload):
         if SupportedWorkload.RING.value == type_of_workload:
+            wl.print_autopilot_node_map_json(autopilot_node_map)
 
-            ring = NetworkWorkload()
-            autopilot_node_map = ring.gen_autopilot_node_map_json()
-            ring.print_autopilot_node_map_json(autopilot_node_map)
-
-            ring_workload = ring.generate_ring_topology_json(autopilot_node_map)
-            ring.print_ring_workload()
+            ring_workload = wl.generate_ring_topology_json(autopilot_node_map)
+            wl.print_ring_workload()
 
             await iperf_start_servers(
                 autopilot_node_map, num_parallel_clients, port_start
@@ -166,7 +175,6 @@ async def main():
                 port_start,
             )
 
-            await cleanup_iperf_servers(autopilot_node_map)
         else:
             #
             # TODO: Build other workloads...
@@ -177,6 +185,8 @@ async def main():
         log.error("Unsupported Workload Attempted")
         sys.exit(1)
 
+    if cleanup_iperf:
+        await cleanup_iperf_servers(autopilot_node_map)
 
 if __name__ == "__main__":
     asyncio.run(main())
