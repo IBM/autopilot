@@ -13,7 +13,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func PeriodicCheckTimer() {
+func PeriodicCheck() {
 	klog.Info("Running a periodic check")
 	utils.HealthcheckLock.Lock()
 	defer utils.HealthcheckLock.Unlock()
@@ -21,12 +21,36 @@ func PeriodicCheckTimer() {
 	runAllTestsLocal("all", checks, "1", "None", "None", nil)
 }
 
-func InvasiveCheckTimer() {
-	klog.Info("Trying to run an intrusive check")
+func InvasiveCheck() {
+	klog.Info("Trying to run an invasive check")
 	utils.HealthcheckLock.Lock()
 	defer utils.HealthcheckLock.Unlock()
 	if utils.GPUsAvailability() {
-		utils.CreateJob("dcgm")
+		klog.Info("Begining invasive health checks, updating node label =TESTING for node ", os.Getenv("NODE_NAME"))
+		label := `
+		{
+			"metadata": {
+				"labels": {
+					"autopilot.ibm.com/gpuhealth": "TESTING"
+					}
+			}
+		}
+		`
+		utils.PatchNode(label, os.Getenv("NODE_NAME"))
+		err := utils.CreateJob("dcgm")
+		if err != nil {
+			klog.Info("Invasive health checks failed, updating node label for node ", os.Getenv("NODE_NAME"))
+			label := `
+		{
+			"metadata": {
+				"labels": {
+					"autopilot.ibm.com/gpuhealth": ""
+					}
+			}
+		}
+		`
+			utils.PatchNode(label, os.Getenv("NODE_NAME"))
+		}
 	}
 }
 
