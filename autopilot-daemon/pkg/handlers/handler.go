@@ -144,6 +144,14 @@ func PingHandler() http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func InvasiveCheckHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Launching invasive health checks. Results will added to 'autopilot.ibm.com/gpuhealth' node label"))
+		InvasiveCheck()
+	}
+	return http.HandlerFunc(fn)
+}
+
 func IperfHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Iperf3 test"))

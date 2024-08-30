@@ -72,16 +72,17 @@ func main() {
 
 	hcMux := http.NewServeMux()
 
-	hcMux.Handle("/pciebw", handlers.PCIeBWHandler(utils.UserConfig.BWThreshold))
-	hcMux.Handle("/remapped", handlers.RemappedRowsHandler())
-	hcMux.Handle("/status", handlers.SystemStatusHandler())
+	hcMux.Handle("/dcgm", handlers.DCGMHandler())
+	hcMux.Handle("/gpumem", handlers.GpuMemHandler())
+	hcMux.Handle("/gpupower", handlers.GpuPowerHandler())
 	hcMux.Handle("/iperf", handlers.IperfHandler())
 	hcMux.Handle("/iperfservers", handlers.StartIperfServersHandler())
-	hcMux.Handle("/dcgm", handlers.DCGMHandler())
+	hcMux.Handle("/invasive", handlers.InvasiveCheckHandler())
+	hcMux.Handle("/pciebw", handlers.PCIeBWHandler(utils.UserConfig.BWThreshold))
 	hcMux.Handle("/ping", handlers.PingHandler())
-	hcMux.Handle("/gpupower", handlers.GpuPowerHandler())
-	hcMux.Handle("/gpumem", handlers.GpuMemHandler())
 	hcMux.Handle("/pvc", handlers.PVCHandler())
+	hcMux.Handle("/remapped", handlers.RemappedRowsHandler())
+	hcMux.Handle("/status", handlers.SystemStatusHandler())
 
 	s := &http.Server{
 		Addr:         ":" + *port,
@@ -116,7 +117,7 @@ func main() {
 	go utils.WatchNode()
 
 	// Run the health checks at startup, then start the timer
-	handlers.PeriodicCheckTimer()
+	handlers.PeriodicCheck()
 
 	periodicChecksTicker := time.NewTicker(time.Duration(*repeat) * time.Hour)
 	defer periodicChecksTicker.Stop()
@@ -125,10 +126,10 @@ func main() {
 	for {
 		select {
 		case <-periodicChecksTicker.C:
-			handlers.PeriodicCheckTimer()
+			handlers.PeriodicCheck()
 		case <-invasiveChecksTicker.C:
 			if *invasive > 0 {
-				handlers.InvasiveCheckTimer()
+				handlers.InvasiveCheck()
 			}
 		}
 	}
