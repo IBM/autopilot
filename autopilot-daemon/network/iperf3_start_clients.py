@@ -26,7 +26,7 @@ args = vars(parser.parse_args())
 
 async def run_iperf_client(dstip, dstport, iteration, duration_seconds):
     dstport = dstport + iteration
-    command = ["iperf3", "-c", dstip, "-p", str(dstport), "-t", duration_seconds]
+    command = ["iperf3", "-c", dstip, "-p", str(dstport), "-t", duration_seconds, "-i", "1.0", "-Z"]
     log.info(f"Starting iperf3 client {iteration} using {dstip}:{dstport}...")
 
     process = await asyncio.create_subprocess_exec(
@@ -103,7 +103,7 @@ async def main():
     dstip = args["dstip"]
     dstport = args["dstport"]
     numclients = args["numclients"]
-    duration_seconds = "10"
+    duration_seconds = "5"
 
     tasks = [
         asyncio.create_task(run_iperf_client(dstip, dstport, i, duration_seconds))
