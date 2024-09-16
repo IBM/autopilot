@@ -1,11 +1,14 @@
 ﻿global:
   resolve_timeout: 5m
+  slack_api_url: >-
+    <slack-webhook-api-url>
 inhibit_rules:
   - equal:
       - namespace
       - alertname
     source_matchers:
       - severity = critical
+      - alert = slack
     target_matchers:
       - severity =~ warning|info
   - equal:
@@ -22,18 +25,40 @@ inhibit_rules:
     target_matchers:
       - severity = info
 receivers:
-  - name: Default
-  - name: Watchdog
+  - name: Autopilot
+    slack_configs:
+      - channel: <alerts-slack-channel>
+        send_resolved: true
+        text: |-
+          {{ range .Alerts -}}
+                  *Alert:* {{ .Annotations.title }}{{ if .Labels.severity }} - `{{ .Labels.severity }}`{{ end }}
+                  *Description:* {{ .Annotations.description }}
+                  *Details:*
+                    {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+                    {{ end }}
+                  {{ end }}
+        title: >-
+          [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing
+          | len }}{{ end }}] {{ .CommonLabels.alertname }} for {{
+          .CommonLabels.job }}
+           Autopilot Health Check Report
   - name: Critical
+    slack_configs:
+      - channel: <alerts-slack-channel>
+        link_names: true
+        send_resolved: true
+        text: |-
+          {{ template "slack.default.text" .}}
+          {{ range .Alerts -}}
+                  *Alert:* {{ .Annotations.title }}{{ if .Labels.severity }} - `{{ .Labels.severity }}`{{ end }}
+                  *Description:* {{ .Annotations.description }}
+                  *Details:*
+                    {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+                    {{ end }}
+                  {{ end }}
+  - name: Default
   - name: 'null'
-  - name: autopilot-pcie
-  - name: autopilot-ping
-  - name: autopilot-remapped
-  - name: autopilot-dcgm
-  - name: autopilot-cordon
-  - name: autopilot-gpupower
-  - name: autopilot-pvc
-  - name: autopilot-dcgm3
+  - name: Watchdog
 route:
   group_by:
     - namespace
@@ -48,27 +73,9 @@ route:
     - matchers:
         - alertname = InfoInhibitor
       receiver: 'null'
-    - receiver: autopilot-pcie
-      match:
-        pcie: autopilot
-    - receiver: autopilot-remapped
-      match:
-        remapped: autopilot
-    - receiver: autopilot-dcgm
-      match:
-        dcgm: autopilot
-    - receiver: autopilot-ping
-      match:
-        ping: autopilot
-    - receiver: autopilot-cordon
-      match:
-        cordon: autopilot
-    - receiver: autopilot-gpupower
-      match:
-        gpupower: autopilot
-    - receiver: autopilot-pvc
-      match:
-        pvc: autopilot
-    - receiver: autopilot-dcgm3
-      match:
-        dcgm3: autopilot
+    - receiver: Critical
+      matchers:
+        - severity = critical
+    - receiver: Autopilot
+      matchers:
+        - alert = autopilot
