@@ -39,7 +39,7 @@ The Autopilot Dashboard UI will be in React.js and will include 3 key pages. The
 
 ### Architecture Structure
 
-(insert image)
+![Architecture Diagram](images/architecture.png)
 
 The diagram above illustrates the architecture for the IBM Autopilot Dashboard. It consists of three primary pages: Login Page, Monitoring Page, and Testing Page. These pages interact with the Kubernetes cluster running Autopilot.
 
@@ -55,13 +55,13 @@ NOTE: Our application is a dashboard for Autopilot, so the diagram only includes
 
 **Sample Login Page**
 
-(insert image)
+![Login Page Diagram](images/login-page.png)
 
 The Login page will be the first page users see on the site. Users will enter in their login credentials and the application will determine if they have admin privileges or viewer privileges (or none at all). The ability to login through OpenShift (OpenShift login integration) will be a stretch goal for our project as mentioned in the “Acceptance Criteria” section below.
 
 **Sample Monitoring Page**
 
-(insert image)
+![Monitoring Page Diagram](images/monitor-page.png)
 
 The Monitoring page is used to view all of the worker nodes and the status of their most recent health checks. Initially, all nodes are displayed with failing nodes at the top. However, nodes can be filtered in various ways, including by status code (PASS/ERR), hardware type (GPU, CPU, etc.), and by ID. Users can view the status of a node’s health checks by clicking on and expanding the associated box.
 
