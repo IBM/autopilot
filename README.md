@@ -175,3 +175,85 @@ Stretch Goals:
 
 ## 6.  Release Planning:
 
+The release planning of this project will be based on the EC528 lecture regarding vertical and horizontal user story agile methodology. With this approach, we aim to fulfill most required features for the user before implementing more additional features.  
+
+1) **<i> September </i> [9/14 - 9/30]**
+
+   Exploring Autopilot and initial setup
+   
+   - Designing global architecture/framework of the project and how it works.
+   
+   - Set web UI application design/overview.
+   
+   - Initial setup of the skeleton of the web application.
+
+2) **<i> Early - Mid October </i> [10/2 - 10/16]**
+
+   Get access to Kubernetes cluster running instance of Autopilot from mentors. Use dummy data as replacement in the meantime, so that front-end development is not blocked. Make sure that dummy data closely mimics real data so that transferring is easy.
+
+   **<ins> Login Page </ins>**
+   
+   - Set up front-end components on the page and connect to Kubernetes cluster authentication.
+
+   - Discern between admin vs viewer.
+	
+   **<ins> Monitoring Page </ins>**
+  
+   - Displaying real-time node status and other latest health check information.
+
+   - Include expandable boxes for users to be able to view detailed information (status of latest health checks) for each node.
+        
+   - Enable search box so nodes can be searched by ID.
+
+   **<ins> Testing Page </ins>**
+        
+   - Provide a drop down feature to select types of health checks.
+
+   - Allow for selection of a set of nodes to run tests on.
+
+   - Run tests on the cluster by calling Autopilot’s RESTful API.
+
+   - Return test results in any format to the user (do not worry about embedded terminal windows for now).
+
+3) **<i> Late October - Early November </i> [10/21 - 11/4]**
+
+   **<ins> Monitoring Page </ins>**
+  
+   - Implement a variety of filters to view nodes based on node status, type of hardware, and etc.
+
+   **<ins> Testing Page </ins>**
+        
+   - Incorporate components from Monitoring Page to display real-time node status and other latest health check information.
+
+   - Implement additional filters to select nodes (rather than just by ID). These filters can be taken from the Monitoring page.
+
+   - Implement an embedded terminal window to show results of the tests in a more clean format.
+   
+4) **<i> Mid - Late November </i> [11/11 - 11/25]**
+
+   Testing and refinement
+
+   - Take a test cluster given by mentors and try to run each test on different nodes using the web UI to ensure full responsiveness.
+
+   - Implementing notification system to main user and from main user to administrator for test failures.
+
+   - Fix any bugs or inefficiencies found during testing.
+
+   - Implement feedback suggested by mentors, including adding any features which improve usability.
+
+5) **<i> Late November - Early December </i> [11/27 - 12/10]**
+
+   Stretch goals and final release
+
+   **<ins> Recent Test History </ins>**
+
+   - Add a dropdown feature to display recent test results.
+
+   - Add ability to rerun previous tests.
+
+   - Using NoSQL as a persistent database.
+  
+   **<ins> Open Shift Integration </ins>**
+
+   - Implement seamless login with OpenShift credentials.
+ 
