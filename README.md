@@ -2,6 +2,30 @@
 
 ## IBM Autopilot Dashboard
 
+## Team Members
+
+| Names              | Roles   | Emails                |
+| :----------------- | ------- | --------------------- |
+| James Cadden       | Mentor  | jcadden@ibm.com       |
+| Claudia Misale     | Mentor  | c.misale@ibm.com      |
+| Tyler Rimaldi      | Mentor  | tyler.rimaldi@ibm.com |
+| Ellen Burhansjah   | Student | eburhan@bu.edu        |
+| Anish Sinha        | Student | anishs@bu.edu         |
+| Mete Gumusayak     | Student | mgumus@bu.edu         |
+| Joshua Arrevillaga | Student | arrejosh@bu.edu       |
+| Ryan Liao          | Student | ryanliao@bu.edu       |
+| Jingyi Zhang       | Student | jyz0328@bu.edu        |
+
+## Sprint Demos
+
+1. Due September 25th/October 2nd
+2. Due October 9th/October 16th
+3. Due October 23rd/October 30th
+4. Due November 6th/November 13th
+5. Due November 20th/November 25th
+
+Final Presentation: Due December 9th/December 11th
+
 ** **
 
 ## 1.   Vision and Goals Of The Project:
