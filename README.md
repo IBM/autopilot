@@ -14,9 +14,10 @@ Along the way, we will ensure the dashboard offers clear, actionable insights in
 
 
 ## 2. Users/Personas Of The Project:
-
- <ins>**User 1: Data Scientists e.g. Martin (general user)**</ins>
  IBM Autopilot is designed for someone who needs to run AI workloads and detect the infrastructure-level issues for these jobs. IBM Autopilot will also be used for anyone who requires health checks on the system.  IBM Autopilot realizes these purposes by continuously monitoring and evaluating hardware and devices such as network, storage, and GPUs.
+ 
+ <ins>**User 1: Data Scientists e.g. Martin (general user)**</ins>
+ 
 
 -  **Role and background description:** Martin is a data scientist. His daily tasks involve processing large amounts of data and performing complex computations. One good example would be training deep learning neural networks.
   
