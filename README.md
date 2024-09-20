@@ -67,7 +67,9 @@ The Monitoring page is used to view all of the worker nodes and the status of th
 
 **Sample Testing Page**
 
-(insert image)
+![Testing Page Diagram](images/testing-page.png)
+
+This testing page will be used to select the set of nodes and the health checks/tests the user wants to run. Users will be able to select the tests (health checks) they would like to run using a dropdown menu and can input test parameters when necessary. Similar to the Monitoring page, nodes can be selected using a variety of filters, including one for most recent test status and a search by ID. Once all of the filters are applied and the matching nodes are displayed, a select all button can be pressed to select all of the nodes that match the filter inputs. Once the user has selected a set of tests (with appropriate test parameters) and a set of nodes, the Testing page will send a RESTful API request to IBM Autopilot to run the given tests on the given nodes and the results will be shown in an embedded terminal window.
 
 ### Back-End Description
 
