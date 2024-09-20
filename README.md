@@ -54,7 +54,17 @@ Along the way, we will ensure the dashboard offers clear, actionable insights in
 -  **Needs and goals:** Jessy would need an interface that allows her to view Martin’s computing cluster usage and carry out detailed diagnostics to resolve Martin’s problems.
 
 ## 3.   Scope and Features Of The Project:
+### Features: In-Scope
+* **Embedded Terminal:** Once an Autopilot test is complete or when a user requests a current status update, results will be displayed in an embedded read-only terminal window in way that ensures a clear and easy-to-view format for quick analysis.
+* **Dashboard Overview:** The dashboard provides real-time insights into the health and performance of Kubernetes/OpenShift clusters, specifically tailored for administrators manage GPU-equipped environments. Serving as the primary user interface, it offers a comprehensive view of the environment's current status, facilitating ease and use of quick access to critical operational data. This tool is essential for administrators to monitor system health, initiate necessary actions through the 9 Autopilot health checks, and ensure optimal cluster performance and stability.
+* **Monitoring Page:** The monitoring page will contain a list of all the nodes with a dropdown menu of each of their statuses. There will also be a filter dropdown menu that will allow the user to view specific nodes based on their features as well as a function to search by node ID.
+* **Testing Page:** The testing page will be accessed through the monitoring page and will allow the user to run tests on different nodes.
 
+### Features: Stretch Goal
+* **Recent Test History:** The Autopilot dashboard will include a convenient "Recent History" dropdown menu designed to streamline administrative tasks. This feature prominently displays the administrator's most recent test executions, listing details such as test type, associated node names, and timestamps. By selecting from the dropdown, administrators can quickly rerun tests without the need to locate specific nodes or navigate through previous logs. This functionality not only enhances operational efficiency but also provides a user-friendly interface that simplifies the management and monitoring of GPU-equipped Kubernetes/OpenShift clusters.
+
+### Features: Out-of-Scope
+* **Improving Autopilot:** Autopilot is already a fully functional Kubernetes-native daemon that will detect many infrastructure-level issues during AI workloads. Our goal is not to improve this already working service but to implement the UI dashboard to make it more accessible and easier to use. However, if there is additional time after creating the dashboard, we will dedicate time to improve Autopilot by either fixing existing bugs or adding on more features/tests.
 
 
 ## 4. Solution Concept
