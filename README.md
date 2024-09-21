@@ -175,7 +175,7 @@ Stretch Goals:
 
 ## 6.  Release Planning:
 
-The release planning of this project will be based on the EC528 lecture regarding vertical and horizontal user story agile methodology. With this approach, we aim to fulfill most required features for the user before implementing more additional features.  
+The release planning of this project will be based on the EC528 lecture regarding vertical and horizontal user story agile methodology. We wish to use **vertical slicing** to divide up the project, ensuring each sprint results in working, demonstrable software. We also aim to fulfill most required features for the user before implementing more additional features.  
 
 1) **<i> September </i> [9/14 - 9/30]**
 
