@@ -218,7 +218,7 @@ async def main():
                 port_start,
             )
 
-            await iperf_stop_servers(autopilot_node_map)
+      #      await iperf_stop_servers(autopilot_node_map)
 
         else:
             #
