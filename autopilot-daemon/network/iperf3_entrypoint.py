@@ -96,6 +96,16 @@ async def iperf_start_servers(node_map, num_servers, port_start):
     ]
     await asyncio.gather(*tasks)
 
+async def iperf_stop_servers(node_map):
+    tasks = [
+        make_server_connection(
+            None,
+            node_map[node]["endpoint"],
+            f"/iperfstopservers",
+        )
+        for node in node_map
+    ]
+    await asyncio.gather(*tasks)
 
 async def run_workload(workload_type, nodemap, workload, num_clients, port_start):
     """
@@ -113,7 +123,7 @@ async def run_workload(workload_type, nodemap, workload, num_clients, port_start
         # All the nodes "should have" the same amount of interfaces...let's just get the first node and check how many there are...
         netifaces_count = len(nodemap[next(iter(nodemap))]["netifaces"])
         results = []
-        for iface in range(3):
+        for iface in range(netifaces_count):
             interface_results=[]
             log.info(f"Running Interface net1-{iface}")
             for step in workload:
@@ -207,6 +217,8 @@ async def main():
                 num_parallel_clients,
                 port_start,
             )
+
+            await iperf_stop_servers(autopilot_node_map)
 
         else:
             #
