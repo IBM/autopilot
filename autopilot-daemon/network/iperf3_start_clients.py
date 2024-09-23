@@ -4,7 +4,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--dstip",
     type=str,
-    default="all",
+    default="",
     help=("IP for iperf3 server"),
 )
 
@@ -26,8 +26,18 @@ args = vars(parser.parse_args())
 
 async def run_iperf_client(dstip, dstport, iteration, duration_seconds):
     dstport = dstport + iteration
-    command = ["iperf3", "-c", dstip, "-p", str(dstport), "-t", duration_seconds, "-i", "1.0", "-Z"]
-    log.info(f"Starting iperf3 client {iteration} using {dstip}:{dstport}...")
+    command = [
+        "iperf3",
+        "-c",
+        dstip,
+        "-p",
+        str(dstport),
+        "-t",
+        duration_seconds,
+        "-i",
+        "1.0",
+        "-Z",
+    ]
 
     process = await asyncio.create_subprocess_exec(
         *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
@@ -86,9 +96,6 @@ async def run_iperf_client(dstip, dstport, iteration, duration_seconds):
             "interface": {"ip": dstip, "port": dstport},
             "results": iperf_result,
         }
-        log.info(
-            f"Completed iperf3 client number {iteration} on {dstip}:{dstport}. Full output saved to {output_filename}"
-        )
         return iperf_result
     else:
         log.error(
@@ -96,7 +103,6 @@ async def run_iperf_client(dstip, dstport, iteration, duration_seconds):
         )
         with open(output_filename, "w") as f:
             f.write(stderr.decode())
-        sys.exit()
 
 
 async def main():
@@ -207,9 +213,7 @@ async def main():
         f.write(json.dumps(total_results, indent=4))
         f.write("\n")
 
-    log.info(
-        f"Completed all clients. All stats written to {summary_file}. Overall stats: \n{json.dumps(total_results['stats'], indent=4)}"
-    )
+    print(json.dumps(total_results["stats"], indent=4))
 
 
 if __name__ == "__main__":

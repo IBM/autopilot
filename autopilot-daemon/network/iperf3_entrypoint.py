@@ -33,17 +33,15 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--cleanup',
-    action='store_true',
-    help=(
-        "When provided, this will kill ALL iperf servers on every node."
-    ),
+    "--cleanup",
+    action="store_true",
+    help=("When provided, this will kill ALL iperf servers on every node."),
 )
 
 args = vars(parser.parse_args())
 
 
-async def makeconnection(event, address, handle):
+async def make_server_connection(event, address, handle):
     """
     Handles connections to the target autopilot pod on a different worker-node.
     Attempts to ensure synchronization via asyncio events...
@@ -58,11 +56,23 @@ async def makeconnection(event, address, handle):
         await event.wait()
     url = f"http://{address}:{AUTOPILOT_PORT}{handle}"
     total_timeout = aiohttp.ClientTimeout(total=60 * 10)
-    log.info(f"Initiated connection to: {url}")
     async with aiohttp.ClientSession(timeout=total_timeout) as session:
         async with session.get(url) as resp:
             reply = await resp.text()
-            log.info(f"Response from {url}:\n{reply}")
+
+
+async def make_client_connection(event, iface, src, dst, address, handle):
+    # Task waits for the event to be set before starting its work.
+    if event != None:
+        await event.wait()
+    url = f"http://{address}:{AUTOPILOT_PORT}{handle}"
+    total_timeout = aiohttp.ClientTimeout(total=60 * 10)
+    async with aiohttp.ClientSession(timeout=total_timeout) as session:
+        async with session.get(url) as resp:
+            reply = await resp.text()
+            reply = reply.strip()
+            json_reply = json.loads(reply)
+            return {"src": src, "dst": dst, "iface": iface, "data": json_reply}
 
 
 async def iperf_start_servers(node_map, num_servers, port_start):
@@ -77,7 +87,7 @@ async def iperf_start_servers(node_map, num_servers, port_start):
         port_start (str) The port to start launching servers from on each node.
     """
     tasks = [
-        makeconnection(
+        make_server_connection(
             None,
             node_map[node]["endpoint"],
             f"/iperfservers?numservers={num_servers}&startport={port_start}",
@@ -102,29 +112,57 @@ async def run_workload(workload_type, nodemap, workload, num_clients, port_start
         event = asyncio.Event()
         # All the nodes "should have" the same amount of interfaces...let's just get the first node and check how many there are...
         netifaces_count = len(nodemap[next(iter(nodemap))]["netifaces"])
-        for iface in range(netifaces_count):
+        results = []
+        for iface in range(3):
+            interface_results=[]
+            log.info(f"Running Interface net1-{iface}")
             for step in workload:
-                log.info(f"\nTime Step {step} for interface: net1-{iface}")
                 tasks = []
                 for pair in workload[step]:
                     for source, target in pair.items():
-                        # source and target are worker node names, which are keys to the dictionary...
-                        log.info(f"{source} -> {target}")
-                        log.info(
-                            f"      From {nodemap[target]['pod']} to {nodemap[target]['netifaces'][iface]}:{port_start}"
-                        )
-                        task = makeconnection(
+                        task = make_client_connection(
                             event,
+                            f"net1-{iface}",
+                            f"{nodemap[source]['pod']}_on_{source}",
+                            f"{nodemap[target]['pod']}_on_{target}",
                             nodemap[source]["endpoint"],
                             f"/iperfclients?dstip={nodemap[target]['netifaces'][iface]}&dstport={port_start}&numclients={num_clients}",
                         )
                         tasks.append(task)
                 await asyncio.sleep(1)
-                log.info("Starting all connections...")
-                # signals all waiting tasks to start concurrently.
                 event.set()
-                # Runs all the tasks concurrently AND waits for all of them to complete (very important for timesteps).
-                await asyncio.gather(*tasks)
+                res = await asyncio.gather(*tasks)
+                interface_results.append(res)
+            results.append(interface_results)
+
+        grids=[]
+        for i,el in enumerate(results):
+            grid = {}
+            total_bitrate=0
+            count=0
+            for l in el:
+                for host in l:
+                    src = host["src"]
+                    dst = host["dst"]
+                    bitrate = float(host["data"]["receiver"]["aggregate"]["bitrate"])
+                    count = count + 1
+                    total_bitrate = total_bitrate + bitrate
+                    if src not in grid:
+                        grid[src] = {}
+                    grid[src][dst] = bitrate
+            avg=str(round(Decimal(total_bitrate/count),2))
+            print(f"net1-{i} Average Bandwidth Gb/s: {avg}")
+            grids.append(grid)
+
+        for i,grid in enumerate(grids):
+            print(f"Network Throughput net1-{i}:")
+            pods = sorted(grid.keys())
+            print(f"{'src/dst':<40}" + "".join(f"{dst:<40}" for pod in pods))
+            for src_pod in pods:
+                row = [f"{grid[src_pod].get(dst_pod, 'N/A'):<40}" for dst_pod in pods]
+                print(f"{src_pod:<40}" + "".join(row))
+            print()
+
     else:
         log.error("Unsupported Workload Attempted")
         sys.exit(1)
@@ -138,7 +176,7 @@ async def cleanup_iperf_servers(node_map):
     node_map (dict): A dictionary mapping worker-nodes to representation data.
     """
     tasks = [
-        makeconnection(
+        make_server_connection(
             None,
             node_map[node]["endpoint"],
             f"/iperfstopservers",
@@ -158,15 +196,10 @@ async def main():
     autopilot_node_map = wl.gen_autopilot_node_map_json()
     if type_of_workload in (workload.value for workload in SupportedWorkload):
         if SupportedWorkload.RING.value == type_of_workload:
-            wl.print_autopilot_node_map_json(autopilot_node_map)
-
             ring_workload = wl.generate_ring_topology_json(autopilot_node_map)
-            wl.print_ring_workload()
-
             await iperf_start_servers(
                 autopilot_node_map, num_parallel_clients, port_start
             )
-
             await run_workload(
                 type_of_workload,
                 autopilot_node_map,
@@ -187,6 +220,7 @@ async def main():
 
     if cleanup_iperf:
         await cleanup_iperf_servers(autopilot_node_map)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
