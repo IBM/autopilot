@@ -101,7 +101,7 @@ func GPUsAvailability() bool {
 	return true
 }
 
-func CreateJob(healthcheck string) {
+func CreateJob(healthcheck string) error {
 	var args []string
 	var cmd []string
 	switch healthcheck {
@@ -114,12 +114,14 @@ func CreateJob(healthcheck string) {
 	fieldselector, err := fields.ParseSelector("metadata.name=" + os.Getenv("POD_NAME"))
 	if err != nil {
 		klog.Info("Error in creating the field selector", err.Error())
+		return err
 	}
 	pods, err := cset.Cset.CoreV1().Pods("autopilot").List(context.TODO(), metav1.ListOptions{
 		FieldSelector: fieldselector.String(),
 	})
 	if err != nil {
 		klog.Info("Cannot get pod:", err.Error())
+		return err
 	}
 	autopilotPod := pods.Items[0]
 	ttlsec := int32(30) // setting TTL to 30 sec
@@ -178,8 +180,10 @@ func CreateJob(healthcheck string) {
 		metav1.CreateOptions{})
 	if err != nil {
 		klog.Info("Couldn't create Job ", err.Error())
+		return err
 	}
 	klog.Info("Created")
+	return nil
 }
 
 func CreatePVC() error {
