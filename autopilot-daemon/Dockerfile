@@ -76,10 +76,13 @@ COPY gpu-mem/entrypoint.py /home/autopilot/gpu-mem/entrypoint.py
 
 # Network tests files
 # COPY network/metrics-entrypoint.py /home/autopilot/network/metrics-entrypoint.py
-COPY network/iperf3-entrypoint.py /home/autopilot/network/iperf3-entrypoint.py
 COPY network/ping-entrypoint.py /home/autopilot/network/ping-entrypoint.py
-COPY network/start-iperf-servers.py /home/autopilot/network/start-iperf-servers.py
-COPY network/iperf3-debrief.sh /home/autopilot/network/iperf3-debrief.sh
+COPY network/iperf3_entrypoint.py /home/autopilot/network/iperf3_entrypoint.py
+COPY network/iperf3_utils.py /home/autopilot/network/iperf3_utils.py
+COPY network/network_workload.py /home/autopilot/network/network_workload.py
+COPY network/iperf3_start_servers.py /home/autopilot/network/iperf3_start_servers.py
+COPY network/iperf3_stop_servers.py /home/autopilot/network/iperf3_stop_servers.py
+COPY network/iperf3_start_clients.py /home/autopilot/network/iperf3_start_clients.py
 
 # Remapped Rows test files
 COPY gpu-remapped/entrypoint.py /home/autopilot/gpu-remapped/entrypoint.py

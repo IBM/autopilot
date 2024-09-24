@@ -77,6 +77,8 @@ func main() {
 	hcMux.Handle("/gpupower", handlers.GpuPowerHandler())
 	hcMux.Handle("/iperf", handlers.IperfHandler())
 	hcMux.Handle("/iperfservers", handlers.StartIperfServersHandler())
+	hcMux.Handle("/iperfstopservers", handlers.StopAllIperfServersHandler())
+	hcMux.Handle("/iperfclients", handlers.StartIperfClientsHandler())
 	hcMux.Handle("/invasive", handlers.InvasiveCheckHandler())
 	hcMux.Handle("/pciebw", handlers.PCIeBWHandler(utils.UserConfig.BWThreshold))
 	hcMux.Handle("/ping", handlers.PingHandler())
