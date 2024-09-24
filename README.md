@@ -162,6 +162,10 @@ A key decision we had to make was how to read the latest health check status of 
 
 We of course chose the third option as it is the most lightweight and does not require any scraping. The labels can be read from the easy to use Kubernetes API, allowing for easier development and better maintainability.
 
+**NGINX Server/Container**
+
+We are using NGINX because it is a lightweight and high-performance web server. It is great for load balancing, allowing it to handle many concurrent connections and requests. It can also act as a reverse proxy able to forward requests to backend API endpoints. Our application will run on an NGINX HTTP server within a container on the cluster. We are choosing to run the container on the same cluster as Autopilot to simplify deployment and to also reduce network overhead (communication remains within same cluster).
+
 ## 5. Acceptance criteria
 
 Minimum Acceptance Criteria: 
