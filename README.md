@@ -16,13 +16,16 @@
 | Ryan Liao          | Student | ryanliao@bu.edu       |
 | Jingyi Zhang       | Student | jyz0328@bu.edu        |
 
-## Sprint Demos
+## Sprint Demo Videos and Slides
 
-1. Due September 25th/October 2nd
-2. Due October 9th/October 16th
-3. Due October 23rd/October 30th
-4. Due November 6th/November 13th
-5. Due November 20th/November 25th
+1. ### [Sprint 1 Demo](https://youtu.be/5iCPQ0IaMHA)
+
+   - [Sprint 1 Demo Slide](https://docs.google.com/presentation/d/1aPIBoEaY4MrJwOelWEHnzL7PwBBRUeGN2msTvbXrTwc/edit?usp=sharing)
+
+3. Due October 9th/October 16th
+4. Due October 23rd/October 30th
+5. Due November 6th/November 13th
+6. Due November 20th/November 25th
 
 Final Presentation: Due December 9th/December 11th
 
