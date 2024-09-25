@@ -2,7 +2,7 @@
 name: Feature Request
 about: Describe a feature to see in Autopilot.
 title: "[Feature]"
-labels: ''
+labels: enhancement
 assignees: ''
 
 ---
