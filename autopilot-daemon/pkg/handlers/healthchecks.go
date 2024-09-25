@@ -13,7 +13,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func PeriodicCheckTimer() {
+func PeriodicCheck() {
 	klog.Info("Running a periodic check")
 	utils.HealthcheckLock.Lock()
 	defer utils.HealthcheckLock.Unlock()
@@ -21,12 +21,36 @@ func PeriodicCheckTimer() {
 	runAllTestsLocal("all", checks, "1", "None", "None", nil)
 }
 
-func IntrusiveCheckTimer() {
-	klog.Info("Trying to run an intrusive check")
+func InvasiveCheck() {
+	klog.Info("Trying to run an invasive check")
 	utils.HealthcheckLock.Lock()
 	defer utils.HealthcheckLock.Unlock()
 	if utils.GPUsAvailability() {
-		utils.CreateJob("dcgm")
+		klog.Info("Begining invasive health checks, updating node label =TESTING for node ", os.Getenv("NODE_NAME"))
+		label := `
+		{
+			"metadata": {
+				"labels": {
+					"autopilot.ibm.com/gpuhealth": "TESTING"
+					}
+			}
+		}
+		`
+		utils.PatchNode(label, os.Getenv("NODE_NAME"))
+		err := utils.CreateJob("dcgm")
+		if err != nil {
+			klog.Info("Invasive health checks failed, updating node label for node ", os.Getenv("NODE_NAME"))
+			label := `
+		{
+			"metadata": {
+				"labels": {
+					"autopilot.ibm.com/gpuhealth": ""
+					}
+			}
+		}
+		`
+			utils.PatchNode(label, os.Getenv("NODE_NAME"))
+		}
 	}
 }
 
@@ -303,11 +327,11 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 			if strings.HasPrefix(line, "Node") {
 				entry := strings.Split(line, " ")
 				if entry[len(entry)-1] == "1" {
-					utils.HchecksGauge.WithLabelValues("ping", entry[1], utils.CPUModel, utils.GPUModel, entry[2]).Set(1)
+					utils.HchecksGauge.WithLabelValues("ping", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, entry[1]).Set(1)
 					klog.Info("Observation: ", entry[1], " ", entry[2], " ", entry[3], " Unreachable")
 					unreach_nodes[entry[1]] = append(unreach_nodes[entry[1]], entry[2])
 				} else {
-					utils.HchecksGauge.WithLabelValues("ping", entry[1], utils.CPUModel, utils.GPUModel, entry[2]).Set(0)
+					utils.HchecksGauge.WithLabelValues("ping", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, entry[1]).Set(0)
 				}
 			}
 		}
@@ -316,50 +340,67 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 	return &out, nil
 }
 
-func runIperf(nodelist string, jobName string, plane string, clients string, servers string, sourceNode string, nodelabel string) (*[]byte, error) {
-	out, err := exec.Command("python3", "./network/iperf3-entrypoint.py", "--nodes", nodelist, "--job", jobName, "--plane", plane, "--clients", clients, "--servers", servers, "--source", sourceNode, "--nodelabel", nodelabel).CombinedOutput()
-	klog.Info("Running command: ./network/iperf3-entrypoint.py ", " --nodes ", nodelist, " --job ", jobName, " --plane ", plane, " --clients ", clients, " --servers ", servers, " --source ", sourceNode, " --nodelabel", nodelabel)
-	if err != nil {
-		klog.Info(string(out))
-		klog.Error(err.Error())
-		return nil, err
-	} else {
-		klog.Info("iperf3 test completed:")
-		klog.Info("iperf3 result:\n", string(out))
-		if clients == "1" && servers == "1" {
-			output := strings.TrimSuffix(string(out[:]), "\n")
-			line := strings.Split(output, "\n")
-			var bw float64
-			for i := len(line) - 3; i > 0; i-- {
-				if strings.Contains(line[i], "Aggregate") {
-					break
-				}
-				entries := strings.Split(line[i], " ")
-				if len(entries) == 2 {
-					bw = 0
-				} else {
-					bw, err = strconv.ParseFloat(entries[2], 64)
-				}
-				if err != nil {
-					klog.Error(err.Error())
-					return nil, err
-				}
-				klog.Info("Observation: ", entries[0], " ", entries[1], " ", bw)
-			}
-		}
+func runIperf(workload string, pclients string, startport string, cleanup string) (*[]byte, error) {
+
+	if workload == "" || pclients == "" || startport == "" {
+		klog.Error("Must provide arguments \"workload\", \"pclients\" and \"startport\".")
+		return nil, nil
 	}
+
+	args := []string{"./network/iperf3_entrypoint.py", "--workload", workload, "--pclients", pclients, "--startport", startport}
+
+	if cleanup != "" {
+		args = append(args, cleanup)
+	}
+	out, err := exec.Command("python3", args...).CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+	klog.Info("iperf3 test completed:\n", string(out))
 	return &out, nil
 }
 
-func startIperfServers(replicas string) (*[]byte, error) {
-	out, err := exec.Command("python3", "./network/start-iperf-servers.py", "--replicas", replicas).CombinedOutput()
-	klog.Info("Running command: ./network/start-iperf-servers.py --replicas ", replicas)
+func startIperfServers(numservers string, startport string) (*[]byte, error) {
+	if numservers == "" || startport == "" {
+		klog.Error("Must provide arguments \"numservers\" and \"startport\".")
+		return nil, nil
+	}
+	out, err := exec.Command("python3", "./network/iperf3_start_servers.py", "--numservers", numservers, "--startport", startport).CombinedOutput()
 	if err != nil {
 		klog.Info(string(out))
 		klog.Error(err.Error())
 		return nil, err
 	} else {
 		klog.Info("iperf3 servers started.")
+	}
+	return &out, nil
+}
+
+func stopAllIperfServers() (*[]byte, error) {
+	out, err := exec.Command("python3", "./network/iperf3_stop_servers.py").CombinedOutput()
+	if err != nil {
+		klog.Info(string(out))
+		klog.Error(err.Error())
+		return nil, err
+	} else {
+		klog.Info("iperf3 servers stopped.")
+	}
+	return &out, nil
+}
+
+func startIperfClients(dstip string, dstport string, numclients string) (*[]byte, error) {
+	if dstip == "" || dstport == "" || numclients == "" {
+		klog.Error("Must provide arguments \"dstip\", \"dstport\", and \"startport\".")
+		return nil, nil
+	}
+
+	out, err := exec.Command("python3", "./network/iperf3_start_clients.py", "--dstip", dstip, "--dstport", dstport, "--numclients", numclients).CombinedOutput()
+	if err != nil {
+		klog.Info(string(out))
+		klog.Error(err.Error())
+		return nil, err
+	} else {
+		klog.Info("iperf3 clients started.")
 	}
 	return &out, nil
 }

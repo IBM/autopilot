@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -31,14 +32,6 @@ func SystemStatusHandler() http.Handler {
 		if jobName == "" {
 			jobName = "None"
 		}
-		iperfclients := r.URL.Query().Get("clientsperiface")
-		if iperfclients == "" {
-			iperfclients = "1"
-		}
-		iperfservers := r.URL.Query().Get("serverspernode")
-		if iperfservers == "" {
-			iperfservers = "1"
-		}
 		dcgmR := r.URL.Query().Get("r")
 		if dcgmR == "" {
 			dcgmR = "1"
@@ -47,19 +40,20 @@ func SystemStatusHandler() http.Handler {
 			klog.Info("Running iperf3 on hosts ", hosts, " or job ", jobName)
 			w.Write([]byte("Running iperf3 on hosts " + hosts + " or job " + jobName + "\n\n"))
 			checks = strings.Trim(checks, "iperf")
-			plane := r.URL.Query().Get("plane")
-			if plane == "" {
-				plane = "data"
+			workload := r.URL.Query().Get("workload")
+			pclients := r.URL.Query().Get("pclients")
+			startport := r.URL.Query().Get("startport")
+			cleanup := ""
+			if r.URL.Query().Has("cleanup") {
+				cleanup = "--cleanup"
 			}
-			sourceNode := r.URL.Query().Get("source")
-			if sourceNode == "" {
-				sourceNode = "None"
-			}
-			out, err := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode, nodelabel)
+			out, err := runIperf(workload, pclients, startport, cleanup)
 			if err != nil {
 				klog.Error(err.Error())
 			}
-			w.Write(*out)
+			if out != nil {
+				w.Write(*out)
+			}
 		}
 		if checks != "" {
 			if hosts == os.Getenv("NODE_NAME") {
@@ -143,38 +137,25 @@ func PingHandler() http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func InvasiveCheckHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Launching invasive health checks. Results will added to 'autopilot.ibm.com/gpuhealth' node label"))
+		InvasiveCheck()
+	}
+	return http.HandlerFunc(fn)
+}
+
 func IperfHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Iperf3 test"))
-		hosts := r.URL.Query().Get("host")
-		if hosts == "" {
-			hosts = "all"
+		
+		workload := r.URL.Query().Get("workload")
+		pclients := r.URL.Query().Get("pclients")
+		startport := r.URL.Query().Get("startport")
+		cleanup := ""
+		if r.URL.Query().Has("cleanup") {
+			cleanup = "--cleanup"
 		}
-		jobName := r.URL.Query().Get("job")
-		if jobName == "" {
-			jobName = "None"
-		}
-		sourceNode := r.URL.Query().Get("source")
-		if sourceNode == "" {
-			sourceNode = "None"
-		}
-		iperfclients := r.URL.Query().Get("clientsperiface")
-		if iperfclients == "" {
-			iperfclients = "1"
-		}
-		iperfservers := r.URL.Query().Get("serverspernode")
-		if iperfservers == "" {
-			iperfservers = "1"
-		}
-		plane := r.URL.Query().Get("plane")
-		if plane == "" {
-			plane = "data"
-		}
-		nodelabel := r.URL.Query().Get("nodelabel")
-		if nodelabel == "" {
-			nodelabel = "None"
-		}
-		out, err := runIperf(hosts, jobName, plane, iperfclients, iperfservers, sourceNode, nodelabel)
+		out, err := runIperf(workload, pclients, startport, cleanup)
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -187,12 +168,39 @@ func IperfHandler() http.Handler {
 
 func StartIperfServersHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		replicas := r.URL.Query().Get("replicas")
-		if replicas == "" {
-			replicas = "1"
-		}
-		out, err := startIperfServers(replicas)
+		numservers := r.URL.Query().Get("numservers")
+		startport := r.URL.Query().Get("startport")
+		out, err := startIperfServers(numservers, startport)
 
+		if err != nil {
+			klog.Error(err.Error())
+		}
+		if out != nil {
+			w.Write(*out)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
+
+func StopAllIperfServersHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		out, err := stopAllIperfServers()
+		if err != nil {
+			klog.Error(err.Error())
+		}
+		if out != nil {
+			w.Write(*out)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
+
+func StartIperfClientsHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		dstip := r.URL.Query().Get("dstip")
+		dstport := r.URL.Query().Get("dstport")
+		numclients := r.URL.Query().Get("numclients")
+		out, err := startIperfClients(dstip,dstport,numclients)
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -259,6 +267,16 @@ func PVCHandler() http.Handler {
 		if out != nil {
 			w.Write(*out)
 		}
+	}
+	return http.HandlerFunc(fn)
+}
+
+func ReadinessProbeHandler() http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		data := HealthResult{"readinessProbe", "ready"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(data)
 	}
 	return http.HandlerFunc(fn)
 }

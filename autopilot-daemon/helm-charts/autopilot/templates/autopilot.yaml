@@ -3,7 +3,7 @@ kind: DaemonSet
 metadata:
   labels:
     app: autopilot
-  name: {{ printf "%s-%s" .Chart.Name .Release.Name }}
+  name: {{ printf "%s" .Chart.Name }}
   namespace: {{ .Values.namespace.name }}
 spec:
   selector:
@@ -56,7 +56,7 @@ spec:
            - -c
            - |
              iperf3 -s -p 6310 -D 
-             /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }} --intrusive-check-timer {{ .Values.intrusive }}
+             /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }} --invasive-check-timer {{ .Values.invasive }}
           imagePullPolicy: {{ .Values.image.pullPolicy }} 
           name: autopilot
           securityContext:
@@ -87,6 +87,28 @@ spec:
               name: healthcheck
             - containerPort: 8081
               name: http
+            - containerPort: 8080
+              name: readinessprobe
+          readinessProbe:
+            httpGet:
+              path: /readinessprobe
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 120
+            timeoutSeconds: 10
+          livenessProbe:
+            initialDelaySeconds: 15
+            periodSeconds: 120
+            timeoutSeconds: 15
+          {{- if .Values.onlyOnGPUNodes }}
+            exec:
+              command:
+                - nvidia-smi
+          {{- else }}
+            httpGet:
+              path: /readinessprobe
+              port: 8080
+          {{- end}}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:

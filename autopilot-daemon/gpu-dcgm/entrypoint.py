@@ -216,15 +216,18 @@ def patch_node(success, output):
     now = datetime.datetime.now(datetime.timezone.utc)
     timestamp = now.strftime("%Y-%m-%d_%H.%M.%SUTC")
     result = ""
+    general_health = "PASS"
     if success:
         result = "PASS_"+timestamp
     else:
         result = "ERR_"+timestamp+"_"+output
+        general_health = "EVICT"
 
     label = {
         "metadata": {
             "labels": {
-                "autopilot.ibm.com/dcgm.level.3": result}
+                "autopilot.ibm.com/dcgm.level.3": result,
+                "autopilot.ibm.com/gpuhealth": general_health}
         }
     }
     print("label: ", result)
