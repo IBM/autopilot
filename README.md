@@ -264,3 +264,11 @@ The release planning of this project will be based on the EC528 lecture regardin
 
    - Implement seamless login with OpenShift credentials.
  
+## Instructions:
+
+Follow these commands to start the front-end application:
+```
+cd app
+npm i
+npm run dev
+```
