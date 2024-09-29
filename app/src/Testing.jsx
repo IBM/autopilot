@@ -5,19 +5,27 @@ import MultiSelect from './components/MultiSelect';
 function Testing() {
 
     const [selectedTests, setSelectedTests] = useState([]);
-    const tests = ['Test 1', 'Test 2', 'Test 3', 'Test 4'];
+    const [selectedNodes, setSelectedNodes] = useState([]);
 
-    const handleMultiSelectChange = (selected) => {
+    const tests = ['Test 1', 'Test 2', 'Test 3', 'Test 4']; // can be hardcoded constant
+    const nodes = ['Node 1', 'Node 2', 'Node 3', 'Node 4']; // should be pulled from Kubernetes API rather than constant
+
+    const handleSelectTests = (selected) => {
         setSelectedTests(selected);
+    };
+
+    const handleSelectNodes = (selected) => {
+        setSelectedNodes(selected);
     };
 
     const runTests = () => {
         console.log('Run Tests clicked');
         console.log(selectedTests)
+        console.log(selectedNodes)
     };
 
     const selectAllNodes = () => {
-        console.log('Select All clicked');
+        setSelectedNodes(nodes)
     };
 
     return (
@@ -25,7 +33,7 @@ function Testing() {
             <h1>Run Tests</h1>
 
             <Button
-                text="Select All"
+                text="Select All Nodes"
                 color="green"
                 onClick={selectAllNodes}
             />
@@ -40,7 +48,14 @@ function Testing() {
                 options={tests}
                 placeholder="Select Health Checks"
                 selectedValues={selectedTests}
-                handleChange={handleMultiSelectChange}
+                handleChange={handleSelectTests}
+            />
+
+            <MultiSelect
+                options={nodes}
+                placeholder="Select Nodes"
+                selectedValues={selectedNodes}
+                handleChange={handleSelectNodes}
             />
         </div>
     );
