@@ -28,6 +28,10 @@ function Testing() {
         setSelectedNodes(nodes)
     };
 
+    const selectAllTests = () => {
+        setSelectedTests(tests)
+    };
+
     return (
         <div>
             <h1>Run Tests</h1>
@@ -36,6 +40,12 @@ function Testing() {
                 text="Select All Nodes"
                 color="green"
                 onClick={selectAllNodes}
+            />
+
+            <Button
+                text="Select All Tests"
+                color="green"
+                onClick={selectAllTests}
             />
 
             <Button
