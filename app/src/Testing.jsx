@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import Button from './components/Button';
 import MultiSelect from './components/MultiSelect';
+import runTests from './api/runTests'
 
 function Testing() {
 
     const [selectedTests, setSelectedTests] = useState([]);
     const [selectedNodes, setSelectedNodes] = useState([]);
 
-    const tests = ['Test 1', 'Test 2', 'Test 3', 'Test 4']; // can be hardcoded constant
-    const nodes = ['Node 1', 'Node 2', 'Node 3', 'Node 4']; // should be pulled from Kubernetes API rather than constant
+    const tests = ['pciebw', 'dcgm', 'remapped', 'ping']; // can be hardcoded constant
+    const nodes = ['kind-worker', 'kind-worker2', 'kind-worker3']; // should be pulled from Kubernetes API rather than constant
 
     const handleSelectTests = (selected) => {
         setSelectedTests(selected);
@@ -18,10 +19,18 @@ function Testing() {
         setSelectedNodes(selected);
     };
 
-    const runTests = () => {
+    const submitTests = () => {
         console.log('Run Tests clicked');
         console.log(selectedTests)
         console.log(selectedNodes)
+
+        runTests(selectedTests, selectedNodes)
+            .then((results) => {
+                console.log('Test Results:', results);
+            })
+            .catch((error) => {
+                console.error('Error fetching test results:', error);
+            });
     };
 
     const selectAllNodes = () => {
@@ -51,7 +60,7 @@ function Testing() {
             <Button
                 text="Run Tests"
                 color="blue"
-                onClick={runTests}
+                onClick={submitTests}
             />
 
             <MultiSelect
