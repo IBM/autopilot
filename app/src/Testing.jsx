@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import Button from './components/Button';
 import MultiSelect from './components/MultiSelect';
-import runTests from './api/runTests'
+import Terminal from './components/Terminal';  // Import the terminal component
+import runTests from './api/runTests';
 
 function Testing() {
-
     const [selectedTests, setSelectedTests] = useState([]);
     const [selectedNodes, setSelectedNodes] = useState([]);
+    const [terminalValue, setTerminalValue] = useState(''); // State to store terminal output
 
-    const tests = ['pciebw', 'dcgm', 'remapped', 'ping']; // can be hardcoded constant
-    const nodes = ['kind-worker', 'kind-worker2', 'kind-worker3']; // should be pulled from Kubernetes API rather than constant
+    const tests = ['pciebw', 'dcgm', 'remapped', 'ping']; // Hardcoded constant
+    const nodes = ['kind-worker', 'kind-worker2', 'kind-worker3']; // Hardcoded for now
 
     const handleSelectTests = (selected) => {
         setSelectedTests(selected);
@@ -20,25 +21,22 @@ function Testing() {
     };
 
     const submitTests = () => {
-        console.log('Run Tests clicked');
-        console.log(selectedTests)
-        console.log(selectedNodes)
-
         runTests(selectedTests, selectedNodes)
             .then((results) => {
-                console.log('Test Results:', results);
+                setTerminalValue(results);
             })
             .catch((error) => {
                 console.error('Error fetching test results:', error);
+                setTerminalValue('Error: ' + error.message);
             });
     };
 
     const selectAllNodes = () => {
-        setSelectedNodes(nodes)
+        setSelectedNodes(nodes);
     };
 
     const selectAllTests = () => {
-        setSelectedTests(tests)
+        setSelectedTests(tests);
     };
 
     return (
@@ -76,6 +74,9 @@ function Testing() {
                 selectedValues={selectedNodes}
                 handleChange={handleSelectNodes}
             />
+
+            <h2>Test Results</h2>
+            <Terminal output={terminalValue} />
         </div>
     );
 }
