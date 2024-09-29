@@ -3,7 +3,8 @@ export default async function runTests(selectedTests, selectedNodes) {
         const testsParam = selectedTests.join(',');
         const nodesParam = selectedNodes.join(',');
 
-        const url = `http://localhost:3333/status?check=${testsParam}&host=${nodesParam}`;
+        const endpoint = import.meta.env.VITE_AUTOPILOT_ENDPOINT;
+        const url = `${endpoint}/status?check=${testsParam}&host=${nodesParam}`;
 
         const response = await fetch(url);
 
