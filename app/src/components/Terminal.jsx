@@ -3,7 +3,7 @@ import React from 'react';
 const Terminal = ({ output }) => {
     return (
         <div style={styles.terminal}>
-            <pre style={styles.output}>{output || "No output yet..."}</pre>
+            <pre style={styles.output}>{output || "No tests deployed yet..."}</pre>
         </div>
     );
 }

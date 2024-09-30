@@ -1,16 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from './components/Button';
 import MultiSelect from './components/MultiSelect';
-import Terminal from './components/Terminal';  // Import the terminal component
+import Terminal from './components/Terminal';
 import runTests from './api/runTests';
+import listNodes from './api/getNodes';
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
     const [selectedNodes, setSelectedNodes] = useState([]);
-    const [terminalValue, setTerminalValue] = useState(''); // State to store terminal output
+    const [terminalValue, setTerminalValue] = useState('');
+    const [nodes, setNodes] = useState([]);
 
     const tests = ['pciebw', 'dcgm', 'remapped', 'ping']; // Hardcoded constant
-    const nodes = ['kind-worker', 'kind-worker2', 'kind-worker3']; // Hardcoded for now
+    // const nodes = ['kind-worker', 'kind-worker2', 'kind-worker3']; // Hardcoded for now
+
+    useEffect(() => {
+        listNodes()
+            .then((nodes) => {
+                setNodes(nodes);
+            })
+            .catch((err) => {
+                console.error('Error fetching nodes:', err);
+            });
+    }, []);
 
     const handleSelectTests = (selected) => {
         setSelectedTests(selected);
