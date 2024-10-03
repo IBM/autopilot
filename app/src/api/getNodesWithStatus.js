@@ -11,11 +11,12 @@ async function listNodesWithStatus() {
         // Mapping node data to extract relevant info
         const nodeData = nodes.map(node => {
             const nodeName = node.metadata.name;
-            const role = node.metadata.labels['kubernetes.io/role'] || 'Unknown';
+            const role = node.metadata.labels['node-role.kubernetes.io/master'] ? 'Control Plane' :
+                                node.metadata.labels['node-role.kubernetes.io/worker'] ? 'Worker' : 'Unknown';
             const statusCondition = node.status.conditions.find(cond => cond.type === 'Ready') || {};
             const status = statusCondition.status || 'Unknown';
             const version = node.status.nodeInfo.kubeletVersion || 'Unknown';
-            const hardware = node.status.nodeInfo.machineID || 'Unknown';
+            const architecture = node.status.nodeInfo.architecture || 'Unknown';
             const containerRuntimeVersion = node.status.nodeInfo.containerRuntimeVersion || 'Unknown';
             const operatingSystem = node.status.nodeInfo.operatingSystem || 'Unknown';
 
@@ -27,7 +28,7 @@ async function listNodesWithStatus() {
                 role: role,
                 status: status,
                 version: version,
-                hardware: hardware,
+                architecture: architecture,
                 containerRuntimeVersion: containerRuntimeVersion,
                 operatingSystem: operatingSystem,
                 capacity: {
@@ -37,8 +38,7 @@ async function listNodesWithStatus() {
                 allocatable: {
                     cpu: allocatable.cpu || 'Unknown',
                     memory: allocatable.memory || 'Unknown',
-                },
-                healthChecks: [], // Initialize health check to an empty array
+                }
                 };
         });
 
