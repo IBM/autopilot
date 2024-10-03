@@ -1,66 +1,57 @@
+import useSWR from 'swr';
 import axios from 'axios';
 
 const kubernetesEndpoint = import.meta.env.VITE_KUBERNETES_ENDPOINT;
 
-async function listNodesWithStatus() {
-    try {
+// Helper function to do fetching for SWR
+const fetcher = (url) => axios.get(url).then(res => res.data);
 
-        // Check if kubernetesEndpoint is defined
-        if (typeof kubernetesEndpoint === 'undefined') {
-            throw new Error('kubernetesEndpoint is undefined');
-        }
-        
-        // Fetch node information from Kubernetes
-        const response = await axios.get(`${kubernetesEndpoint}/api/v1/nodes`);
-        const nodes = response.data.items;
+// Using SWR to fetch and process node data with automatic updates/revalidation
+export function useNodesWithStatus() {
+    const { data, error } = useSWR(`${kubernetesEndpoint}/api/v1/nodes`, fetcher, {
+        refreshInterval: 10000,  // Refresh every 10 seconds
+        revalidateOnFocus: true,  // Refresh when user focuses the page
+    });
 
-        // Mapping node data to extract relevant info
-        const nodeData = nodes.map(node => {
-            const nodeName = node.metadata.name;
-            const role = node.metadata.labels['node-role.kubernetes.io/master'] ? 'Control Plane' :
-                node.metadata.labels['node-role.kubernetes.io/worker'] ? 'Worker' : 'Unknown';
-            const statusCondition = node.status.conditions.find(cond => cond.type === 'Ready') || {};
-            const status = statusCondition.status || 'Unknown';
-            const version = node.status.nodeInfo.kubeletVersion || 'Unknown';
-            const architecture = node.status.nodeInfo.architecture || 'Unknown';
-            const containerRuntimeVersion = node.status.nodeInfo.containerRuntimeVersion || 'Unknown';
-            const operatingSystem = node.status.nodeInfo.operatingSystem || 'Unknown';
+    const nodes = data ? data.items.map(node => {
+        const nodeName = node.metadata.name;
+        const role = node.metadata.labels['node-role.kubernetes.io/master'] ? 'Control Plane' :
+            node.metadata.labels['node-role.kubernetes.io/worker'] ? 'Worker' : 'Unknown';
+        const statusCondition = node.status.conditions.find(cond => cond.type === 'Ready') || {};
+        const status = statusCondition.status || 'Unknown';
+        const version = node.status.nodeInfo.kubeletVersion || 'Unknown';
+        const architecture = node.status.nodeInfo.architecture || 'Unknown';
+        const containerRuntimeVersion = node.status.nodeInfo.containerRuntimeVersion || 'Unknown';
+        const operatingSystem = node.status.nodeInfo.operatingSystem || 'Unknown';
 
-            const gpuPresent = node.metadata.labels['nvidia.com/gpu.present']
-            const gpuHealth = node.metadata.labels['autopilot.ibm.com/gpuhealth']
+        const gpuPresent = node.metadata.labels['nvidia.com/gpu.present'];
+        const gpuHealth = node.metadata.labels['autopilot.ibm.com/gpuhealth'];
 
-            const capacity = node.status.capacity || {};
-            const allocatable = node.status.allocatable || {};
+        const capacity = node.status.capacity || {};
+        const allocatable = node.status.allocatable || {};
 
-            return {
-                name: nodeName,
-                role: role,
-                status: status,
-                version: version,
-                architecture: architecture,
-                containerRuntimeVersion: containerRuntimeVersion,
-                operatingSystem: operatingSystem,
+        return {
+            name: nodeName,
+            role: role,
+            status: status,
+            version: version,
+            architecture: architecture,
+            containerRuntimeVersion: containerRuntimeVersion,
+            operatingSystem: operatingSystem,
 
-                gpuPresent: gpuPresent,
-                gpuHealth: gpuHealth,
+            gpuPresent: gpuPresent,
+            gpuHealth: gpuHealth,
 
-                capacity: {
-                    cpu: capacity.cpu || 'Unknown',
-                    memory: capacity.memory || 'Unknown',
-                },
-                allocatable: {
-                    cpu: allocatable.cpu || 'Unknown',
-                    memory: allocatable.memory || 'Unknown',
-                }
-            };
-        });
+            capacity: {
+                cpu: capacity.cpu || 'Unknown',
+                memory: capacity.memory || 'Unknown',
+            },
+            allocatable: {
+                cpu: allocatable.cpu || 'Unknown',
+                memory: allocatable.memory || 'Unknown',
+            }
+        };
+    }) : [];
 
-        return nodeData;
-
-    } catch (error) {
-        console.error('Failed to fetch nodes:', error);
-        throw new Error('Failed to fetch node status');
-    }
+    return { nodes, error };
 }
-
-export default listNodesWithStatus;
