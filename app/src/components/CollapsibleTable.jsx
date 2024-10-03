@@ -22,14 +22,17 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 const lightGreen = "#90EE90"
 const lightRed = "#FAA0A0"
 
+// !important is used to ensure specificity and prevent overwriting
 const StyledTableCell = styled(TableCell)`
-  font-weight: bold;
-  font-size: 1.1rem; /* Increase font size */
-  background-color: #f5f5f5;
+  font-weight: bold !important; 
+  font-size: 1.1rem !important;
+  background-color: #f5f5f5 !important;
 `;
 
-const StyledTableRow = styled(TableRow)`
-  background-color: ${(props) => (props.pass ? lightGreen : lightRed)};
+const StyledTableRow = styled(TableRow).withConfig({
+    shouldForwardProp: (prop) => prop !== 'pass',
+})`
+    background-color: ${(props) => (props.pass ? lightGreen : lightRed)};
 `;
 
 const Row = ({ node }) => {
