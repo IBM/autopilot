@@ -12,13 +12,16 @@ async function listNodesWithStatus() {
         const nodeData = nodes.map(node => {
             const nodeName = node.metadata.name;
             const role = node.metadata.labels['node-role.kubernetes.io/master'] ? 'Control Plane' :
-                                node.metadata.labels['node-role.kubernetes.io/worker'] ? 'Worker' : 'Unknown';
+                node.metadata.labels['node-role.kubernetes.io/worker'] ? 'Worker' : 'Unknown';
             const statusCondition = node.status.conditions.find(cond => cond.type === 'Ready') || {};
             const status = statusCondition.status || 'Unknown';
             const version = node.status.nodeInfo.kubeletVersion || 'Unknown';
             const architecture = node.status.nodeInfo.architecture || 'Unknown';
             const containerRuntimeVersion = node.status.nodeInfo.containerRuntimeVersion || 'Unknown';
             const operatingSystem = node.status.nodeInfo.operatingSystem || 'Unknown';
+
+            const gpuPresent = node.metadata.labels['nvidia.com/gpu.present']
+            const gpuHealth = node.metadata.labels['autopilot.ibm.com/gpuhealth']
 
             const capacity = node.status.capacity || {};
             const allocatable = node.status.allocatable || {};
@@ -31,6 +34,10 @@ async function listNodesWithStatus() {
                 architecture: architecture,
                 containerRuntimeVersion: containerRuntimeVersion,
                 operatingSystem: operatingSystem,
+
+                gpuPresent: gpuPresent,
+                gpuHealth: gpuHealth,
+
                 capacity: {
                     cpu: capacity.cpu || 'Unknown',
                     memory: capacity.memory || 'Unknown',
@@ -39,7 +46,7 @@ async function listNodesWithStatus() {
                     cpu: allocatable.cpu || 'Unknown',
                     memory: allocatable.memory || 'Unknown',
                 }
-                };
+            };
         });
 
         return nodeData;

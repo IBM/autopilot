@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useState} from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Collapse from '@mui/material/Collapse';
@@ -18,12 +18,15 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 // Referenced from https://mui.com/material-ui/react-table/#collapsible-table
 
+const lightGreen = "#90EE90"
+const lightRed = "#FAA0A0"
+
 const Row = ({ node }) => {
     const [open, setOpen] = useState(false);
 
     return (
         <>
-            <TableRow>
+            <TableRow style={{ background: node.gpuHealth === 'PASS' ? lightGreen : lightRed }}>
                 <TableCell>
                     <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
                         {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
@@ -38,6 +41,8 @@ const Row = ({ node }) => {
                 <TableCell align="left">{node.architecture}</TableCell>
                 <TableCell align="left">{node.containerRuntimeVersion}</TableCell>
                 <TableCell align="left">{node.operatingSystem}</TableCell>
+                <TableCell align="left">{node.gpuPresent}</TableCell>
+                <TableCell align="left">{node.gpuHealth}</TableCell>
             </TableRow>
 
             <TableRow>
@@ -77,6 +82,8 @@ function CollapsibleTable({ nodes }) {
                         <TableCell>Architecture</TableCell>
                         <TableCell>Container Runtime Version</TableCell>
                         <TableCell>Operating System</TableCell>
+                        <TableCell>GPU Present</TableCell>
+                        <TableCell>GPU Health</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
