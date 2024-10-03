@@ -5,17 +5,20 @@ import Terminal from './components/Terminal';
 import runTests from './api/runTests';
 import listNodes from './api/getNodes';
 import Switch from './components/Switch';
-import {Helmet} from 'react-helmet';
+import { Helmet } from 'react-helmet';
 import NumberField from './components/NumberField';
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
     const [selectedNodes, setSelectedNodes] = useState([]);
+
+    const [isSwitchOn, setIsSwitchOn] = useState(false);
+    const [batchValue, setBatchValue] = useState('');
+
     const [terminalValue, setTerminalValue] = useState('');
     const [nodes, setNodes] = useState([]);
 
     const tests = ['pciebw', 'dcgm', 'remapped', 'ping']; // Hardcoded constant
-    // const nodes = ['kind-worker', 'kind-worker2', 'kind-worker3']; // Hardcoded for now
 
     useEffect(() => {
         listNodes()
@@ -36,7 +39,7 @@ function Testing() {
     };
 
     const submitTests = () => {
-        runTests(selectedTests, selectedNodes)
+        runTests(selectedTests, selectedNodes, batchValue)
             .then((results) => {
                 setTerminalValue(results);
             })
@@ -54,17 +57,14 @@ function Testing() {
         setSelectedTests(tests);
     };
 
-    const [isSwitchOn, setIsSwitchOn] = useState(false);
-
-    const [numberValue, setNumberValue] = useState('');
-
     const handleToggle = () => {
         setIsSwitchOn(!isSwitchOn);
+        setBatchValue('')
     }
 
     const handleNumberChange = (e) => {
-        setNumberValue(e.target.value);
-      };
+        setBatchValue(e.target.value);
+    };
 
     return (
         <div>
@@ -75,7 +75,47 @@ function Testing() {
 
             <h1>Run Tests</h1>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginLeft: '75px'}}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginLeft: '75px' }}>
+                <MultiSelect
+                    options={tests}
+                    placeholder="Select Health Checks"
+                    selectedValues={selectedTests}
+                    handleChange={handleSelectTests}
+                />
+
+                <MultiSelect
+                    options={nodes}
+                    placeholder="Select Nodes"
+                    selectedValues={selectedNodes}
+                    handleChange={handleSelectNodes}
+                />
+
+                <div>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginLeft: '40px' }}>
+                        <Switch
+                            isOn={isSwitchOn}
+                            handleToggle={handleToggle}
+                            onText="Batches: On"
+                            offText="Batches: Off"
+                            onColor="#4CAF50"
+                            offColor="#D32F2F"
+                        />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginLeft: '40px', marginTop: '10px' }}>
+                        <NumberField
+                            isDisabled={!isSwitchOn}
+                            value={batchValue}
+                            onChange={handleNumberChange}
+                            placeholder="# of Batches?"
+                            min={1}
+                            max={100}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '30px' }}>
                 <Button
                     text="Select All Nodes"
                     color="green"
@@ -94,50 +134,9 @@ function Testing() {
                     onClick={submitTests}
                 />
             </div>
-            
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginLeft: '125px'}}>
-                <MultiSelect
-                    options={tests}
-                    placeholder="Select Health Checks"
-                    selectedValues={selectedTests}
-                    handleChange={handleSelectTests}
-                />
-
-                <MultiSelect
-                    options={nodes}
-                    placeholder="Select Nodes"
-                    selectedValues={selectedNodes}
-                    handleChange={handleSelectNodes}
-                />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginLeft: '125px'}}>
-                <Switch
-                    isOn={isSwitchOn}
-                    handleToggle={handleToggle}
-                    onText="Batches: On"
-                    offText="Batches: Off"
-                    onColor="#4CAF50"
-                    offColor="#D32F2F"
-                />
-            </div>
-        
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginLeft: '130px', marginTop: '10px'}}>
-                <NumberField
-                    isDisabled={!isSwitchOn}
-                    value={numberValue}
-                    onChange={handleNumberChange}
-                    placeholder="# of Batches?"
-                    min={1}  
-                    max={100}  
-                />
-            </div>
             <h2>Test Results</h2>
             <Terminal output={terminalValue} />
-            
-
-            
         </div>
     );
 }

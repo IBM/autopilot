@@ -1,10 +1,10 @@
-export default async function runTests(selectedTests, selectedNodes, batchParam = null) {
+export default async function runTests(selectedTests, selectedNodes, batchParam = '') {
     try {
         const testsParam = selectedTests.join(',');
         const nodesParam = selectedNodes.join(',');
 
         const endpoint = import.meta.env.VITE_AUTOPILOT_ENDPOINT;
-        const url = batchParam != null
+        const url = batchParam
             ? `${endpoint}/status?check=${testsParam}&host=${nodesParam}&batch=${batchParam}`
             : `${endpoint}/status?check=${testsParam}&host=${nodesParam}`;
 
