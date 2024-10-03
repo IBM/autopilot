@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
+import styled from 'styled-components';
 import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Collapse from '@mui/material/Collapse';
@@ -21,12 +22,22 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 const lightGreen = "#90EE90"
 const lightRed = "#FAA0A0"
 
+const StyledTableCell = styled(TableCell)`
+  font-weight: bold;
+  font-size: 1.1rem; /* Increase font size */
+  background-color: #f5f5f5;
+`;
+
+const StyledTableRow = styled(TableRow)`
+  background-color: ${(props) => (props.pass ? lightGreen : lightRed)};
+`;
+
 const Row = ({ node }) => {
     const [open, setOpen] = useState(false);
 
     return (
         <>
-            <TableRow style={{ background: node.gpuHealth === 'PASS' ? lightGreen : lightRed }}>
+            <StyledTableRow pass={node.gpuHealth === 'PASS'}>
                 <TableCell>
                     <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
                         {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
@@ -43,22 +54,37 @@ const Row = ({ node }) => {
                 <TableCell align="left">{node.operatingSystem}</TableCell>
                 <TableCell align="left">{node.gpuPresent}</TableCell>
                 <TableCell align="left">{node.gpuHealth}</TableCell>
-            </TableRow>
+            </StyledTableRow>
 
             <TableRow>
                 {/*Expandable table: capacity/allocatable resources, and health checks*/}
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={3}>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box margin={1}>
                             <Typography variant="h6" gutterBottom>
                                 Capacity / Allocatable Resources:
                             </Typography>
-                            <ul>
-                                <li>CPU (Capacity): {node.capacity.cpu}</li>
-                                <li>Memory (Capacity): {node.capacity.memory}</li>
-                                <li>CPU (Allocatable): {node.allocatable.cpu}</li>
-                                <li>Memory (Allocatable): {node.allocatable.memory}</li>
-                            </ul>
+                            <Table size="small" aria-label="resources">
+                                <TableHead>
+                                    <TableRow>
+                                        <StyledTableCell>Resource</StyledTableCell>
+                                        <StyledTableCell>Capacity</StyledTableCell>
+                                        <StyledTableCell>Allocatable</StyledTableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    <TableRow>
+                                        <TableCell>CPU</TableCell>
+                                        <TableCell>{node.capacity.cpu}</TableCell>
+                                        <TableCell>{node.allocatable.cpu}</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableCell>Memory</TableCell>
+                                        <TableCell>{node.capacity.memory}</TableCell>
+                                        <TableCell>{node.allocatable.memory}</TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
                         </Box>
                     </Collapse>
                 </TableCell>
@@ -75,15 +101,15 @@ function CollapsibleTable({ nodes }) {
                 <TableHead>
                     <TableRow>
                         <TableCell />
-                        <TableCell>Node Name</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Role</TableCell>
-                        <TableCell>Version</TableCell>
-                        <TableCell>Architecture</TableCell>
-                        <TableCell>Container Runtime Version</TableCell>
-                        <TableCell>Operating System</TableCell>
-                        <TableCell>GPU Present</TableCell>
-                        <TableCell>GPU Health</TableCell>
+                        <StyledTableCell>Node Name</StyledTableCell>
+                        <StyledTableCell>Status</StyledTableCell>
+                        <StyledTableCell>Role</StyledTableCell>
+                        <StyledTableCell>Version</StyledTableCell>
+                        <StyledTableCell>Architecture</StyledTableCell>
+                        <StyledTableCell>Container Runtime Version</StyledTableCell>
+                        <StyledTableCell>Operating System</StyledTableCell>
+                        <StyledTableCell>GPU Present</StyledTableCell>
+                        <StyledTableCell>GPU Health</StyledTableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>

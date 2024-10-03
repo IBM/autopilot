@@ -28,8 +28,8 @@ export function useNodesWithStatus() {
         const containerRuntimeVersion = node.status.nodeInfo.containerRuntimeVersion || 'Unknown';
         const operatingSystem = node.status.nodeInfo.operatingSystem || 'Unknown';
 
-        const gpuPresent = node.metadata.labels['nvidia.com/gpu.present'];
-        const gpuHealth = node.metadata.labels['autopilot.ibm.com/gpuhealth'];
+        const gpuPresent = node.metadata.labels['nvidia.com/gpu.present'] || 'Not present';
+        const gpuHealth = node.metadata.labels['autopilot.ibm.com/gpuhealth'] || 'Not Pass';
 
         const capacity = node.status.capacity || {};
         const allocatable = node.status.allocatable || {};
