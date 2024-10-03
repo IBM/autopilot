@@ -106,6 +106,8 @@ Row.propTypes = {
         architecture: PropTypes.string.isRequired,
         containerRuntimeVersion: PropTypes.string.isRequired,
         operatingSystem: PropTypes.string.isRequired,
+        gpuHealth: PropTypes.string.isRequired,
+        gpuPresent: PropTypes.string.isRequired,
         capacity: PropTypes.shape({
             cpu: PropTypes.string.isRequired,
             memory: PropTypes.string.isRequired,
