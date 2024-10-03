@@ -1,8 +1,8 @@
 import React, { useState } from 'react';  
 import {useNodesWithStatus} from "./api/getNodesWithStatus.js";
 import CollapsibleTable from "./components/CollapsibleTable.jsx";
-import TextField from '@mui/material/TextField'; // For search input
-
+import SearchInput from './components/SearchInput'; 
+import { Helmet } from 'react-helmet';
 // Displaying live node labels and status + current health checks
 
 function Monitor() {
@@ -24,16 +24,12 @@ function Monitor() {
 
     return (
         <div>
+            <Helmet>
+                <title>Monitor Cluster</title> {/* Set the page title here */}
+            </Helmet>
             <h1>Monitor Cluster</h1>
-            {/* Add Search Input */}
-            <TextField
-                label="Search by Node Name"
-                variant="outlined"
-                fullWidth
-                margin="normal"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)} // Update search query
-            />
+            
+            <SearchInput searchQuery={searchQuery} setSearchQuery={setSearchQuery} /> {/* Add Search Input */}
             <CollapsibleTable nodes={filteredNodes} /> {/* Display filtered nodes */}
         </div>
     );
