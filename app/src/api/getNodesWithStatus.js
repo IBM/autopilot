@@ -8,6 +8,10 @@ const fetcher = (url) => axios.get(url).then(res => res.data);
 
 // Using SWR to fetch and process node data with automatic updates/revalidation
 export function useNodesWithStatus() {
+    if (typeof kubernetesEndpoint === 'undefined') {
+        throw new Error('Kubernetes endpoint not set');
+    }
+    
     const { data, error } = useSWR(`${kubernetesEndpoint}/api/v1/nodes`, fetcher, {
         refreshInterval: 10000,  // Refresh every 10 seconds
         revalidateOnFocus: true,  // Refresh when user focuses the page
