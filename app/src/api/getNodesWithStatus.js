@@ -4,6 +4,12 @@ const kubernetesEndpoint = import.meta.env.VITE_KUBERNETES_ENDPOINT;
 
 async function listNodesWithStatus() {
     try {
+
+        // Check if kubernetesEndpoint is defined
+        if (typeof kubernetesEndpoint === 'undefined') {
+            throw new Error('kubernetesEndpoint is undefined');
+        }
+        
         // Fetch node information from Kubernetes
         const response = await axios.get(`${kubernetesEndpoint}/api/v1/nodes`);
         const nodes = response.data.items;
