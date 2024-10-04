@@ -106,7 +106,7 @@ helm repo add autopilot git+https://github.com/IBM/autopilot.git@autopilot-daemo
 2) Install autopilot (idempotent command). The config file is for customizing the helm values. Namespace is where the helm chart will live, not the namespace where Autopilot runs
 
 ```bash
-helm upgrade autopilot autopilot/autopilot-daemon --install --namespace=<default> -f your-config.yml
+helm upgrade autopilot autopilot/autopilot --install --namespace=<default> -f your-config.yml
 ```
 
 The controllers should show up in the selected namespace
