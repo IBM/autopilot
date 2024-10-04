@@ -55,7 +55,6 @@ The current status of Autopilot includes:
 A subset of the tests is enabled by default, and they run by default every hour. Both the the list of health checks and the timer can be customized at initialization time.
 
 By default, the periodic checks list contains PCIe, rows remapping, GPUs power, DCGM level 1 and ping.
-Health checks can an also run them manually if needed. 
 
 Results from health checks are exported as Prometheus Gauges, so that users and admins can easily check the status of the system on Grafana.
 
@@ -64,7 +63,7 @@ Results from health checks are exported as Prometheus Gauges, so that users and 
 Autopilot runs health checks periodically and labels the nodes with `autopilot.ibm.com/gpuhealth: ERR` is any of the GPU health checks returns an error. Otherwise, health is set as `PASS`.
 
 Also, more extensive tests, namely DCGM diagnostics level 3, are also executed automatically only on nodes that have free GPUs. This deeper analysis is needed to reveal problems in the GPUs that can be found only after running level 3 DCGM diagnostic.
-This type of diagnostics can help deciding if the worker node should be used for running workloads or not. To facilitate this task, Autopilot will label nodes with key `autopilot/dcgm.level.3`.
+This type of diagnostics can help deciding if the worker node should be used for running workloads or not. To facilitate this task, Autopilot will label nodes with key `autopilot.ibm.com/dcgm.level.3`.
 
 If errors are found, the label `autopilot.ibm.com/dcgm.level.3` will contain the value `ERR`, a timestamp, the test(s) that failed and the GPU id(s) if available. Otherwise, the value is set to `PASS_timestamp`.
 
@@ -79,13 +78,23 @@ All metrics are accessible through Prometheus and Grafana dashboards. The gauge 
 - `cpumodel` and `gpumodel`, for heterogeneous clusters
 - `deviceid` to select specific GPUs, when available
 
-## Install Autopilot 
+## Install Autopilot
 
 Autopilot can be installed through Helm and need admin privileges to create objects like services, serviceaccounts, namespaces and relevant RBAC.
 
+**NOTE**: this install procedure does NOT allow the use of `--create-namespace` or `--namespace=autopilot` in the `helm` command. This is because out helm chart, creates a namespace with a label, namely, we are creating a namespace with the label `openshift.io/cluster-monitoring: "true"`, so that Prometheus can scrape metrics. This applies to OpenShift clusters **only**. It is not possible, in Helm, to create namespaces with labels or annotations through the `--create-namespace` parameter, so we decided to create the namespace ourselves.
+
+Therefore, we recommend one of the following options, which are mutually exclusive:
+
+- use `--create-namespace` with `--namespace=autopilot` in the helm cli AND disable namespace creation in the helm chart config file `namespace.create=false`. **If on OpenShift**, then manually label the namespace for Prometheus with `label ns autopilot "openshift.io/cluster-monitoring"=`.
+- use `namespace.create=true` in the helm chart config file BUT NOT use `--create-namespace` in the helm cli. Can still use `--namespace` in the helm cli but it should be set to something else (i.e., `default`).
+- create the namespace by hand `kubectl create namespace autopilot`, use `--namespace autopilot` in the helm cli and set `namespace.create=false` in the helm config file. **If on OpenShift**, then manually label the namespace for Prometheus with `label ns autopilot "openshift.io/cluster-monitoring"=`.
+
+In the next release, we will remove the namespace from the Helm templates and will add OpenShift-only configurations separately.
+
 ### Requirements
 
-- Need to install `helm-git` plugin on all hosts
+- Need to install `helm-git` plugin
 
 ```bash
 helm plugin install https://github.com/aslafy-z/helm-git --version 0.15.1
@@ -112,7 +121,7 @@ helm upgrade autopilot autopilot/autopilot --install --namespace=<default> -f yo
 The controllers should show up in the selected namespace
 
 ```bash
-oc get po -n autopilot
+kubectl get po -n autopilot
 ```
 
 ```bash
@@ -133,7 +142,7 @@ autopilot-daemon-autopilot-xhntv   1/1     Running   0          70m
 
 Autopilot provides a `/status` handler that can be queried to get the entire system status, meaning that it will run all the tests on all the nodes. Autopilot is reachable by service name `autopilot-healthchecks.autopilot.svc` in-cluster only, meaning it can be reached from a pod running in the cluster, or through port forwarding (see below).
 
-Health check names are `pciebw`, `dcgm`, `remapped`, `ping`, `iperf`, `pvc`.
+Health check names are `pciebw`, `dcgm`, `remapped`, `ping`, `iperf`, `pvc`, `gpumem`.
 
 For example, using port forwarding to localhost or by exposing the service
 
@@ -151,7 +160,7 @@ curl "http://localhost:3333/status?check=pciebw&host=nodename1"
 Alternatively, retrieve the route with `kubectl get routes autopilot-healthchecks -n autopilot`
 
 ```bash
-curl "<route-name>/status?check=pciebw&host=nodename1"
+curl "http://<route-name>/status?check=pciebw&host=nodename1"
 ```
 
 All tests can be tailored by a combination of:
@@ -164,30 +173,29 @@ Some health checks provide further customization.
 
 ### DCGM
 
-This test runs `dcgmi diag`, and we support only `r` as [parameter](https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/dcgm-diagnostics.html#command-line-options). 
+This test runs `dcgmi diag`, and we support only `r` as [parameter](https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/dcgm-diagnostics.html#command-line-options).
 
 The default is `1`, but can customize it by `/status?check=dcgm&r=2`.
 
-### IPERF
+### Network Bandwidth Validation with IPERF
 
-This tests runs from a client node, which
+As part of this workload, Autopilot will generate the Ring Workload and then start `iperf3 servers` on each interface on each Autopilot pod based on the configuration options provided by the user.  Only after the `iperf3 servers` are started, Autopilot will begin executing the workload by starting `iperf3 clients` based on the configuration options provided by the user. All results are logged back to the user.
 
-- Issues several RPCs to start remote `iperf3` servers
-- Launches a certain number of clients towards each of those servers
+- For each network interface on each node, an `iperf3 server` is started. The number of `iperf3 servers` is dependent on the `number of clients` intended on being run. For example, if the  `number of clients` is `8`, then there will be `8` `iperf3 servers` started per interface on a unique `port`.
 
-Both can be customized.
+- For each timestep, all `pairs` are executed simultaneously. For each pair some `number of clients` are started in parallel and will run for `5 seconds` using `zero-copies` against a respective `iperf3 server`
+- Metrics such `minimum`, `maximum`, `mean`, `aggregate` bitrates and transfers are tracked. The results are stored both as `JSON` in the respective `pod` as well as summarized and dumped into the `pod logs`.
+- Invocation from the exposed Autopilot API is as follows below:
 
-- `serverspernode` can be used to create a certain number of servers on each remote node.
-  - if the value is lower than the number of secondary network interfaces, it will create the minimum number of `1` server per interface (excludes `eth0` and `lo`). Each server runs on a separate port.
-  - otherwise, it will divide that value by the number of network interfaces existing in the cluster.
-- `clientsperiface` can be used to launch a desired number of clients against a single remote server.
+```bash
+# Invoked via the `status` handle:
+curl "http://autopilot-healthchecks-autopilot.<domain>/status?check=iperf&workload=ring&pclients=<NUMBER_OF_IPERF3_CLIENTS>&startport=<STARTING_IPERF3_SERVER_PORT>"
 
-Another possible customization is to decide which network plane to test. By default is `data` plane, that is, what runs on secondary interfaces.
+# Invoked via the `iperf` handle directly:
+curl "http://autopilot-healthchecks-autopilot.<domain>/iperf?workload=ring&pclients=<NUMBER_OF_IPERF3_CLIENTS>&startport=<STARTING_IPERF3_SERVER_PORT>"
+```
 
-To test connection on `eth0`, that is, the management plane (`mgmt`), can use the `plane` parameter as follows `/status?check=iperf&plane=mgmt`.
-It will create only one client and there is a single server per node.
-
-### Example
+### Concrete Example
 
 In this example, we target one node and check the pcie bandwidth and use the port-forwarding method.
 In this scenario, we have a value lower than `8GB/s`, which results in an alert. This error will be exported to the OpenShift web console and on Slack, if that is enabled by admins.
