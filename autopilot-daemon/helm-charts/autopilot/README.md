@@ -65,5 +65,5 @@ env:
 All these values can be saved in a `config.yaml` file, which can be passed to the `helm` install command
 
 ```bash
-helm upgrade autopilot autopilot/autopilot-daemon --install --namespace=<default> -f your-config.yml
+helm upgrade autopilot autopilot/autopilot --install --namespace=<default> -f your-config.yml
 ```
