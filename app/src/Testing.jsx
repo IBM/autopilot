@@ -75,7 +75,7 @@ function Testing() {
 
             <h1>Run Tests</h1>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginLeft: '75px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1vh', marginLeft: '5vw'}}>
                 <MultiSelect
                     options={tests}
                     placeholder="Select Health Checks"
@@ -91,7 +91,7 @@ function Testing() {
                 />
 
                 <div>
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginLeft: '40px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1vh', marginLeft: '5vw', marginTop: '1vh' }}>
                         <Switch
                             isOn={isSwitchOn}
                             handleToggle={handleToggle}
@@ -102,7 +102,7 @@ function Testing() {
                         />
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginLeft: '40px', marginTop: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1vh', marginLeft: '5vw', marginTop: '7vh' }}>
                         <NumberField
                             isDisabled={!isSwitchOn}
                             value={batchValue}
@@ -115,7 +115,7 @@ function Testing() {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '30px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1vh', marginTop: '-6.5vh', marginLeft: '-18vw' }}>
                 <Button
                     text="Select All Nodes"
                     color="green"
