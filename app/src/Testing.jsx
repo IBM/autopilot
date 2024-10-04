@@ -107,7 +107,7 @@ function Testing() {
                             isDisabled={!isSwitchOn}
                             value={batchValue}
                             onChange={handleNumberChange}
-                            placeholder="# of Batches?"
+                            placeholder="Batch #"
                             min={1}
                             max={100}
                         />
