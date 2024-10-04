@@ -82,13 +82,13 @@ All metrics are accessible through Prometheus and Grafana dashboards. The gauge 
 
 Autopilot can be installed through Helm and need admin privileges to create objects like services, serviceaccounts, namespaces and relevant RBAC.
 
-**NOTE**: this install procedure does NOT allow the use of `--create-namespace` or `--namespace=autopilot` in the `helm` command. This is because ou3 helm chart, creates a namespace with a label, namely, we are creating a namespace with the label `openshift.io/cluster-monitoring: "true"`, so that Prometheus can scrape metrics. This applies to OpenShift clusters **only**. It is not possible, in Helm, to create namespaces with labels or annotations through the `--create-namespace` parameter, so we decided to create the namespace ourselves.
+**NOTE**: this install procedure does NOT allow the use of `--create-namespace` or `--namespace=autopilot` in the `helm` command. This is because our helm chart, creates a namespace with a label, namely, we are creating a namespace with the label `openshift.io/cluster-monitoring: "true"`, so that Prometheus can scrape metrics. This applies to OpenShift clusters **only**. It is not possible, in Helm, to create namespaces with labels or annotations through the `--create-namespace` parameter, so we decided to create the namespace ourselves.
 
 Therefore, we recommend one of the following options, which are mutually exclusive:
 
-1. use `--create-namespace` with `--namespace=autopilot` in the helm cli AND disable namespace creation in the helm chart config file `namespace.create=false`. **If on OpenShift**, then manually label the namespace for Prometheus with `label ns autopilot "openshift.io/cluster-monitoring"=`.
-2. use `namespace.create=true` in the helm chart config file BUT NOT use `--create-namespace` in the helm cli. Can still use `--namespace` in the helm cli but it should be set to something else (i.e., `default`).
-3. create the namespace by hand `kubectl create namespace autopilot`, use `--namespace autopilot` in the helm cli and set `namespace.create=false` in the helm config file. **If on OpenShift**, then manually label the namespace for Prometheus with `label ns autopilot "openshift.io/cluster-monitoring"=`.
+- Option 1: use `--create-namespace` with `--namespace=autopilot` in the helm cli AND disable namespace creation in the helm chart config file `namespace.create=false`. **If on OpenShift**, then manually label the namespace for Prometheus with `label ns autopilot "openshift.io/cluster-monitoring"=`.
+- Option 2: use `namespace.create=true` in the helm chart config file BUT NOT use `--create-namespace` in the helm cli. Can still use `--namespace` in the helm cli but it should be set to something else (i.e., `default`).
+- Option 3: create the namespace by hand `kubectl create namespace autopilot`, use `--namespace autopilot` in the helm cli and set `namespace.create=false` in the helm config file. **If on OpenShift**, then manually label the namespace for Prometheus with `label ns autopilot "openshift.io/cluster-monitoring"=`.
 
 In the next release, we will remove the namespace from the Helm templates and will add OpenShift-only configurations separately.
 
