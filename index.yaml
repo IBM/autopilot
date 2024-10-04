@@ -1,9 +1,20 @@
 apiVersion: v1
 entries:
+  autopilot:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2024-10-04T16:02:27.459262-04:00"
+    description: A Helm chart for Kubernetes
+    digest: 6f773be7c85f0dbaab8df4987fd8e6f138e064514bf34c88500ca589cae28561
+    name: autopilot
+    type: application
+    urls:
+    - https://ibm.github.io/autopilot/autopilot-v1.9.0.tgz
+    version: v1.9.0
   autopilot-daemon:
   - apiVersion: v2
     appVersion: latest
-    created: "2024-09-24T21:13:36.266729-04:00"
+    created: "2024-10-04T16:02:27.452529-04:00"
     description: A Helm chart for Kubernetes
     digest: 9ff47fa7803fa703cff08a595d39c9b52aa7278fdb0483d104b2337dd1f1c43a
     name: autopilot-daemon
@@ -13,7 +24,7 @@ entries:
     version: v1.8.0
   - apiVersion: v2
     appVersion: latest
-    created: "2024-09-24T21:13:36.265984-04:00"
+    created: "2024-10-04T16:02:27.450973-04:00"
     description: A Helm chart for Kubernetes
     digest: ed8eb863172dbe6be014206dc95128cb1025914d38e7334cf232a9ef2e7e0b97
     name: autopilot-daemon
@@ -23,7 +34,7 @@ entries:
     version: v1.7.0
   - apiVersion: v2
     appVersion: latest
-    created: "2024-09-24T21:13:36.265146-04:00"
+    created: "2024-10-04T16:02:27.449854-04:00"
     description: A Helm chart for Kubernetes
     digest: f0349dc8359c9a7191990fb881d7d68f74a167481632c645dc7cc30433ae01be
     name: autopilot-daemon
@@ -33,7 +44,7 @@ entries:
     version: v1.6.1
   - apiVersion: v2
     appVersion: latest
-    created: "2024-09-24T21:13:36.264474-04:00"
+    created: "2024-10-04T16:02:27.448804-04:00"
     description: A Helm chart for Kubernetes
     digest: 1e9371b17148e729c21b8138f2e9312b48266948680d8644139139638b15df0e
     name: autopilot-daemon
@@ -43,7 +54,7 @@ entries:
     version: 1.6.0
   - apiVersion: v2
     appVersion: latest
-    created: "2024-09-24T21:13:36.263778-04:00"
+    created: "2024-10-04T16:02:27.447606-04:00"
     description: A Helm chart for Kubernetes
     digest: 13980a4c36225ac63b83e0fe167a597a8f1830029c20fb4a1fdf8b57b7cd1020
     name: autopilot-daemon
@@ -51,4 +62,4 @@ entries:
     urls:
     - https://ibm.github.io/autopilot/autopilot-daemon-1.5.0.tgz
     version: 1.5.0
-generated: "2024-09-24T21:13:36.262702-04:00"
+generated: "2024-10-04T16:02:27.445609-04:00"
