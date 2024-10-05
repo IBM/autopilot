@@ -18,7 +18,7 @@ function Testing() {
     const [terminalValue, setTerminalValue] = useState('');
     const [nodes, setNodes] = useState([]);
 
-    const tests = ['pciebw', 'dcgm', 'remapped', 'ping']; // Hardcoded constant
+    const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc']; // Hardcoded constant
 
     useEffect(() => {
         listNodes()
