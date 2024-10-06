@@ -7,7 +7,6 @@ metadata:
     app.kubernetes.io/name: servicemonitor
     app.kubernetes.io/component: metrics
   name: autopilot-metrics-monitor
-  namespace: {{ .Values.namespace.name }}
 spec:
   endpoints:
     - path: /metrics

@@ -4,7 +4,6 @@ metadata:
   labels:
     app: autopilot
   name: autopilot-healthchecks
-  namespace: {{ .Values.namespace.name }}
   annotations: 
     {{- toYaml .Values.serviceAnnotations | nindent 4 }}
 spec:
