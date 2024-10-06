@@ -32,7 +32,7 @@ All tests can be tailored by a combination of:
 - `nodelabel=<key=value>`, run tests on nodes having the `key=value` label.
 - `batch=<#hosts>`, how many hosts to check at a single moment. Requests to the batch are run in parallel asynchronously. Batching is done to avoid running too many requests in parallel when the number of worker nodes increases. Defaults to all nodes.
 
-Some health checks provide further customization. More details on all the tests can be found [here](https://github.com/IBM/autopilot/tree/main/autopilot-daemon/HEALTH_CHECKS.md)
+Some health checks provide further customization. More details on all the tests can be found [here](https://github.com/IBM/autopilot/autopilot-daemon/HEALTH_CHECKS.md)
 
 ## DCGM
 

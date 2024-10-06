@@ -15,7 +15,7 @@ helm plugin install https://github.com/aslafy-z/helm-git --version 0.15.1
 
 ## Helm Chart customization
 
-Helm charts values and how-to for customization can be found [here](https://github.com/IBM/autopilot/tree/main/autopilot-daemon/helm-charts/autopilot).
+Helm charts values and how-to for customization can be found [here](https://github.com/IBM/autopilot/autopilot-daemon/helm-charts/autopilot).
 
 ## Install
 

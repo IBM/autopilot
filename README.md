@@ -58,11 +58,11 @@ By default, the periodic checks list contains PCIe, rows remapping, GPUs power, 
 
 Results from health checks are exported as Prometheus Gauges, so that users and admins can easily check the status of the system on Grafana.
 
-Detailed description of all the health checks, can be found [here](https://github.com/IBM/autopilot/blob/main/HEALTH_CHECKS.md)
+Detailed description of all the health checks, can be found [here](https://github.com/IBM/autopilot/HEALTH_CHECKS.md).
 
 ## Usage
 
-To learn how to invoke health checks, please refer to [this page](https://github.com/IBM/autopilot/blob/main/USAGE.md)
+To learn how to invoke health checks, please refer to [this page](https://github.com/IBM/autopilot/USAGE.md).
 
 ## Deep Diagnostics and Node Labeling
 
