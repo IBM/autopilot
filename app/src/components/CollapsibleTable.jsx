@@ -22,6 +22,19 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 const lightGreen = "#90EE90"
 const lightRed = "#FAA0A0"
 
+const ResponsiveTableContainer = styled(TableContainer)`
+    width: 100%;
+    overflow-x: auto;
+    padding: 0;
+    margin: 0;
+
+    @media (max-width: 768px) {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    } 
+`;
+
 // !important is used to ensure specificity and prevent overwriting
 const StyledTableCell = styled(TableCell)`
   font-weight: bold !important; 
@@ -99,7 +112,7 @@ const Row = ({ node }) => {
 
 function CollapsibleTable({ nodes }) {
     return (
-        <TableContainer component={Paper}>
+        <ResponsiveTableContainer component={Paper}>
             <Table aria-label="collapsible table">
                 <TableHead>
                     <TableRow>
@@ -121,7 +134,7 @@ function CollapsibleTable({ nodes }) {
                     ))}
                 </TableBody>
             </Table>
-        </TableContainer>
+        </ResponsiveTableContainer>
     );
 }
 
