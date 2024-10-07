@@ -101,6 +101,41 @@ func GPUsAvailability() bool {
 	return true
 }
 
+//// Returns the daemonset of this pod
+//func GetDaemonset() string {
+//	if value, ok := os.LookupEnv("DAEMONSET"); ok {
+//		return value
+//	} else {
+//		cset := GetClientsetInstance()
+//		pod, err := cset.Cset.CoreV1().Pods(os.Getenv("NAMESPACE")).Get(context.TODO(), os.Getenv("POD_NAME"), metav1.GetOptions{})
+//		if err == nil {
+//			for _, ownerRef := range pod.OwnerReferences {
+//				if ownerRef.Kind == "DaemonSet" {
+//					os.Setenv("DAEMONSET", ownerRef.Name)
+//					return ownerRef.Name
+//				}
+//			}
+//		}
+//		return ""
+//	}
+//}
+//
+//// Returns the service account of this pod
+//func GetServiceAccount() string {
+//	if value, ok := os.LookupEnv("SERVICE_ACCOUNT"); ok {
+//		return value
+//	} else {
+//		cset := GetClientsetInstance()
+//		pod, err := cset.Cset.CoreV1().Pods(os.Getenv("NAMESPACE")).Get(context.TODO(), os.Getenv("POD_NAME"), metav1.GetOptions{})
+//		if err != nil {
+//			return ""
+//		} else {
+//			os.Setenv("SERVICE_ACCOUNT", pod.Spec.ServiceAccountName)
+//			return pod.Spec.ServiceAccountName
+//		}
+//	}
+//}
+
 func CreateJob(healthcheck string) error {
 	var args []string
 	var cmd []string
