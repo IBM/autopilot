@@ -67,23 +67,3 @@ To learn how to install Autopilot, please refer to [SETUP.md](SETUP.md)
 ## Usage
 
 To learn how to invoke health checks, please refer to [USAGE.md](USAGE.md).
-
-## Deep Diagnostics and Node Labeling
-
-Autopilot runs health checks periodically and labels the nodes with `autopilot.ibm.com/gpuhealth: ERR` is any of the GPU health checks returns an error. Otherwise, health is set as `PASS`.
-
-Also, more extensive tests, namely DCGM diagnostics level 3, are also executed automatically only on nodes that have free GPUs. This deeper analysis is needed to reveal problems in the GPUs that can be found only after running level 3 DCGM diagnostic.
-This type of diagnostics can help deciding if the worker node should be used for running workloads or not. To facilitate this task, Autopilot will label nodes with key `autopilot.ibm.com/dcgm.level.3`.
-
-If errors are found, the label `autopilot.ibm.com/dcgm.level.3` will contain the value `ERR`, a timestamp, the test(s) that failed and the GPU id(s) if available. Otherwise, the value is set to `PASS_timestamp`.
-
-### Logs and Metrics
-
-All health checks results are exported through Prometheus, but they can be also found in each pod's logs.
-
-All metrics are accessible through Prometheus and Grafana dashboards. The gauge exposed is `autopilot_health_checks` and can be customized with the following filters:
-
-- `check`, select one or more specific health checks
-- `node`, filter by node name
-- `cpumodel` and `gpumodel`, for heterogeneous clusters
-- `deviceid` to select specific GPUs, when available
