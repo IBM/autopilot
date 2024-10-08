@@ -43,7 +43,7 @@ RUN  apt -y update && apt -y upgrade &&  DEBIAN_FRONTEND="noninteractive" TZ="Am
         && apt -y clean && apt -y autoremove
 
 # Add capabilities for ping
-RUN setcap cap_net_raw,cap_net_admin+p /bin/ping
+RUN setcap cap_net_raw,cap_net_admin+p /bin/ping && setcap cap_net_raw,cap_net_admin+p /usr/bin/ping
 RUN add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /" && apt -y update && apt install -y datacenter-gpu-manager
 # add ca-certificates (Alpine commands, previous base image)
 # RUN apk update && apk --no-cache  add ca-certificates
