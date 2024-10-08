@@ -1,4 +1,3 @@
-
 # Manually Query the Autopilot Service
 
 Autopilot provides a `/status` handler that can be queried to get the entire system status, meaning that it will run all the tests on all the nodes. Autopilot is reachable by service name `autopilot-healthchecks.autopilot.svc` in-cluster only, meaning it can be reached from a pod running in the cluster, or through port forwarding (see below).
@@ -9,7 +8,7 @@ For example, using port forwarding to localhost or by exposing the service
 
 ```bash
 kubectl port-forward service/autopilot-healthchecks 3333:3333 -n autopilot
-# or kubectl expose service autopilot-healthchecks -n autopilot
+# or oc expose service autopilot-healthchecks -n autopilot in OpenShift
 ```
 
 If using port forward, then launch `curl` on another terminal
@@ -19,6 +18,13 @@ curl "http://localhost:3333/status?check=pciebw&host=nodename1"
 ```
 
 Alternatively, retrieve the route with `kubectl get routes autopilot-healthchecks -n autopilot`
+When using routes, it is recommended to [increase the timeout](https://docs.openshift.com/container-platform/4.10/networking/routes/route-configuration.html#nw-configuring-route-timeouts_route-configuration) with the following command
+
+```bash
+oc annotate route autopilot-healthchecks -n autopilot --overwrite haproxy.router.openshift.io/timeout=30m 
+```
+
+Then:
 
 ```bash
 curl "http://<route-name>/status?check=pciebw&host=nodename1"

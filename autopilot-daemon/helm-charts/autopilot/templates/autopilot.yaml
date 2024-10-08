@@ -38,18 +38,15 @@ spec:
           command:
           - sh
           - -c
-          image: {{ printf "%s:%s" .Values.image.repository .Chart.Version }}
+          image: {{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}
           imagePullPolicy: Always
           name: device-plugin-validation
           securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
             runAsNonRoot: true
+            runAsUser: 1000910000
       {{- end}}
       containers:
-        - image: {{ printf "%s:%s" .Values.image.repository .Chart.Version }}
+        - image: {{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}
           command:
            - sh
            - -c
@@ -58,11 +55,8 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }} 
           name: autopilot
           securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
             runAsNonRoot: true
+            runAsUser: 1000910000
           env:
           {{- range .Values.env }}
             - name: {{ .name }}

@@ -3,7 +3,6 @@
 
 Autopilot can be installed through Helm and need enough privileges to create objects like services, serviceaccounts, namespaces and relevant RBAC.
 
-**If on OpenShift**, after completing the installation, manually label the namespace to enable metrics to be scraped by Prometheus with `label ns autopilot "openshift.io/cluster-monitoring"=`
 
 ## Requirements
 
@@ -49,4 +48,13 @@ autopilot-daemon-autopilot-xhntv   1/1     Running   0          70m
 
 ```bash
  helm uninstall autopilot -n autopilot
+ kubectl delete namespace autopilot
+```
+
+## OpenShift Users
+
+**If on OpenShift**, after completing the installation, manually label the namespace to enable metrics to be scraped by Prometheus with the following command:
+
+```bash
+kubectl label ns autopilot openshift.io/cluster-monitoring=true
 ```
