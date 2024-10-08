@@ -22,10 +22,13 @@
 
    - [Sprint 1 Demo Slide](https://docs.google.com/presentation/d/1aPIBoEaY4MrJwOelWEHnzL7PwBBRUeGN2msTvbXrTwc/edit?usp=sharing)
 
-3. Due October 9th/October 16th
-4. Due October 23rd/October 30th
-5. Due November 6th/November 13th
-6. Due November 20th/November 25th
+2. ### [Sprint 2 Demo](https://youtu.be/qW1zDtuH2ug)
+   
+   - [Sprint 2 Demo Slide](https://docs.google.com/presentation/d/1McQLv38CLnFPsv0KiufjC5g9H5iq3BwkFWDeaK6zTL4/edit?usp=sharing)
+     
+3. Due October 23rd/October 30th
+4. Due November 6th/November 13th
+5. Due November 20th/November 25th
 
 Final Presentation: Due December 9th/December 11th
 
