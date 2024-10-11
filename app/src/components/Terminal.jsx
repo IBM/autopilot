@@ -14,7 +14,7 @@ const styles = {
         color: 'white',
         padding: '10px',
         borderRadius: '5px',
-        height: '300px',
+        height: '50vh',
         overflowY: 'auto',
         fontFamily: 'monospace',
         whiteSpace: 'pre-wrap',
