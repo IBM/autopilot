@@ -11,6 +11,7 @@ import NumberField from './components/NumberField';
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
     const [selectedNodes, setSelectedNodes] = useState([]);
+    const [dcgmRValue, setDcgmRValue] = useState('');
 
     const [isSwitchOn, setIsSwitchOn] = useState(false);
     const [batchValue, setBatchValue] = useState('');
@@ -18,7 +19,7 @@ function Testing() {
     const [terminalValue, setTerminalValue] = useState('');
     const [nodes, setNodes] = useState([]);
 
-    const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc']; // Hardcoded constant
+    const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc'];
 
     useEffect(() => {
         listNodes()
@@ -38,8 +39,12 @@ function Testing() {
         setSelectedNodes(selected);
     };
 
+    const handleDcgmChange = (e) => {
+        setDcgmRValue(e.target.value);
+    };
+
     const submitTests = () => {
-        runTests(selectedTests, selectedNodes, batchValue)
+        runTests(selectedTests, selectedNodes, batchValue, dcgmRValue)
             .then((results) => {
                 setTerminalValue(results);
             })
@@ -59,8 +64,8 @@ function Testing() {
 
     const handleToggle = () => {
         setIsSwitchOn(!isSwitchOn);
-        setBatchValue('')
-    }
+        setBatchValue('');
+    };
 
     const handleNumberChange = (e) => {
         setBatchValue(e.target.value);
@@ -85,6 +90,8 @@ function Testing() {
                             placeholder="Select Health Checks"
                             selectedValues={selectedTests}
                             handleChange={handleSelectTests}
+                            dcgmValue={dcgmRValue}
+                            handleDcgmChange={handleDcgmChange}
                         />
 
                         <MultiSelect
@@ -142,7 +149,7 @@ function Testing() {
                     <Terminal output={terminalValue} />
                 </div>
             </div>
-        </div >
+        </div>
     );
 }
 
