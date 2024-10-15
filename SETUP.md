@@ -3,7 +3,6 @@
 
 Autopilot can be installed through Helm and need enough privileges to create objects like services, serviceaccounts, namespaces and relevant RBAC.
 
-
 ## Requirements
 
 - Install `helm-git` plugin
@@ -44,16 +43,30 @@ autopilot-daemon-autopilot-x6h8d   1/1     Running   0          70m
 autopilot-daemon-autopilot-xhntv   1/1     Running   0          70m
 ```
 
-### Uninstall
+## Uninstall
 
 ```bash
  helm uninstall autopilot -n autopilot
  kubectl delete namespace autopilot
 ```
 
-## OpenShift Users
+## Enabling Prometheus
+
+### Kubernetes Users
+
+The ServiceMonitor object is the one that enables Prometheus to scrape the metrics produced by Autopilot.
+In order for Prometheus to find the right objects, the `ServiceMonitor` needs to be annotated with the Prometheus' release name. It is usually `prometheus`, and that's the default added in the Autopilot release.
+If that is not the case in your cluster, the correct release label can be found by checking in the `ServiceMonitor` of Prometheus itself, or the name of Prometheus helm chart.
+Then, Autopilot's `ServiceMonitor` can be labeled with the following command
+
+```bash
+kubectl label servicemonitors.monitoring.coreos.com -n autopilot autopilot-metrics-monitor release=<prometheus-release-name>
+```
+
+### OpenShift Users
 
 **If on OpenShift**, after completing the installation, manually label the namespace to enable metrics to be scraped by Prometheus with the following command:
+The `ServiceMonitor` labeling is not required.
 
 ```bash
 kubectl label ns autopilot openshift.io/cluster-monitoring=true

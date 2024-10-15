@@ -42,8 +42,6 @@ RUN  apt -y update && apt -y upgrade &&  DEBIAN_FRONTEND="noninteractive" TZ="Am
         git \
         && apt -y clean && apt -y autoremove
 
-# Add capabilities for ping
-RUN setcap cap_net_raw,cap_net_admin+p /bin/ping && setcap cap_net_raw,cap_net_admin+p /usr/bin/ping
 RUN add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /" && apt -y update && apt install -y datacenter-gpu-manager
 # add ca-certificates (Alpine commands, previous base image)
 # RUN apk update && apk --no-cache  add ca-certificates
@@ -55,6 +53,8 @@ RUN add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/r
 #         cd perftest && \
 #         ./autogen.sh && ./configure && \
 #         make && make install
+# Add capabilities for ping
+RUN setcap cap_net_raw,cap_net_admin+p /bin/ping
 
 RUN useradd -ms /bin/bash autopilot && usermod -g root autopilot 
 
@@ -102,4 +102,7 @@ RUN pip install --upgrade pip && pip install kubernetes netifaces aiohttp[speedu
 RUN apt -y update && apt install -y vim && apt -y clean && apt -y autoremove
 RUN chmod 755 /usr/local/bin/autopilot && chown -hR autopilot /home/autopilot && chmod -R g=u /home/autopilot
 RUN chmod 777 /tmp
+
+
+
 CMD ["/usr/local/bin/autopilot"]

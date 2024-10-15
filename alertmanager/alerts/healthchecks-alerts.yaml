@@ -60,7 +60,7 @@ spec:
         summary: Node {{ $labels.node }} has GPU errors
       expr: |  
         kube_node_labels{label_autopilot_ibm_com_dcgm_level_3=~".*ERR.*"} and kube_node_labels{label_autopilot_ibm_com_dcgm_level_3!~""}
-      for: 1m
+      for: 5m
       labels:
         severity: critical
         alert: autopilot
@@ -86,7 +86,7 @@ spec:
         summary: PVC cannot be created
       expr: |
         sum (autopilot_health_checks{health="pvc"}==1) by (node)
-      for: 1m
+      for: 5m
       labels:
         severity: critical
         alert: autopilot
@@ -105,14 +105,14 @@ spec:
         alert: autopilot
   - name: Alerts on Autopilot pods not ready
     rules:
-    - alert: AutopilotPodsFailing
+    - alert: AutopilotPodsNotReady
       annotations:
-        description: Autopilot pod on node {{ $labels.node }} are failing {{ with $console_url := "console_url" | query }}{{ if ne
+        description: Autopilot pod on node {{ $labels.node }} is not ready {{ with $console_url := "console_url" | query }}{{ if ne
             (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url
             ) }}{{ end }}{{ end }}.
-        summary: Autopilot pod on node {{ $labels.node }} is failing
+        summary: Autopilot pod on node {{ $labels.node }} is not ready
       expr: count(kube_pod_info{} and on(pod) (kube_pod_container_status_waiting{namespace=~"autopilot.*"} > 0)) by (namespace)
-      for: 5m
+      for: 15m
       labels:
         severity: critical
         alert: autopilot

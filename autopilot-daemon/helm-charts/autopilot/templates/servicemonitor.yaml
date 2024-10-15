@@ -1,4 +1,5 @@
 # Prometheus Monitor Service (Metrics)
+{{ if .Capabilities.APIVersions.Has "monitoring.coreos.com/v1" -}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -6,6 +7,7 @@ metadata:
     app: autopilot
     app.kubernetes.io/name: servicemonitor
     app.kubernetes.io/component: metrics
+    release: prometheus
   name: autopilot-metrics-monitor
 spec:
   endpoints:
@@ -15,3 +17,4 @@ spec:
   selector:
     matchLabels:
       app: autopilot
+{{ end -}}

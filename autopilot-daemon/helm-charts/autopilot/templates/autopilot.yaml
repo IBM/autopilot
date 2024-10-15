@@ -57,6 +57,10 @@ spec:
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000910000
+            capabilities:
+                add:
+                - NET_RAW
+                - NET_ADMIN
           env:
           {{- range .Values.env }}
             - name: {{ .name }}
