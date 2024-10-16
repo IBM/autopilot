@@ -24,12 +24,16 @@ const MenuProps = {
     },
 };
 
-const MultiSelect = ({ options, placeholder, selectedValues, handleChange, width = 300 }) => {
+const MultiSelect = ({ options, placeholder, selectedValues, handleChange, dcgmValue = null, handleDcgmChange = () => { }, width = 300 }) => {
     const handleSelectChange = (event) => {
         const {
             target: { value },
         } = event;
         handleChange(typeof value === 'string' ? value.split(',') : value);
+    };
+
+    const stopPropagation = (event) => {
+        event.stopPropagation();
     };
 
     return (
@@ -49,6 +53,18 @@ const MultiSelect = ({ options, placeholder, selectedValues, handleChange, width
                     <MenuItem key={option} value={option}>
                         <Checkbox checked={selectedValues.includes(option)} />
                         <ListItemText primary={option} />
+
+                        {option === 'dcgm' && selectedValues.includes('dcgm') && (
+                            <input
+                                type="number"
+                                value={dcgmValue}
+                                onChange={(e) => { stopPropagation(e); handleDcgmChange(e); }}
+                                placeholder="r value"
+                                style={{ marginLeft: '10px', width: '60px' }}
+                                min="1"
+                                onClick={stopPropagation}
+                            />
+                        )}
                     </MenuItem>
                 ))}
             </Select>
@@ -56,14 +72,14 @@ const MultiSelect = ({ options, placeholder, selectedValues, handleChange, width
     );
 };
 
-// Define prop types for the component
 MultiSelect.propTypes = {
     options: PropTypes.arrayOf(PropTypes.string).isRequired,
     placeholder: PropTypes.string,
     selectedValues: PropTypes.arrayOf(PropTypes.string).isRequired,
     handleChange: PropTypes.func.isRequired,
+    dcgmValue: PropTypes.string,
+    handleDcgmChange: PropTypes.func,
     width: PropTypes.number,
 };
 
-// Export the component as default
 export default MultiSelect;

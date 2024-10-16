@@ -11,6 +11,7 @@ import NumberField from './components/NumberField';
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
     const [selectedNodes, setSelectedNodes] = useState([]);
+    const [dcgmRValue, setDcgmRValue] = useState('');
 
     const [isSwitchOn, setIsSwitchOn] = useState(false);
     const [batchValue, setBatchValue] = useState('');
@@ -18,7 +19,7 @@ function Testing() {
     const [terminalValue, setTerminalValue] = useState('');
     const [nodes, setNodes] = useState([]);
 
-    const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc']; // Hardcoded constant
+    const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc'];
 
     useEffect(() => {
         listNodes()
@@ -38,8 +39,12 @@ function Testing() {
         setSelectedNodes(selected);
     };
 
+    const handleDcgmChange = (e) => {
+        setDcgmRValue(e.target.value);
+    };
+
     const submitTests = () => {
-        runTests(selectedTests, selectedNodes, batchValue)
+        runTests(selectedTests, selectedNodes, batchValue, dcgmRValue)
             .then((results) => {
                 setTerminalValue(results);
             })
@@ -59,8 +64,8 @@ function Testing() {
 
     const handleToggle = () => {
         setIsSwitchOn(!isSwitchOn);
-        setBatchValue('')
-    }
+        setBatchValue('');
+    };
 
     const handleNumberChange = (e) => {
         setBatchValue(e.target.value);
@@ -75,23 +80,29 @@ function Testing() {
 
             <h1>Run Tests</h1>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1vh', marginLeft: '5vw'}}>
-                <MultiSelect
-                    options={tests}
-                    placeholder="Select Health Checks"
-                    selectedValues={selectedTests}
-                    handleChange={handleSelectTests}
-                />
+            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '20px' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <h2>Test Parameters</h2>
 
-                <MultiSelect
-                    options={nodes}
-                    placeholder="Select Nodes"
-                    selectedValues={selectedNodes}
-                    handleChange={handleSelectNodes}
-                />
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        <MultiSelect
+                            options={tests}
+                            placeholder="Select Health Checks"
+                            selectedValues={selectedTests}
+                            handleChange={handleSelectTests}
+                            dcgmValue={dcgmRValue}
+                            handleDcgmChange={handleDcgmChange}
+                        />
 
-                <div>
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1vh', marginLeft: '5vw', marginTop: '1vh' }}>
+                        <MultiSelect
+                            options={nodes}
+                            placeholder="Select Nodes"
+                            selectedValues={selectedNodes}
+                            handleChange={handleSelectNodes}
+                        />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '50px', justifyContent: 'center' }}>
                         <Switch
                             isOn={isSwitchOn}
                             handleToggle={handleToggle}
@@ -100,9 +111,7 @@ function Testing() {
                             onColor="#4CAF50"
                             offColor="#D32F2F"
                         />
-                    </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1vh', marginLeft: '5vw', marginTop: '7vh' }}>
                         <NumberField
                             isDisabled={!isSwitchOn}
                             value={batchValue}
@@ -112,31 +121,34 @@ function Testing() {
                             max={100}
                         />
                     </div>
+
+                    <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+                        <Button
+                            text="Select All Nodes"
+                            color="green"
+                            onClick={selectAllNodes}
+                        />
+
+                        <Button
+                            text="Select All Tests"
+                            color="green"
+                            onClick={selectAllTests}
+                        />
+
+                        <Button
+                            text="Run Tests"
+                            color="blue"
+                            onClick={submitTests}
+                        />
+                    </div>
+                </div>
+
+                <div style={{ flex: 1, marginLeft: '20px' }}>
+                    <h2>Test Results</h2>
+
+                    <Terminal output={terminalValue} />
                 </div>
             </div>
-
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1vh', marginTop: '-6.5vh', marginLeft: '-18vw' }}>
-                <Button
-                    text="Select All Nodes"
-                    color="green"
-                    onClick={selectAllNodes}
-                />
-
-                <Button
-                    text="Select All Tests"
-                    color="green"
-                    onClick={selectAllTests}
-                />
-
-                <Button
-                    text="Run Tests"
-                    color="blue"
-                    onClick={submitTests}
-                />
-            </div>
-
-            <h2>Test Results</h2>
-            <Terminal output={terminalValue} />
         </div>
     );
 }
