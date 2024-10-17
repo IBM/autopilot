@@ -79,7 +79,16 @@ function Testing() {
             <h1>Run Tests</h1>
 
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '20px' }}>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                <div style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '20px',
+                    padding: '20px',
+                    backgroundColor: '#f4f4f4',
+                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)'
+                }}>
                     <h2>Test Parameters</h2>
 
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
@@ -166,7 +175,12 @@ function Testing() {
                     </div>
                 </div>
 
-                <div style={{ flex: 1, marginLeft: '20px' }}>
+                <div style={{
+                    flex: 1,
+                    marginLeft: '20px',
+                    padding: '20px',
+                    borderLeft: '2px solid #ccc',
+                }}>
                     <h2>Test Results</h2>
 
                     <Terminal output={terminalValue} />
