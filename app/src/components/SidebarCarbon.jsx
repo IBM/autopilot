@@ -25,7 +25,7 @@ function Sidebar() {
                         <img
                             src="https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg"
                             alt="IBM Logo"
-                            style={{ width: '5vw', maxWidth: '100px', marginRight: '1vw' }}
+                            style={{ width: '5vw', maxWidth: '75px', marginRight: '1vw' }}
                         />
                         <span style={{ color: 'black', fontSize: '1.5vw' }}>
                             Autopilot
