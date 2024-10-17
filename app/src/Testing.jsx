@@ -85,12 +85,11 @@ function Testing() {
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                         <MultiSelect
                             id="health-checks"
-                            titleText="Health Checks"
                             label="Select Health Checks"
                             items={tests}
-                            selectedItems={selectedTests}
                             itemToString={(item) => (item ? item : '')}
                             onChange={({ selectedItems }) => handleSelectTests(selectedItems)}
+                            titleText="Health Checks"
                         />
 
                         <MultiSelect
@@ -102,6 +101,21 @@ function Testing() {
                             itemToString={(item) => (item ? item : '')}
                             onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
                         />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        {selectedTests.includes('dcgm') && (
+                            <div style={{ width: '10vw' }}>
+                                <NumberInput
+                                    id="dcgm-number"
+                                    label="DCGM R Value"
+                                    min={1}
+                                    max={100}
+                                    value={dcgmRValue ? dcgmRValue : 1}
+                                    onChange={(e) => handleDcgmChange(e)}
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ display: 'flex', gap: '50px', justifyContent: 'center' }}>
