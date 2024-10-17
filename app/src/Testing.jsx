@@ -87,32 +87,35 @@ function Testing() {
                     gap: '20px',
                     padding: '20px',
                     backgroundColor: '#f4f4f4',
-                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
+                    margin: '0 auto'
                 }}>
-                    <h2>Test Parameters</h2>
+                    <h2 style={{ alignSelf: "center" }}>Test Parameters</h2>
 
-                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                        <MultiSelect
-                            id="health-checks"
-                            label="Select Health Checks"
-                            items={tests}
-                            itemToString={(item) => (item ? item : '')}
-                            onChange={({ selectedItems }) => handleSelectTests(selectedItems)}
-                            titleText="Health Checks"
-                        />
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                        <div style={{
+                            width: '10vw'
+                        }}>
+                            <MultiSelect
+                                id="health-checks"
+                                label="Select Tests"
+                                items={tests}
+                                itemToString={(item) => (item ? item : '')}
+                                onChange={({ selectedItems }) => handleSelectTests(selectedItems)}
+                                titleText="Health Checks"
+                            />
+                        </div>
 
-                        <MultiSelect
-                            id="nodes"
-                            titleText="Nodes"
-                            label="Select Nodes"
-                            items={nodes}
-                            selectedItems={selectedNodes}
-                            itemToString={(item) => (item ? item : '')}
-                            onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
-                        />
+                        <Button
+                            kind="primary"
+                            onClick={selectAllTests}
+                            style={{ alignSelf: 'center', width: '10vw' }}
+                        >
+                            Select All Tests
+                        </Button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '1vw', justifyContent: 'center' }}>
                         {selectedTests.includes('dcgm') && (
                             <div style={{ width: '10vw' }}>
                                 <NumberInput
@@ -127,7 +130,31 @@ function Testing() {
                         )}
                     </div>
 
-                    <div style={{ display: 'flex', gap: '50px', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                        <div style={{
+                            width: '10vw'
+                        }}>
+                            <MultiSelect
+                                id="nodes"
+                                titleText="Nodes"
+                                label="Select Nodes"
+                                items={nodes}
+                                selectedItems={selectedNodes}
+                                itemToString={(item) => (item ? item : '')}
+                                onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
+                            />
+                        </div>
+
+                        <Button
+                            kind="primary"
+                            onClick={selectAllNodes}
+                            style={{ alignSelf: 'center', width: '10vw' }}
+                        >
+                            Select All Nodes
+                        </Button>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
                         <Toggle
                             id="batches-toggle"
                             labelText={isSwitchOn ? "Batches: On" : "Batches: Off"}
@@ -150,22 +177,7 @@ function Testing() {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-                        <Button
-                            kind="primary"
-                            onClick={selectAllTests}
-                        >
-                            Select All Tests
-                        </Button>
-
-                        <Button
-                            kind="primary"
-                            onClick={selectAllNodes}
-                        >
-                            Select All Nodes
-                        </Button>
-                    </div>
-                    <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
                         <Button
                             kind="danger"
                             onClick={submitTests}
