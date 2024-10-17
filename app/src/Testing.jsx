@@ -70,12 +70,12 @@ function Testing() {
     };
 
     const HeaderStyle = {
-        fontSize: '2rem', 
-        fontWeight: 'bold', 
-        color: '#3D3D3D', 
-        margin: '2vh 0', 
-        padding: '1vh', 
-        borderBottom: '0.2vh solid #E0E0E0', 
+        //fontSize: '2rem',
+        //fontWeight: 'bold',
+        color: '#3D3D3D',
+        margin: '2vh 0',
+        padding: '1vh',
+        borderBottom: '0.2vh solid #E0E0E0',
     };
 
     return (
@@ -85,7 +85,7 @@ function Testing() {
                 <title>Testing</title>
             </Helmet>
 
-            <h1 style={HeaderStyle}>Run Tests</h1>
+            <h1 style={{ textAlign: "center", ...HeaderStyle }}>Run Tests</h1>
 
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '20px' }}>
 
@@ -99,7 +99,7 @@ function Testing() {
                     boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
                     margin: '0 auto'
                 }}>
-                    <h2 style={{ alignSelf: "center", ...HeaderStyle }}>Test Parameters</h2>
+                    <h2 style={{ textAlign: "center", ...HeaderStyle }}>Test Parameters</h2>
 
                     <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
                         <div style={{
@@ -109,6 +109,7 @@ function Testing() {
                                 id="health-checks"
                                 label="Select Tests"
                                 items={tests}
+                                selectedItems={selectedTests}
                                 itemToString={(item) => (item ? item : '')}
                                 onChange={({ selectedItems }) => handleSelectTests(selectedItems)}
                                 titleText="Health Checks"
@@ -202,8 +203,7 @@ function Testing() {
                     padding: '20px',
                     borderLeft: '2px solid #ccc',
                 }}>
-                    <h2 style={HeaderStyle}>Test Results</h2>
-
+                    <h2 style={{ textAlign: "center", ...HeaderStyle }}>Test Results</h2>
                     <Terminal output={terminalValue} />
                 </div>
             </div>
