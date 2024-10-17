@@ -3,8 +3,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './Login';
 import Monitor from './Monitor';
 import Testing from './Testing';
-import Sidebar from './components/Sidebar';
+import Sidebar from './components/SidebarCarbon';
 import styled from 'styled-components';
+import '@carbon/styles/css/styles.css';
 
 const MainContent = styled.div`
   margin-left: 220px; /* Adjust according to sidebar width */
@@ -19,19 +20,19 @@ const MainContent = styled.div`
 
 function App() {
   return (
-      <Router>
-        <div style={{ display: 'flex' }}>
-          <Sidebar />
-          <MainContent>
-            <Routes>
-              <Route path="/" element={<Login />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/monitor" element={<Monitor />} />
-              <Route path="/testing" element={<Testing />} />
-            </Routes>
-          </MainContent>
-        </div>
-      </Router>
+    <Router>
+      <div style={{ display: 'flex' }}>
+        <Sidebar />
+        <MainContent>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/monitor" element={<Monitor />} />
+            <Route path="/testing" element={<Testing />} />
+          </Routes>
+        </MainContent>
+      </div>
+    </Router>
   );
 }
 
