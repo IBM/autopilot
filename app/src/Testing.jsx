@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Button from './components/Button';
 import MultiSelect from './components/MultiSelect';
 import Terminal from './components/Terminal';
 import runTests from './api/runTests';
@@ -7,6 +6,7 @@ import listNodes from './api/getNodes';
 import Switch from './components/Switch';
 import { Helmet } from 'react-helmet';
 import NumberField from './components/NumberField';
+import { Button } from '@carbon/react';
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
@@ -124,22 +124,25 @@ function Testing() {
 
                     <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
                         <Button
-                            text="Select All Nodes"
-                            color="green"
+                            kind="primary"
                             onClick={selectAllNodes}
-                        />
+                        >
+                            Select All Nodes
+                        </Button>
 
                         <Button
-                            text="Select All Tests"
-                            color="green"
+                            kind="primary"
                             onClick={selectAllTests}
-                        />
+                        >
+                            Select All Tests
+                        </Button>
 
                         <Button
-                            text="Run Tests"
-                            color="blue"
+                            kind="danger"
                             onClick={submitTests}
-                        />
+                        >
+                            Run Tests
+                        </Button>
                     </div>
                 </div>
 
