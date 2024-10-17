@@ -2,25 +2,12 @@ import * as React from 'react';
 import { useState } from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
-import Box from '@mui/material/Box';
-import Collapse from '@mui/material/Collapse';
-import IconButton from '@mui/material/IconButton';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
 
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import { Table, TableHead, TableRow, TableBody, TableCell, TableContainer, Button } from '@carbon/react';
+import { ChevronDown, ChevronUp } from '@carbon/icons-react'; // Carbon icons for expand/collapse
 
-// Referenced from https://mui.com/material-ui/react-table/#collapsible-table
-
-const lightGreen = "#90EE90"
-const lightRed = "#FAA0A0"
+const lightGreen = "#90EE90";
+const lightRed = "#FAA0A0";
 
 const ResponsiveTableContainer = styled(TableContainer)`
     width: 100%;
@@ -35,7 +22,6 @@ const ResponsiveTableContainer = styled(TableContainer)`
     } 
 `;
 
-// !important is used to ensure specificity and prevent overwriting
 const StyledTableCell = styled(TableCell)`
   font-weight: bold !important; 
   font-size: 1.1rem !important;
@@ -54,14 +40,32 @@ const Row = ({ node }) => {
     return (
         <>
             <StyledTableRow pass={node.gpuHealth === 'PASS'}>
-                <TableCell>
-                    <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
-                        {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-                    </IconButton>
-                </TableCell>
 
-                {/*Main table: name, status, role, version, hardware, containerRuntimeVersion, and OS*/}
-                <TableCell component="th" scope="row">{node.name}</TableCell>
+            <TableCell style={{ padding: 0, height: '3rem' }}>
+                <Button
+                    kind="ghost"
+                    size="small"
+                    renderIcon={open ? ChevronUp : ChevronDown}
+                    iconDescription={open ? 'Collapse' : 'Expand'}
+                    onClick={() => setOpen(!open)}
+                    className="cds--layout--size-small"
+                    style={{
+                        display: 'grid',
+                        placeItems: 'center',
+                        width: '100%',
+                        height: '100%',
+                        minHeight: '3rem',
+                        margin: 0
+                    }}
+                >
+                    <span className="cds--assistive-text"></span>
+                </Button>
+            </TableCell>
+
+
+
+                {/* Main table: name, status, role, version, hardware, containerRuntimeVersion, and OS */}
+                <TableCell>{node.name}</TableCell>
                 <TableCell align="left">{node.status === 'True' ? 'Ready' : 'Not Ready'}</TableCell>
                 <TableCell align="left">{node.role}</TableCell>
                 <TableCell align="left">{node.version}</TableCell>
@@ -72,14 +76,12 @@ const Row = ({ node }) => {
                 <TableCell align="left">{node.gpuHealth}</TableCell>
             </StyledTableRow>
 
-            <TableRow>
-                {/*Expandable table: capacity/allocatable resources, and health checks*/}
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
-                    <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box margin={1}>
-                            <Typography variant="h6" gutterBottom>
-                                Capacity / Allocatable Resources:
-                            </Typography>
+            {open && (
+                <TableRow>
+                    <TableCell colSpan={10}>
+                        {/* Expandable table: capacity/allocatable resources, and health checks */}
+                        <div>
+                            <h6>Capacity / Allocatable Resources:</h6>
                             <Table size="small" aria-label="resources">
                                 <TableHead>
                                     <TableRow>
@@ -101,19 +103,18 @@ const Row = ({ node }) => {
                                     </TableRow>
                                 </TableBody>
                             </Table>
-                        </Box>
-                    </Collapse>
-                </TableCell>
-            </TableRow>
+                        </div>
+                    </TableCell>
+                </TableRow>
+            )}
         </>
     );
 };
 
-
 function CollapsibleTable({ nodes }) {
     return (
-        <ResponsiveTableContainer component={Paper}>
-            <Table aria-label="collapsible table">
+        <ResponsiveTableContainer>
+            <Table>
                 <TableHead>
                     <TableRow>
                         <TableCell />
@@ -137,7 +138,6 @@ function CollapsibleTable({ nodes }) {
         </ResponsiveTableContainer>
     );
 }
-
 
 Row.propTypes = {
     node: PropTypes.shape({
