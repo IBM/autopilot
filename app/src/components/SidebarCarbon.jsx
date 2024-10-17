@@ -21,11 +21,16 @@ function Sidebar() {
                 style={customSidebarStyle}
             >
                 <SideNavItems>
-                    <SideNavLink large>
-                        <span style={{ color: 'black', fontSize: '1.2rem' }}>
-                            IBM Autopilot
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2vh 0' }}>
+                        <img
+                            src="https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg"
+                            alt="IBM Logo"
+                            style={{ width: '5vw', maxWidth: '100px', marginRight: '1vw' }}
+                        />
+                        <span style={{ color: 'black', fontSize: '1.5vw' }}>
+                            Autopilot
                         </span>
-                    </SideNavLink>
+                    </div>
                     <SideNavDivider />
                     <SideNavLink href="/login" large>
                         Login

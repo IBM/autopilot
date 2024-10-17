@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CopyButton } from 'carbon-components-react';
+import { CopyButton } from '@carbon/react';
 
 const Terminal = ({ output }) => {
     const [copied, setCopied] = useState(false);
@@ -7,7 +7,7 @@ const Terminal = ({ output }) => {
     const handleCopy = () => {
         navigator.clipboard.writeText(output || "No tests deployed yet...");
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000); // Reset copied state after 2 seconds
+        setTimeout(() => setCopied(false), 2000);
     };
 
     return (
@@ -52,4 +52,3 @@ const styles = {
 };
 
 export default Terminal;
-
