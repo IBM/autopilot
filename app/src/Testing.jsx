@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import MultiSelect from './components/MultiSelect';
 import Terminal from './components/Terminal';
 import runTests from './api/runTests';
 import listNodes from './api/getNodes';
-import Switch from './components/Switch';
 import { Helmet } from 'react-helmet';
 import NumberField from './components/NumberField';
-import { Button } from '@carbon/react';
+import { Button, MultiSelect, Toggle, NumberInput } from '@carbon/react';
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
@@ -86,50 +84,50 @@ function Testing() {
 
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                         <MultiSelect
-                            options={tests}
-                            placeholder="Select Health Checks"
-                            selectedValues={selectedTests}
-                            handleChange={handleSelectTests}
-                            dcgmValue={dcgmRValue}
-                            handleDcgmChange={handleDcgmChange}
+                            id="health-checks"
+                            titleText="Health Checks"
+                            label="Select Health Checks"
+                            items={tests}
+                            selectedItems={selectedTests}
+                            itemToString={(item) => (item ? item : '')}
+                            onChange={({ selectedItems }) => handleSelectTests(selectedItems)}
                         />
 
                         <MultiSelect
-                            options={nodes}
-                            placeholder="Select Nodes"
-                            selectedValues={selectedNodes}
-                            handleChange={handleSelectNodes}
+                            id="nodes"
+                            titleText="Nodes"
+                            label="Select Nodes"
+                            items={nodes}
+                            selectedItems={selectedNodes}
+                            itemToString={(item) => (item ? item : '')}
+                            onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
                         />
                     </div>
 
                     <div style={{ display: 'flex', gap: '50px', justifyContent: 'center' }}>
-                        <Switch
-                            isOn={isSwitchOn}
-                            handleToggle={handleToggle}
-                            onText="Batches: On"
-                            offText="Batches: Off"
-                            onColor="#4CAF50"
-                            offColor="#D32F2F"
+                        <Toggle
+                            id="batches-toggle"
+                            labelText={isSwitchOn ? "Batches: On" : "Batches: Off"}
+                            toggled={isSwitchOn}
+                            onToggle={handleToggle}
+                            labelA="Batches: Off"
+                            labelB="Batches: On"
                         />
-
-                        <NumberField
-                            isDisabled={!isSwitchOn}
-                            value={batchValue}
-                            onChange={handleNumberChange}
-                            placeholder="Batch #"
-                            min={1}
-                            max={100}
-                        />
+                        <div style={{
+                            width: '10vw'
+                        }}>
+                            <NumberInput
+                                id="batch-number"
+                                label="Batch #"
+                                min={1}
+                                value={batchValue ? batchValue : 1}
+                                disabled={!isSwitchOn}
+                                onChange={(e) => handleNumberChange(e)}
+                            />
+                        </div>
                     </div>
 
                     <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-                        <Button
-                            kind="primary"
-                            onClick={selectAllNodes}
-                        >
-                            Select All Nodes
-                        </Button>
-
                         <Button
                             kind="primary"
                             onClick={selectAllTests}
@@ -137,6 +135,14 @@ function Testing() {
                             Select All Tests
                         </Button>
 
+                        <Button
+                            kind="primary"
+                            onClick={selectAllNodes}
+                        >
+                            Select All Nodes
+                        </Button>
+                    </div>
+                    <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
                         <Button
                             kind="danger"
                             onClick={submitTests}
