@@ -11,7 +11,7 @@ export function useNodesWithStatus() {
     if (typeof kubernetesEndpoint === 'undefined') {
         throw new Error('Kubernetes endpoint not set');
     }
-    
+
     const { data, error } = useSWR(`${kubernetesEndpoint}/api/v1/nodes`, fetcher, {
         refreshInterval: 10000,  // Refresh every 10 seconds
         revalidateOnFocus: true,  // Refresh when user focuses the page
@@ -25,11 +25,35 @@ export function useNodesWithStatus() {
         const status = statusCondition.status || 'Unknown';
         const version = node.status.nodeInfo.kubeletVersion || 'Unknown';
         const architecture = node.status.nodeInfo.architecture || 'Unknown';
-        const containerRuntimeVersion = node.status.nodeInfo.containerRuntimeVersion || 'Unknown';
-        const operatingSystem = node.status.nodeInfo.operatingSystem || 'Unknown';
 
-        const gpuPresent = node.metadata.labels['nvidia.com/gpu.present'] || 'Not present';
+        // GPU Info
+        const gpuPresent = node.metadata.labels['nvidia.com/gpu.present'] || 'Not Present';
+        const gpuCount = node.metadata.labels['nvidia.com/gpu.count'] || 'Unknown';
+        const gpuModel = node.metadata.labels['nvidia.com/gpu.product'] || 'Unknown';
         const gpuHealth = node.metadata.labels['autopilot.ibm.com/gpuhealth'] || 'Not Pass';
+
+        // DCGM diagnostics
+        const dcgmLevel3Label = node.metadata.labels['autopilot.ibm.com/dcgm.level.3'] || 'Not Applicable';
+        let dcgmStatus = 'Unknown';
+        let dcgmTimestamp = 'Unknown';
+        let dcgmDetails = 'Unknown';
+
+        // Need to take into consideration for multiple failed tests and nodes
+        if (dcgmLevel3Label.startsWith('ERR')) {
+            const results = dcgmLevel3Label.split('_');
+            // const failedTests = [];
+            // const gpuIDs = [];
+
+            dcgmStatus = 'ERR';
+            dcgmTimestamp = results[1];
+            dcgmDetails = results.slice(2).join(', ');
+        } else if (dcgmLevel3Label.startsWith('PASS')) {
+            const results = dcgmLevel3Label.split('_');
+
+            dcgmStatus = 'PASS';
+            dcgmTimestamp = results[1];
+            dcgmDetails = `Passed all tests`;
+        }
 
         const capacity = node.status.capacity || {};
         const allocatable = node.status.allocatable || {};
@@ -40,17 +64,23 @@ export function useNodesWithStatus() {
             status: status,
             version: version,
             architecture: architecture,
-            containerRuntimeVersion: containerRuntimeVersion,
-            operatingSystem: operatingSystem,
 
             gpuPresent: gpuPresent,
             gpuHealth: gpuHealth,
+            gpuCount: gpuCount,
+            gpuModel: gpuModel,
+
+            dcgmStatus: dcgmStatus,
+            dcgmTimestamp: dcgmTimestamp,
+            dcgmDetails: dcgmDetails,
 
             capacity: {
+                gpu: capacity['nvidia.com/gpu'] || 'Unknown',
                 cpu: capacity.cpu || 'Unknown',
                 memory: capacity.memory || 'Unknown',
             },
             allocatable: {
+                gpu: allocatable['nvidia.com/gpu'] || 'Unknown',
                 cpu: allocatable.cpu || 'Unknown',
                 memory: allocatable.memory || 'Unknown',
             }
