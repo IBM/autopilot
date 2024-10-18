@@ -35,12 +35,23 @@ These checks are configured to run periodically (e.g., hourly), and results are 
 
 ## Deep Diagnostics and Node Labeling
 
-Autopilot runs health checks periodically and labels the nodes with `autopilot.ibm.com/gpuhealth: ERR` is any of the GPU health checks returns an error. Otherwise, health is set as `PASS`.
+Autopilot runs health checks periodically on GPU nodes, and if any of the health checks returns an error, the node is labeled with `autopilot.ibm.com/gpuhealth: ERR`. Otherwise, the label is set as `PASS`.
 
 Also, more extensive tests, namely DCGM diagnostics level 3, are also executed automatically only on nodes that have free GPUs. This deeper analysis is needed to reveal problems in the GPUs that can be found only after running level 3 DCGM diagnostic.
 This type of diagnostics can help deciding if the worker node should be used for running workloads or not. To facilitate this task, Autopilot will label nodes with key `autopilot.ibm.com/dcgm.level.3`.
 
-If errors are found, the label `autopilot.ibm.com/dcgm.level.3` will contain the value `ERR`, a timestamp, the test(s) that failed and the GPU id(s) if available. Otherwise, the value is set to `PASS_timestamp`.
+If errors are found during the level 3 diagnostics, the label `autopilot.ibm.com/dcgm.level.3` will contain detailed information about the error in the following format: 
+
+`ERR_Year-Month-Date_Hour.Minute.UTC_Diagnostic_Test.gpuID,Diagnostic_Test.gpuID,...`
+
+- `ERR`: An indicator that an error has occurred
+- `Year-Month-Date_Hour.Minute.UTC`: Timestamp of completed diagnostics
+- `Diagnostic_Test`: Name of the test that has failed (formatted to replace spaces with underscores)
+- `gpuID`: ID of GPU where the failure has occurred
+
+**Example:** `autopilot.ibm.com/dcgm.level.3=ERR_2024-10-10_19.12.03UTC_page_retirement_row_remap.0`
+
+If there are no errors, the value is set to `PASS_Year-Month-Date_Hour.Minute.UTC`.
 
 ### Logs and Metrics
 
