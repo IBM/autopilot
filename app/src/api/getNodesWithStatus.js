@@ -36,23 +36,25 @@ export function useNodesWithStatus() {
         const dcgmLevel3Label = node.metadata.labels['autopilot.ibm.com/dcgm.level.3'] || 'Not Applicable';
         let dcgmStatus = 'Unknown';
         let dcgmTimestamp = 'Unknown';
-        let dcgmDetails = 'Unknown';
+        let dcgmDetails = [];
 
-        // Need to take into consideration for multiple failed tests and nodes
+        // ERR_Year-Month-Date_Hour.Minute.UTC_Diagnostic_One.gpuNumber,Diagnostic_Two.gpuNumber
+        // Example: ERR_2024-10-10_19.12.03UTC_page_retirement_row_remap.0
         if (dcgmLevel3Label.startsWith('ERR')) {
-            const results = dcgmLevel3Label.split('_');
-            // const failedTests = [];
-            // const gpuIDs = [];
+            const [status, date, timeUTC, ...details] = dcgmLevel3Label.split('_');
 
-            dcgmStatus = 'ERR';
-            dcgmTimestamp = results[1];
-            dcgmDetails = results.slice(2).join(', ');
+            dcgmStatus = status;
+            dcgmTimestamp = `${date} ${timeUTC.replace('UTC', ' UTC')}`;
+            dcgmDetails = details.join('_').split(",").map(detail => {
+                const [testName, gpuID] = detail.split('.');
+                return {testName, gpuID};
+            });
         } else if (dcgmLevel3Label.startsWith('PASS')) {
-            const results = dcgmLevel3Label.split('_');
+            const [status, date, timeUTC] = dcgmLevel3Label.split('_');
 
-            dcgmStatus = 'PASS';
-            dcgmTimestamp = results[1];
-            dcgmDetails = `Passed all tests`;
+            dcgmStatus = status;
+            dcgmTimestamp = `${date} ${timeUTC.replace('UTC', ' UTC')}`;
+            dcgmDetails = `Pass All Tests`;
         }
 
         const capacity = node.status.capacity || {};
