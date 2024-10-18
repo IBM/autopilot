@@ -120,15 +120,25 @@ const Row = ({ node }) => {
                                 <TableHead>
                                     <TableRow>
                                         <StyledTableCell>DCGM Status</StyledTableCell>
-                                        <StyledTableCell>Time Stamp</StyledTableCell>
-                                        <StyledTableCell>Details</StyledTableCell> {/*If too long, have it as another small table*/}
+                                        <StyledTableCell>Timestamp</StyledTableCell>
+                                        <StyledTableCell>Details</StyledTableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     <TableRow>
                                         <TableCell>{node.dcgmStatus}</TableCell>
                                         <TableCell>{node.dcgmTimestamp}</TableCell>
-                                        <TableCell>{node.dcgmDetails}</TableCell>
+                                        <TableCell>
+                                            {node.dcgmStatus === 'ERR' ? (
+                                                <ul>
+                                                    {node.dcgmDetails.map((detail, index) => (
+                                                        <li key={index}>
+                                                            {`Test: ${detail.testName}, GPU ID: ${detail.gpuID}`}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : `No Details Available`}
+                                        </TableCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>
@@ -181,7 +191,12 @@ Row.propTypes = {
         gpuCount: PropTypes.string.isRequired,
         dcgmStatus: PropTypes.string.isRequired,
         dcgmTimestamp: PropTypes.string.isRequired,
-        dcgmDetails: PropTypes.string.isRequired,
+        dcgmDetails: PropTypes.arrayOf(
+            PropTypes.shape({
+                testName: PropTypes.string.isRequired,
+                gpuID: PropTypes.string.isRequired,
+            })
+        ).isRequired,
         capacity: PropTypes.shape({
             gpu: PropTypes.string.isRequired,
             cpu: PropTypes.string.isRequired,
