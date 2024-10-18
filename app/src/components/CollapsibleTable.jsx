@@ -14,12 +14,13 @@ const ResponsiveTableContainer = styled(TableContainer)`
     overflow-x: auto;
     padding: 0;
     margin: 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 
     @media (max-width: 768px) {
         width: 100%;
         padding: 0;
         margin: 0;
-    } 
+    }
 `;
 
 const StyledTableCell = styled(TableCell)`
@@ -34,6 +35,10 @@ const StyledTableRow = styled(TableRow).withConfig({
     background-color: ${(props) => (props.pass ? lightGreen : lightRed)};
 `;
 
+const ExpandableTableWrapper = styled.div`
+    padding: 3px;
+`;
+
 const Row = ({ node }) => {
     const [open, setOpen] = useState(false);
 
@@ -41,38 +46,37 @@ const Row = ({ node }) => {
         <>
             <StyledTableRow pass={node.gpuHealth === 'PASS'}>
 
-            <TableCell style={{ padding: 0, height: '3rem' }}>
-                <Button
-                    kind="ghost"
-                    size="small"
-                    renderIcon={open ? ChevronUp : ChevronDown}
-                    iconDescription={open ? 'Collapse' : 'Expand'}
-                    onClick={() => setOpen(!open)}
-                    className="cds--layout--size-small"
-                    style={{
-                        display: 'grid',
-                        placeItems: 'center',
-                        width: '100%',
-                        height: '100%',
-                        minHeight: '3rem',
-                        margin: 0
-                    }}
-                >
-                    <span className="cds--assistive-text"></span>
-                </Button>
-            </TableCell>
+                <TableCell style={{ padding: 0, height: '3rem' }}>
+                    <Button
+                        kind="ghost"
+                        size="small"
+                        renderIcon={open ? ChevronUp : ChevronDown}
+                        iconDescription={open ? 'Collapse' : 'Expand'}
+                        onClick={() => setOpen(!open)}
+                        className="cds--layout--size-small"
+                        style={{
+                            display: 'grid',
+                            placeItems: 'center',
+                            width: '100%',
+                            height: '100%',
+                            minHeight: '3rem',
+                            margin: 0
+                        }}
+                    >
+                        <span className="cds--assistive-text"></span>
+                    </Button>
+                </TableCell>
 
 
-
-                {/* Main table: name, status, role, version, hardware, containerRuntimeVersion, and OS */}
+                {/* Main table*/}
                 <TableCell>{node.name}</TableCell>
                 <TableCell align="left">{node.status === 'True' ? 'Ready' : 'Not Ready'}</TableCell>
                 <TableCell align="left">{node.role}</TableCell>
                 <TableCell align="left">{node.version}</TableCell>
                 <TableCell align="left">{node.architecture}</TableCell>
-                <TableCell align="left">{node.containerRuntimeVersion}</TableCell>
-                <TableCell align="left">{node.operatingSystem}</TableCell>
                 <TableCell align="left">{node.gpuPresent}</TableCell>
+                <TableCell align="left">{node.gpuModel}</TableCell>
+                <TableCell align="left">{node.gpuCount}</TableCell>
                 <TableCell align="left">{node.gpuHealth}</TableCell>
             </StyledTableRow>
 
@@ -80,8 +84,8 @@ const Row = ({ node }) => {
                 <TableRow>
                     <TableCell colSpan={10}>
                         {/* Expandable table: capacity/allocatable resources, and health checks */}
-                        <div>
-                            <h6>Capacity / Allocatable Resources:</h6>
+                        <ExpandableTableWrapper>
+                            <h4><strong>Capacity / Allocatable Resources:</strong></h4>
                             <Table size="small" aria-label="resources">
                                 <TableHead>
                                     <TableRow>
@@ -91,6 +95,11 @@ const Row = ({ node }) => {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
+                                    <TableRow>
+                                        <TableCell>GPU</TableCell>
+                                        <TableCell>{node.capacity.gpu}</TableCell>
+                                        <TableCell>{node.allocatable.gpu}</TableCell>
+                                    </TableRow>
                                     <TableRow>
                                         <TableCell>CPU</TableCell>
                                         <TableCell>{node.capacity.cpu}</TableCell>
@@ -103,7 +112,27 @@ const Row = ({ node }) => {
                                     </TableRow>
                                 </TableBody>
                             </Table>
-                        </div>
+                        </ExpandableTableWrapper>
+                        <br/>
+                        <ExpandableTableWrapper>
+                            <h4><strong>GPU DCGM Level 3 Diagnostics:</strong></h4>
+                            <Table size="small" aria-label="resources">
+                                <TableHead>
+                                    <TableRow>
+                                        <StyledTableCell>DCGM Status</StyledTableCell>
+                                        <StyledTableCell>Time Stamp</StyledTableCell>
+                                        <StyledTableCell>Details</StyledTableCell> {/*If too long, have it as another small table*/}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    <TableRow>
+                                        <TableCell>{node.dcgmStatus}</TableCell>
+                                        <TableCell>{node.dcgmTimestamp}</TableCell>
+                                        <TableCell>{node.dcgmDetails}</TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </ExpandableTableWrapper>
                     </TableCell>
                 </TableRow>
             )}
@@ -117,15 +146,15 @@ function CollapsibleTable({ nodes }) {
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell />
+                        <TableCell/>
                         <StyledTableCell>Node Name</StyledTableCell>
                         <StyledTableCell>Status</StyledTableCell>
                         <StyledTableCell>Role</StyledTableCell>
                         <StyledTableCell>Version</StyledTableCell>
                         <StyledTableCell>Architecture</StyledTableCell>
-                        <StyledTableCell>Container Runtime Version</StyledTableCell>
-                        <StyledTableCell>Operating System</StyledTableCell>
                         <StyledTableCell>GPU Present</StyledTableCell>
+                        <StyledTableCell>GPU Type</StyledTableCell>
+                        <StyledTableCell>GPU Count</StyledTableCell>
                         <StyledTableCell>GPU Health</StyledTableCell>
                     </TableRow>
                 </TableHead>
@@ -146,15 +175,20 @@ Row.propTypes = {
         role: PropTypes.string.isRequired,
         version: PropTypes.string.isRequired,
         architecture: PropTypes.string.isRequired,
-        containerRuntimeVersion: PropTypes.string.isRequired,
-        operatingSystem: PropTypes.string.isRequired,
         gpuHealth: PropTypes.string.isRequired,
         gpuPresent: PropTypes.string.isRequired,
+        gpuModel: PropTypes.string.isRequired,
+        gpuCount: PropTypes.string.isRequired,
+        dcgmStatus: PropTypes.string.isRequired,
+        dcgmTimestamp: PropTypes.string.isRequired,
+        dcgmDetails: PropTypes.string.isRequired,
         capacity: PropTypes.shape({
+            gpu: PropTypes.string.isRequired,
             cpu: PropTypes.string.isRequired,
             memory: PropTypes.string.isRequired,
         }).isRequired,
         allocatable: PropTypes.shape({
+            gpu: PropTypes.string.isRequired,
             cpu: PropTypes.string.isRequired,
             memory: PropTypes.string.isRequired,
         }).isRequired,
@@ -169,16 +203,8 @@ CollapsibleTable.propTypes = {
             role: PropTypes.string.isRequired,
             version: PropTypes.string.isRequired,
             architecture: PropTypes.string.isRequired,
-            containerRuntimeVersion: PropTypes.string.isRequired,
-            operatingSystem: PropTypes.string.isRequired,
-            capacity: PropTypes.shape({
-                cpu: PropTypes.string.isRequired,
-                memory: PropTypes.string.isRequired,
-            }).isRequired,
-            allocatable: PropTypes.shape({
-                cpu: PropTypes.string.isRequired,
-                memory: PropTypes.string.isRequired,
-            }).isRequired,
+            gpuHealth: PropTypes.string.isRequired,
+            gpuPresent: PropTypes.string.isRequired
         }).isRequired
     ).isRequired,
 };
