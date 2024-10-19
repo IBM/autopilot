@@ -1,3 +1,4 @@
+// referenced from https://learnk8s.io/real-time-dashboard
 export default async function watchNodes() {
     const endpoint = import.meta.env.VITE_KUBERNETES_ENDPOINT;
     const apiUrl = `${endpoint}/api/v1/nodes?watch=true`;
@@ -6,43 +7,60 @@ export default async function watchNodes() {
         const response = await fetch(apiUrl);
         const reader = response.body.getReader();
         const utf8Decoder = new TextDecoder('utf-8');
+        let buffer = '';
 
-        let result = '';
-        let nodesList = [];
-
-        while (true) {
+        async function readStream() {
             const { done, value } = await reader.read();
             if (done) {
-                break;
+                console.log('Watch request terminated.');
+                return;
             }
 
-            result += utf8Decoder.decode(value, { stream: true });
+            buffer += utf8Decoder.decode(value, { stream: true });
+            buffer = processBuffer(buffer);
 
-            const events = result.split('\n');
-            result = events.pop();  // Keeping the last incomplete line for the next iteration
-
-            events.forEach(event => {
-                if (event.trim()) {
-                    const parsedEvent = JSON.parse(event);
-
-                    if (parsedEvent.type === "ADDED" || parsedEvent.type === "MODIFIED") {
-                        const nodeName = parsedEvent.object.metadata.name;
-                        if (!nodesList.includes(nodeName)) {
-                            nodesList.push(nodeName);
-                            console.log(`Node added or modified: ${nodeName}`);
-                            console.log('Node list:', nodesList);
-                        }
-                    } else if (parsedEvent.type === "DELETED") {
-                        const nodeName = parsedEvent.object.metadata.name;
-                        nodesList = nodesList.filter(name => name !== nodeName);
-                        console.log(`Node deleted: ${nodeName}`);
-                    }
-                }
-            });
+            await readStream();
         }
-        return nodesList;
+        await readStream();
     } catch (error) {
         console.error('Error watching nodes:', error);
         throw error;
     }
+}
+
+// Helper fn to process the buffer and handle events
+function processBuffer(buffer) {
+    const remainingBuffer = findLine(buffer, (line) => {
+        try {
+            const event = JSON.parse(line);
+            const nodeName = event.object.metadata.name;
+
+            if (event.type === "ADDED" || event.type === "MODIFIED") {
+                console.log(`Node added or modified: ${nodeName}`);
+            } else if (event.type === "DELETED") {
+                console.log(`Node deleted: ${nodeName}`);
+            }
+        } catch (error) {
+            console.error('Error while parsing line:', line, '\n', error);
+        }
+    });
+
+    return remainingBuffer; // returning remaining buffer for the next read
+}
+
+// Helper fn to find lines in the buffer and execute a callback
+function findLine(buffer, fn) {
+    const newLineIndex = buffer.indexOf('\n');
+    if (newLineIndex === -1) {
+        return buffer; // when no new line found, return the current buffer
+    }
+
+    const chunk = buffer.slice(0, newLineIndex); // extracting line
+    const newBuffer = buffer.slice(newLineIndex + 1); // remaining buffer
+
+    // processing the chunk
+    fn(chunk);
+
+    // continue searching for more lines in the new buffer
+    return findLine(newBuffer, fn);
 }
