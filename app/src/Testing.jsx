@@ -3,7 +3,6 @@ import Terminal from './components/Terminal';
 import runTests from './api/runTests';
 import listNodes from './api/getNodes';
 import { Helmet } from 'react-helmet';
-import NumberField from './components/NumberField';
 import { Button, MultiSelect, Toggle, NumberInput } from '@carbon/react';
 
 function Testing() {
@@ -69,6 +68,20 @@ function Testing() {
         setBatchValue(e.target.value);
     };
 
+    const getMaxItemLength = () => {
+        const combinedArray = [...nodes, ...tests];
+        let maxLength = 0;
+        for (let item of combinedArray) {
+            if (item.length > maxLength) {
+                maxLength = item.length;
+            }
+        }
+        return maxLength;
+    };
+
+    const maxLength = getMaxItemLength();
+    const dynamicWidth = Math.min(400, maxLength * 12);
+
     const HeaderStyle = {
         //fontSize: '2rem',
         //fontWeight: 'bold',
@@ -103,7 +116,7 @@ function Testing() {
 
                     <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
                         <div style={{
-                            width: '10vw'
+                            width: `${dynamicWidth}px`
                         }}>
                             <MultiSelect
                                 id="health-checks"
@@ -142,7 +155,7 @@ function Testing() {
 
                     <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
                         <div style={{
-                            width: '10vw'
+                            width: `${dynamicWidth}px`
                         }}>
                             <MultiSelect
                                 id="nodes"
