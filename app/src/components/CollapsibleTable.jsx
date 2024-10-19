@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
-
-import { Table, TableHead, TableRow, TableBody, TableCell, TableContainer, Button } from '@carbon/react';
-import { ChevronDown, ChevronUp } from '@carbon/icons-react'; // Carbon icons for expand/collapse
+import { Table, TableHead, TableRow, TableBody, TableCell, TableContainer, Button, Dropdown, MultiSelect } from '@carbon/react';
+import { ChevronDown, ChevronUp, Filter } from '@carbon/icons-react';
+import ReactDOM from 'react-dom';
 
 const lightGreen = "#90EE90";
 const lightRed = "#FAA0A0";
@@ -45,7 +45,6 @@ const Row = ({ node }) => {
     return (
         <>
             <StyledTableRow pass={node.gpuHealth === 'PASS'}>
-
                 <TableCell style={{ padding: 0, height: '3rem' }}>
                     <Button
                         kind="ghost"
@@ -67,8 +66,7 @@ const Row = ({ node }) => {
                     </Button>
                 </TableCell>
 
-
-                {/* Main table*/}
+                {/* Main table */}
                 <TableCell>{node.name}</TableCell>
                 <TableCell align="left">{node.status === 'True' ? 'Ready' : 'Not Ready'}</TableCell>
                 <TableCell align="left">{node.role}</TableCell>
@@ -83,7 +81,6 @@ const Row = ({ node }) => {
             {open && (
                 <TableRow>
                     <TableCell colSpan={10}>
-                        {/* Expandable table: capacity/allocatable resources, and health checks */}
                         <ExpandableTableWrapper>
                             <h4><strong>Capacity / Allocatable Resources:</strong></h4>
                             <Table size="small" aria-label="resources">
@@ -113,7 +110,7 @@ const Row = ({ node }) => {
                                 </TableBody>
                             </Table>
                         </ExpandableTableWrapper>
-                        <br/>
+                        <br />
                         <ExpandableTableWrapper>
                             <h4><strong>GPU DCGM Level 3 Diagnostics:</strong></h4>
                             <Table size="small" aria-label="resources">
@@ -151,12 +148,76 @@ const Row = ({ node }) => {
 };
 
 function CollapsibleTable({ nodes }) {
+    const [selectedFilters, setSelectedFilters] = useState([]);
+    const [filterOpen, setFilterOpen] = useState(false);
+    const filterButtonRef = useRef(null);
+    const dropdownRef = useRef(null);
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+
+    const filteredNodes = useMemo(() => {
+        if (selectedFilters.length === 0) return nodes;
+        return nodes.filter(node => selectedFilters.includes(node.gpuHealth));
+    }, [nodes, selectedFilters]);
+
+    const uniqueGpuHealths = useMemo(() => {
+        return [...new Set(nodes.map(node => node.gpuHealth))];
+    }, [nodes]);
+
+    const handleFilterToggle = () => {
+        if (filterOpen) {
+            setFilterOpen(false);
+        } else {
+            const buttonRect = filterButtonRef.current.getBoundingClientRect();
+            const dropdownHeight = 300;
+            const dropdownWidth = 200;
+
+            let top = buttonRect.bottom + window.scrollY + 5;
+            if (top + dropdownHeight > window.innerHeight) {
+                top = buttonRect.top + window.scrollY - dropdownHeight - 5;
+            }
+
+            let left = buttonRect.left + window.scrollX;
+            if (left + dropdownWidth > window.innerWidth) {
+                left = window.innerWidth - dropdownWidth - 10;
+            }
+
+            setDropdownPosition({ top, left });
+            setFilterOpen(true);
+        }
+    };
+
+    const handleFilterChange = (selectedItems) => {
+        setSelectedFilters(selectedItems.map(item => item.id));
+    };
+
+    const handleClearFilters = () => {
+        setSelectedFilters([]);
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                filterOpen &&
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target) &&
+                !filterButtonRef.current.contains(event.target)
+            ) {
+                setFilterOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [filterOpen]);
+
     return (
         <ResponsiveTableContainer>
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell/>
+                        <TableCell />
                         <StyledTableCell>Node Name</StyledTableCell>
                         <StyledTableCell>Status</StyledTableCell>
                         <StyledTableCell>Role</StyledTableCell>
@@ -165,50 +226,71 @@ function CollapsibleTable({ nodes }) {
                         <StyledTableCell>GPU Present</StyledTableCell>
                         <StyledTableCell>GPU Type</StyledTableCell>
                         <StyledTableCell>GPU Count</StyledTableCell>
-                        <StyledTableCell>GPU Health</StyledTableCell>
+                        <StyledTableCell>
+                            GPU Health
+                            <Button
+                                ref={filterButtonRef}
+                                hasIconOnly
+                                renderIcon={Filter}
+                                onClick={handleFilterToggle}
+                                iconDescription="Filter"
+                                kind="ghost"
+                                style={{
+                                    padding: 0,
+                                    minWidth: 'auto',
+                                    height: 'auto'
+                                }}
+                                aria-haspopup="true"
+                                aria-expanded={filterOpen}
+                            />
+                        </StyledTableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {nodes.map((node) => (
+                    {filteredNodes.map((node) => (
                         <Row key={node.name} node={node} />
                     ))}
                 </TableBody>
             </Table>
+            {filterOpen && ReactDOM.createPortal(
+                <div ref={dropdownRef} style={{
+                    position: 'absolute',
+                    top: dropdownPosition.top,
+                    left: dropdownPosition.left,
+                    zIndex: 1000,
+                    background: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    padding: '10px',
+                    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+                }}>
+                    <MultiSelect
+                        items={uniqueGpuHealths.map((health) => ({
+                            id: health,
+                            label: health,
+                        }))}
+                        itemToString={(item) => (item ? item.label : '')}
+                        onChange={({ selectedItems }) => handleFilterChange(selectedItems)}
+                        label="Select GPU Health"
+                        placeholder="Select Filters"
+                        initialSelectedItems={uniqueGpuHealths.filter(health => selectedFilters.includes(health)).map(health => ({
+                            id: health,
+                            label: health,
+                        }))}
+                    />
+                    <Button onClick={handleClearFilters} kind="secondary" style={{ marginTop: '10px' }}>
+                        Clear Filters
+                    </Button>
+                </div>,
+                document.body
+            )}
+
         </ResponsiveTableContainer>
     );
 }
 
-Row.propTypes = {
-    node: PropTypes.shape({
-        name: PropTypes.string.isRequired,
-        status: PropTypes.string.isRequired,
-        role: PropTypes.string.isRequired,
-        version: PropTypes.string.isRequired,
-        architecture: PropTypes.string.isRequired,
-        gpuHealth: PropTypes.string.isRequired,
-        gpuPresent: PropTypes.string.isRequired,
-        gpuModel: PropTypes.string.isRequired,
-        gpuCount: PropTypes.string.isRequired,
-        dcgmStatus: PropTypes.string.isRequired,
-        dcgmTimestamp: PropTypes.string.isRequired,
-        dcgmDetails: PropTypes.arrayOf(
-            PropTypes.shape({
-                testName: PropTypes.string.isRequired,
-                gpuID: PropTypes.string.isRequired,
-            })
-        ).isRequired,
-        capacity: PropTypes.shape({
-            gpu: PropTypes.string.isRequired,
-            cpu: PropTypes.string.isRequired,
-            memory: PropTypes.string.isRequired,
-        }).isRequired,
-        allocatable: PropTypes.shape({
-            gpu: PropTypes.string.isRequired,
-            cpu: PropTypes.string.isRequired,
-            memory: PropTypes.string.isRequired,
-        }).isRequired,
-    }).isRequired,
-};
+
+
 
 CollapsibleTable.propTypes = {
     nodes: PropTypes.arrayOf(
@@ -218,9 +300,21 @@ CollapsibleTable.propTypes = {
             role: PropTypes.string.isRequired,
             version: PropTypes.string.isRequired,
             architecture: PropTypes.string.isRequired,
+            gpuPresent: PropTypes.string.isRequired,
+            gpuModel: PropTypes.string.isRequired,
+            gpuCount: PropTypes.number.isRequired,
             gpuHealth: PropTypes.string.isRequired,
-            gpuPresent: PropTypes.string.isRequired
-        }).isRequired
+            capacity: PropTypes.object.isRequired,
+            allocatable: PropTypes.object.isRequired,
+            dcgmStatus: PropTypes.string.isRequired,
+            dcgmTimestamp: PropTypes.string.isRequired,
+            dcgmDetails: PropTypes.arrayOf(
+                PropTypes.shape({
+                    testName: PropTypes.string.isRequired,
+                    gpuID: PropTypes.string.isRequired,
+                })
+            ).isRequired,
+        })
     ).isRequired,
 };
 
