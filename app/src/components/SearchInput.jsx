@@ -1,13 +1,13 @@
 import React from 'react';
-import {Search} from '@carbon/react'
+import { Search } from '@carbon/react';
 
-// SearchInput component
-function SearchInput({ searchQuery, setSearchQuery }) {
+// SearchInput component with label prop
+function SearchInput({ searchQuery, setSearchQuery, label = "Search" }) {
     return (
         <Search
             id="search-node-name"
-            labelText="Search by Node Name" // Accessible label
-            placeHolder="Search by Node Name" // Placeholder text
+            labelText={label} 
+            placeHolder={label} 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)} // Update search query
             size="md" 
