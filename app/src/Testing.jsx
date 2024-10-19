@@ -4,7 +4,6 @@ import runTests from './api/runTests';
 // import listNodes from './api/getNodes';
 import watchNodes from "./api/watchNodes.js";
 import { Helmet } from 'react-helmet';
-import NumberField from './components/NumberField';
 import { Button, MultiSelect, Toggle, NumberInput } from '@carbon/react';
 
 function Testing() {
@@ -21,15 +20,27 @@ function Testing() {
     const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc'];
 
     useEffect(() => {
-        watchNodes()
-            .then((nodes) => {
-                setNodes(nodes);
-                console.log('Fetched nodes: ', nodes);
-            })
+        const handleNodeChange = (node, isDeleted) => {
+            setNodes((prevNodes) => {
+                if (isDeleted) { // Removing deleted node
+                    return prevNodes.filter(n => n.metadata.name !== node.metadata.name);
+                }
+                // Updating node name
+                const existingNode = prevNodes.find(n => n.metadata.name === node.metadata.name);
+                if (existingNode) {
+                    return prevNodes.map(n => n.metadata.name === node.metadata.name ? node : n);
+                }
+                return [...prevNodes, node];
+            });
+        };
+
+        watchNodes(handleNodeChange)
+            .then(() => console.log('Started watching nodes'))
             .catch((err) => {
                 console.error('Error fetching nodes:', err);
             });
     }, []);
+
 
     const handleSelectTests = (selected) => {
         setSelectedTests(selected);
@@ -87,9 +98,9 @@ function Testing() {
                 <title>Testing</title>
             </Helmet>
 
-            <h1 style={{ textAlign: "center", ...HeaderStyle }}>Run Tests</h1>
+            <h1 style={{textAlign: "center", ...HeaderStyle}}>Run Tests</h1>
 
-            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '20px' }}>
+            <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '20px'}}>
 
                 <div style={{
                     flex: 1,
@@ -101,9 +112,9 @@ function Testing() {
                     boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
                     margin: '0 auto'
                 }}>
-                    <h2 style={{ textAlign: "center", ...HeaderStyle }}>Test Parameters</h2>
+                    <h2 style={{textAlign: "center", ...HeaderStyle}}>Test Parameters</h2>
 
-                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                    <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
                         <div style={{
                             width: '10vw'
                         }}>
@@ -113,7 +124,7 @@ function Testing() {
                                 items={tests}
                                 selectedItems={selectedTests}
                                 itemToString={(item) => (item ? item : '')}
-                                onChange={({ selectedItems }) => handleSelectTests(selectedItems)}
+                                onChange={({selectedItems}) => handleSelectTests(selectedItems)}
                                 titleText="Health Checks"
                             />
                         </div>
@@ -121,15 +132,15 @@ function Testing() {
                         <Button
                             kind="primary"
                             onClick={selectAllTests}
-                            style={{ alignSelf: 'center', width: '10vw' }}
+                            style={{alignSelf: 'center', width: '10vw'}}
                         >
                             Select All Tests
                         </Button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '1vw', justifyContent: 'center' }}>
+                    <div style={{display: 'flex', gap: '1vw', justifyContent: 'center'}}>
                         {selectedTests.includes('dcgm') && (
-                            <div style={{ width: '10vw' }}>
+                            <div style={{width: '10vw'}}>
                                 <NumberInput
                                     id="dcgm-number"
                                     label="DCGM R Value"
@@ -142,7 +153,7 @@ function Testing() {
                         )}
                     </div>
 
-                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                    <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
                         <div style={{
                             width: '10vw'
                         }}>
@@ -150,23 +161,23 @@ function Testing() {
                                 id="nodes"
                                 titleText="Nodes"
                                 label="Select Nodes"
-                                items={nodes}
+                                items={nodes.map(node => node.metadata.name)} // mapping node objects to names
                                 selectedItems={selectedNodes}
                                 itemToString={(item) => (item ? item : '')}
-                                onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
+                                onChange={({selectedItems}) => handleSelectNodes(selectedItems)}
                             />
                         </div>
 
                         <Button
                             kind="primary"
                             onClick={selectAllNodes}
-                            style={{ alignSelf: 'center', width: '10vw' }}
+                            style={{alignSelf: 'center', width: '10vw'}}
                         >
                             Select All Nodes
                         </Button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                    <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
                         <Toggle
                             id="batches-toggle"
                             labelText={isSwitchOn ? "Batches: On" : "Batches: Off"}
@@ -189,7 +200,7 @@ function Testing() {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                    <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
                         <Button
                             kind="danger"
                             onClick={submitTests}
@@ -205,8 +216,8 @@ function Testing() {
                     padding: '20px',
                     borderLeft: '2px solid #ccc',
                 }}>
-                    <h2 style={{ textAlign: "center", ...HeaderStyle }}>Test Results</h2>
-                    <Terminal output={terminalValue} />
+                    <h2 style={{textAlign: "center", ...HeaderStyle}}>Test Results</h2>
+                    <Terminal output={terminalValue}/>
                 </div>
             </div>
         </div>
