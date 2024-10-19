@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Terminal from './components/Terminal';
 import runTests from './api/runTests';
-import listNodes from './api/getNodes';
+// import listNodes from './api/getNodes';
+import watchNodes from "./api/watchNodes.js";
 import { Helmet } from 'react-helmet';
 import NumberField from './components/NumberField';
 import { Button, MultiSelect, Toggle, NumberInput } from '@carbon/react';
@@ -20,9 +21,10 @@ function Testing() {
     const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc'];
 
     useEffect(() => {
-        listNodes()
+        watchNodes()
             .then((nodes) => {
                 setNodes(nodes);
+                console.log('Fetched nodes: ', nodes);
             })
             .catch((err) => {
                 console.error('Error fetching nodes:', err);
