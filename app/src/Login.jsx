@@ -1,4 +1,13 @@
 import React, { useState } from 'react';
+import {
+  TextInput,
+  PasswordInput,
+  Button,
+  InlineNotification,
+  Grid,
+  Column,
+} from '@carbon/react';
+import '@carbon/styles/css/styles.css'; // Correct Carbon styles import
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -7,7 +16,6 @@ function Login() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-
     if (username === '' || password === '') {
       setError('Please fill in both fields!');
     } else {
@@ -17,104 +25,88 @@ function Login() {
   };
 
   return (
-    <div style={styles.loginContainer}>
-      <div style={styles.loginBox}>
-        <h2>Login</h2>
-        {error && <p style={styles.errorMessage}>{error}</p>}
+    <Grid
+      fullWidth
+      style={{
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#ffffff',
+        padding: '1rem',
+      }}
+    >
+      <Column
+        lg={4} md={6} sm={12}
+        style={{
+          backgroundColor: '#ffffff',
+          padding: '2rem',
+          borderRadius: '8px',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+          maxWidth: '400px',
+          width: '100%',
+        }}
+      >
         <form onSubmit={handleLogin}>
-          <div style={styles.formGroup}>
-            <label>Username or Email</label>
-            <input
-              type="text"
+          <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>Login</h2>
+          {error && (
+            <InlineNotification
+              kind="error"
+              title="Error"
+              subtitle={error}
+              lowContrast
+              style={{ marginBottom: '1rem' }}
+            />
+          )}
+          <div style={{ marginBottom: '1rem' }}>
+            <TextInput
+              id="username"
+              labelText="Username or Email"
               placeholder="Enter your username or email"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              style={styles.inputField}
             />
           </div>
-          <div style={styles.formGroup}>
-            <label>Password</label>
-            <input
-              type="password"
+          <div style={{ marginBottom: '1rem' }}>
+            <PasswordInput
+              id="password"
+              labelText="Password"
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={styles.inputField}
             />
           </div>
-          <button type="submit" style={styles.loginButton}>
-            Login
-          </button>
-          <a href="https://openshift-login-url" style={styles.openshiftButton}>
-            OpenShift Login
-          </a>
+
+          {/* Centralized Button Container */}
+          <div style={{ textAlign: 'center' }}>
+            <Button
+              type="submit"
+              kind="primary"
+              style={{
+                marginBottom: '1rem',
+                minWidth: '336px',
+                height: '48px',
+              }}
+            >
+              Login
+            </Button>
+            <Button
+              kind="secondary"
+              href="https://openshift-login-url"
+              style={{
+                minWidth: '336px',
+                height: '48px',
+              }}
+            >
+              OpenShift Login
+            </Button>
+          </div>
         </form>
-      </div>
-    </div>
+      </Column>
+    </Grid>
   );
 }
-
-const styles = {
-  loginContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100vh',
-    marginLeft: '200px',  // Adjusting for the sidebar
-    width: 'calc(100% - 350px)',  // Width accounting for the 200px sidebar
-    backgroundColor: '#f4f4f4',
-    fontFamily: 'Arial, sans-serif',  // Apply Arial font here
-  },
-  loginBox: {
-    backgroundColor: 'white',
-    padding: '20px',
-    borderRadius: '8px',
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-    width: '400px',
-    textAlign: 'center',
-    fontFamily: 'Arial, sans-serif',  // Apply Arial font here
-  },
-  formGroup: {
-    marginBottom: '15px',
-    textAlign: 'left',
-  },
-  inputField: {
-    width: '95%',
-    padding: '10px',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    marginBottom: '10px',
-  },
-  loginButton: {
-    width: '95%',
-    padding: '10px',
-    color: 'white',
-    backgroundColor: '#28a745',  // Green color for the Login button
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    marginBottom: '10px',
-  },
-  openshiftButton: {
-    width: '90%',
-    padding: '10px',
-    backgroundColor: '#007bff',  // Blue color for the OpenShift button
-    color: 'white',
-    borderRadius: '4px',
-    textAlign: 'center',
-    textDecoration: 'none',
-    display: 'inline-block',
-    fontSize: '16px',
-    marginBottom: '10px',
-    cursor: 'pointer',
-  },
-  errorMessage: {
-    color: 'red',
-    marginBottom: '10px',
-  },
-};
 
 export default Login;
