@@ -119,7 +119,7 @@ function Testing() {
                         <Button
                             kind="primary"
                             onClick={selectAllTests}
-                            style={{ alignSelf: 'center', width: '10vw' }}
+                            style={{ alignSelf: 'center', width: '10vw', paddingRight: '0vw' }}
                         >
                             Select All Tests
                         </Button>
@@ -158,7 +158,7 @@ function Testing() {
                         <Button
                             kind="primary"
                             onClick={selectAllNodes}
-                            style={{ alignSelf: 'center', width: '10vw' }}
+                            style={{ alignSelf: 'center', width: '10vw', paddingRight: '0vw' }}
                         >
                             Select All Nodes
                         </Button>
