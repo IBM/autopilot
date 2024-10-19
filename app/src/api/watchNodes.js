@@ -1,5 +1,7 @@
-// referenced from https://learnk8s.io/real-time-dashboard
-export default async function watchNodes() {
+// Referenced from https://learnk8s.io/real-time-dashboard
+
+// Callbacks (onNodeChange) are used to handle changes in node names incrementally
+export default async function watchNodes(onNodeChange) {
     const endpoint = import.meta.env.VITE_KUBERNETES_ENDPOINT;
     const apiUrl = `${endpoint}/api/v1/nodes?watch=true`;
 
@@ -17,7 +19,7 @@ export default async function watchNodes() {
             }
 
             buffer += utf8Decoder.decode(value, { stream: true });
-            buffer = processBuffer(buffer);
+            buffer = processBuffer(buffer, onNodeChange);
 
             await readStream();
         }
@@ -28,8 +30,9 @@ export default async function watchNodes() {
     }
 }
 
-// Helper fn to process the buffer and handle events
-function processBuffer(buffer) {
+// Helper fn to process buffer
+// Pass node updates via the callback
+function processBuffer(buffer, onNodeChange) {
     const remainingBuffer = findLine(buffer, (line) => {
         try {
             const event = JSON.parse(line);
@@ -37,30 +40,32 @@ function processBuffer(buffer) {
 
             if (event.type === "ADDED" || event.type === "MODIFIED") {
                 console.log(`Node added or modified: ${nodeName}`);
+                onNodeChange(event.object);
             } else if (event.type === "DELETED") {
                 console.log(`Node deleted: ${nodeName}`);
+                onNodeChange(event.object, true);
             }
         } catch (error) {
             console.error('Error while parsing line:', line, '\n', error);
         }
     });
 
-    return remainingBuffer; // returning remaining buffer for the next read
+    return remainingBuffer; // Returning remaining buffer for the next read
 }
 
 // Helper fn to find lines in the buffer and execute a callback
 function findLine(buffer, fn) {
     const newLineIndex = buffer.indexOf('\n');
     if (newLineIndex === -1) {
-        return buffer; // when no new line found, return the current buffer
+        return buffer; // When no new line found, return the current buffer
     }
 
-    const chunk = buffer.slice(0, newLineIndex); // extracting line
-    const newBuffer = buffer.slice(newLineIndex + 1); // remaining buffer
+    const chunk = buffer.slice(0, newLineIndex); // Extracting line
+    const newBuffer = buffer.slice(newLineIndex + 1); // Remaining buffer
 
-    // processing the chunk
+    // Processing the chunk
     fn(chunk);
 
-    // continue searching for more lines in the new buffer
+    // Continue searching for more lines in the new buffer
     return findLine(newBuffer, fn);
 }
