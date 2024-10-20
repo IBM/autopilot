@@ -1,21 +1,31 @@
-export default async function runTests(selectedTests, selectedNodes, batchParam = '', dcgmRValue = '') {
+export default async function runTests(selectedTests, selectedNodes = [], jobValue = '', labelValue = '', batchValue = '', dcgmRValue = '') {
     try {
-        const testsParam = selectedTests.join(',');
-        const nodesParam = selectedNodes.join(',');
+        const testsValue = selectedTests.join(',');
+        const nodesValue = selectedNodes.join(',');
 
         const endpoint = import.meta.env.VITE_AUTOPILOT_ENDPOINT;
-        let url = `${endpoint}/status?check=${testsParam}&host=${nodesParam}`;
-        if (dcgmRValue) {
-            url += `&r=${dcgmRValue}`;
+        let url = `${endpoint}/status?check=${testsValue}`;
+
+        if (nodesValue) {
+            url += `&host=${nodesValue}`;
         }
-        if (batchParam) {
-            url += `&batch=${batchParam}`;
+        if (jobValue) {
+            url += `&job=${jobValue}`;
+        }
+        if (labelValue) {
+            url += `&nodelabel=${labelValue}`;
+        }
+        if (dcgmRValue) {
+            url += `& r=${dcgmRValue} `;
+        }
+        if (batchValue) {
+            url += `& batch=${batchValue} `;
         }
 
         const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error(`Error Status: ${response.status}`);
+            throw new Error(`Error Status: ${response.status} `);
         }
 
         const results = await response.text();

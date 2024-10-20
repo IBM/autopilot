@@ -3,7 +3,7 @@ import Terminal from './components/Terminal';
 import runTests from './api/runTests';
 import listNodes from './api/getNodes';
 import { Helmet } from 'react-helmet';
-import { Button, MultiSelect, Toggle, NumberInput } from '@carbon/react';
+import { Button, MultiSelect, Toggle, NumberInput, TextInput } from '@carbon/react';
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
@@ -13,10 +13,13 @@ function Testing() {
     const [isSwitchOn, setIsSwitchOn] = useState(false);
     const [batchValue, setBatchValue] = useState('');
 
+    const [jobInput, setJobInput] = useState('');
+    const [labelInput, setLabelInput] = useState('');
+
     const [terminalValue, setTerminalValue] = useState('');
     const [nodes, setNodes] = useState([]);
 
-    const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc'];
+    const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc', 'gpumem'];
 
     useEffect(() => {
         listNodes()
@@ -66,6 +69,14 @@ function Testing() {
 
     const handleNumberChange = (e) => {
         setBatchValue(e.target.value);
+    };
+
+    const handleJobChange = (e) => {
+        setJobInput(e.target.value);
+    };
+
+    const handleLabelChange = (e) => {
+        setLabelInput(e.target.value);
     };
 
     const getMaxItemLength = () => {
@@ -175,6 +186,31 @@ function Testing() {
                         >
                             Select All Nodes
                         </Button>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                        <div style={{
+                            width: `${dynamicWidth}px`
+                        }}>
+                            <TextInput
+                                labelText="Select Job"
+                                placeholder="namespace:key=value"
+                                helperText="namespace:key=value"
+                                value={jobInput}
+                                onChange={handleJobChange}
+                            />
+                        </div>
+                        <div style={{
+                            width: '10vw'
+                        }}>
+                            <TextInput
+                                labelText="Select Node Label"
+                                placeholder="key=value"
+                                helperText="key=value"
+                                value={labelInput}
+                                onChange={handleLabelChange}
+                            />
+                        </div>
                     </div>
 
                     <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
