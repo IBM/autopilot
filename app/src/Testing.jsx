@@ -39,12 +39,12 @@ function Testing() {
         setSelectedNodes(selected);
     };
 
-    const handleDcgmChange = (e) => {
-        setDcgmRValue(e.target.value);
+    const handleDcgmChange = (e, { value }) => {
+        setDcgmRValue(value.toString());
     };
 
     const submitTests = () => {
-        runTests(selectedTests, selectedNodes, batchValue, dcgmRValue)
+        runTests(selectedTests, selectedNodes, jobInput, labelInput, batchValue, dcgmRValue)
             .then((results) => {
                 setTerminalValue(results);
             })
@@ -67,8 +67,8 @@ function Testing() {
         setBatchValue('');
     };
 
-    const handleNumberChange = (e) => {
-        setBatchValue(e.target.value);
+    const handleBatchChange = (e, { value }) => {
+        setBatchValue(value.toString());
     };
 
     const handleJobChange = (e) => {
@@ -158,7 +158,7 @@ function Testing() {
                                     min={1}
                                     max={100}
                                     value={dcgmRValue ? dcgmRValue : 1}
-                                    onChange={(e) => handleDcgmChange(e)}
+                                    onChange={handleDcgmChange}
                                 />
                             </div>
                         )}
@@ -193,6 +193,7 @@ function Testing() {
                             width: `${dynamicWidth}px`
                         }}>
                             <TextInput
+                                id="jobInput"
                                 labelText="Select Job"
                                 placeholder="namespace:key=value"
                                 helperText="namespace:key=value"
@@ -204,6 +205,7 @@ function Testing() {
                             width: '10vw'
                         }}>
                             <TextInput
+                                id="labelInput"
                                 labelText="Select Node Label"
                                 placeholder="key=value"
                                 helperText="key=value"
@@ -231,7 +233,7 @@ function Testing() {
                                 min={1}
                                 value={batchValue ? batchValue : 1}
                                 disabled={!isSwitchOn}
-                                onChange={(e) => handleNumberChange(e)}
+                                onChange={handleBatchChange}
                             />
                         </div>
                     </div>

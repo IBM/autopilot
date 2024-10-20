@@ -16,10 +16,10 @@ export default async function runTests(selectedTests, selectedNodes = [], jobVal
             url += `&nodelabel=${labelValue}`;
         }
         if (dcgmRValue) {
-            url += `& r=${dcgmRValue} `;
+            url += `&r=${dcgmRValue}`;
         }
         if (batchValue) {
-            url += `& batch=${batchValue} `;
+            url += `&batch=${batchValue}`;
         }
 
         const response = await fetch(url);
