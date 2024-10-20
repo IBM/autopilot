@@ -91,7 +91,7 @@ function Testing() {
     };
 
     const maxLength = getMaxItemLength();
-    const dynamicWidth = Math.min(400, maxLength * 12);
+    const dynamicWidth = Math.max(200, Math.min(400, maxLength * 12));
 
     const HeaderStyle = {
         //fontSize: '2rem',
