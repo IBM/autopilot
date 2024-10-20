@@ -30,11 +30,38 @@ function Monitor() {
     if (!nodes.length) {
         return <div>Loading...</div>;
     }
-    
-    // Filter nodes 
-    const filteredNodes = nodes.filter(node =>
-        node.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+
+    // Log the first node for debugging purposes
+    console.log(nodes[0]);
+
+    // Filter nodes by all fields except memory, including the readiness condition for status
+    const filteredNodes = nodes.filter(node => {
+        const {
+            name, role, status, version, architecture, gpuPresent,
+            gpuHealth, gpuCount, gpuModel, dcgmStatus, dcgmTimestamp, capacity, allocatable
+        } = node;
+
+        const readinessStatus = status === 'True' ? 'Ready' : 'Not Ready'; // Convert status to Ready/Not Ready
+        const searchQueryLower = searchQuery.toLowerCase();
+
+        return (
+            name.toLowerCase().includes(searchQueryLower) ||
+            role.toLowerCase().includes(searchQueryLower) ||
+            readinessStatus.toLowerCase().includes(searchQueryLower) || // Add readiness condition to filtering
+            version.toLowerCase().includes(searchQueryLower) ||
+            architecture.toLowerCase().includes(searchQueryLower) ||
+            gpuPresent.toLowerCase().includes(searchQueryLower) ||
+            gpuHealth.toLowerCase().includes(searchQueryLower) ||
+            gpuCount.toLowerCase().includes(searchQueryLower) ||
+            gpuModel.toLowerCase().includes(searchQueryLower) ||
+            dcgmStatus.toLowerCase().includes(searchQueryLower) ||
+            dcgmTimestamp.toLowerCase().includes(searchQueryLower) ||
+            capacity.gpu.toLowerCase().includes(searchQueryLower) ||
+            capacity.cpu.toLowerCase().includes(searchQueryLower) || 
+            allocatable.gpu.toLowerCase().includes(searchQueryLower) ||
+            allocatable.cpu.toLowerCase().includes(searchQueryLower)
+        );
+    });
 
     return (
         <MonitorWrapper>
@@ -42,10 +69,18 @@ function Monitor() {
                 <title>Monitor Cluster</title> {/* Set the page title here */}
             </Helmet>
             <h1>Monitor Cluster</h1>
-            <SearchInput searchQuery={searchQuery} setSearchQuery={setSearchQuery} /> {/* Add Search Input */}
-            <CollapsibleTable nodes={filteredNodes} /> {/* Display filtered nodes */}
+            <SearchInput
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                label="Search Features" 
+            />
+            <CollapsibleTable nodes={filteredNodes.map(node => ({
+                ...node,
+                readiness: node.status === 'True' ? 'Ready' : 'Not Ready' // Add readiness status to the node object
+            }))} /> {/* Display filtered nodes with readiness status */}
         </MonitorWrapper>
     );
 }
+
 
 export default Monitor;

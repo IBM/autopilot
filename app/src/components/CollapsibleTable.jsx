@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
-
 import { Table, TableHead, TableRow, TableBody, TableCell, TableContainer, Button } from '@carbon/react';
-import { ChevronDown, ChevronUp } from '@carbon/icons-react'; // Carbon icons for expand/collapse
+import { ChevronDown, ChevronUp } from '@carbon/icons-react';
+import ColumnFilter from './ColumnFilter';
 
 const lightGreen = "#90EE90";
 const lightRed = "#FAA0A0";
@@ -15,23 +15,15 @@ const ResponsiveTableContainer = styled(TableContainer)`
     padding: 0;
     margin: 0;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-
-    @media (max-width: 768px) {
-        width: 100%;
-        padding: 0;
-        margin: 0;
-    }
 `;
 
 const StyledTableCell = styled(TableCell)`
-  font-weight: bold !important; 
-  font-size: 1.1rem !important;
-  background-color: #f5f5f5 !important;
+    font-weight: bold !important; 
+    font-size: 1.1rem !important;
+    background-color: #f5f5f5 !important;
 `;
 
-const StyledTableRow = styled(TableRow).withConfig({
-    shouldForwardProp: (prop) => prop !== 'pass',
-})`
+const StyledTableRow = styled(TableRow)`
     background-color: ${(props) => (props.pass ? lightGreen : lightRed)};
 `;
 
@@ -45,7 +37,6 @@ const Row = ({ node }) => {
     return (
         <>
             <StyledTableRow pass={node.gpuHealth === 'PASS'}>
-
                 <TableCell style={{ padding: 0, height: '3rem' }}>
                     <Button
                         kind="ghost"
@@ -67,8 +58,6 @@ const Row = ({ node }) => {
                     </Button>
                 </TableCell>
 
-
-                {/* Main table*/}
                 <TableCell>{node.name}</TableCell>
                 <TableCell align="left">{node.status === 'True' ? 'Ready' : 'Not Ready'}</TableCell>
                 <TableCell align="left">{node.role}</TableCell>
@@ -83,7 +72,6 @@ const Row = ({ node }) => {
             {open && (
                 <TableRow>
                     <TableCell colSpan={10}>
-                        {/* Expandable table: capacity/allocatable resources, and health checks */}
                         <ExpandableTableWrapper>
                             <h4><strong>Capacity / Allocatable Resources:</strong></h4>
                             <Table size="small" aria-label="resources">
@@ -113,22 +101,32 @@ const Row = ({ node }) => {
                                 </TableBody>
                             </Table>
                         </ExpandableTableWrapper>
-                        <br/>
+                        <br />
                         <ExpandableTableWrapper>
                             <h4><strong>GPU DCGM Level 3 Diagnostics:</strong></h4>
                             <Table size="small" aria-label="resources">
                                 <TableHead>
                                     <TableRow>
                                         <StyledTableCell>DCGM Status</StyledTableCell>
-                                        <StyledTableCell>Time Stamp</StyledTableCell>
-                                        <StyledTableCell>Details</StyledTableCell> {/*If too long, have it as another small table*/}
+                                        <StyledTableCell>Timestamp</StyledTableCell>
+                                        <StyledTableCell>Details</StyledTableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     <TableRow>
                                         <TableCell>{node.dcgmStatus}</TableCell>
                                         <TableCell>{node.dcgmTimestamp}</TableCell>
-                                        <TableCell>{node.dcgmDetails}</TableCell>
+                                        <TableCell>
+                                            {node.dcgmStatus === 'ERR' ? (
+                                                <ul>
+                                                    {node.dcgmDetails.map((detail, index) => (
+                                                        <li key={index}>
+                                                            {`Test: ${detail.testName}, GPU ID: ${detail.gpuID}`}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : 'No Details Available'}
+                                        </TableCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>
@@ -141,25 +139,132 @@ const Row = ({ node }) => {
 };
 
 function CollapsibleTable({ nodes }) {
+    const [selectedGpuHealths, setSelectedGpuHealths] = useState([]);
+    const [selectedStatuses, setSelectedStatuses] = useState([]);
+    const [selectedRoles, setSelectedRoles] = useState([]);
+    const [selectedVersions, setSelectedVersions] = useState([]);
+    const [selectedArchitectures, setSelectedArchitectures] = useState([]);
+    const [selectedGpuPresents, setSelectedGpuPresents] = useState([]);
+    const [selectedGpuModels, setSelectedGpuModels] = useState([]);
+    const [selectedGpuCounts, setSelectedGpuCounts] = useState([]);
+
+    // Memoized filtered nodes
+    const filteredNodes = useMemo(() => {
+        return nodes.filter(node => {
+            const gpuHealthMatch = selectedGpuHealths.length === 0 || selectedGpuHealths.includes(node.gpuHealth);
+            const statusMatch = selectedStatuses.length === 0 || selectedStatuses.includes(node.status === 'True' ? 'Ready' : 'Not Ready');
+            const roleMatch = selectedRoles.length === 0 || selectedRoles.includes(node.role);
+            const versionMatch = selectedVersions.length === 0 || selectedVersions.includes(node.version);
+            const architectureMatch = selectedArchitectures.length === 0 || selectedArchitectures.includes(node.architecture);
+            const gpuPresentMatch = selectedGpuPresents.length === 0 || selectedGpuPresents.includes(node.gpuPresent);
+            const gpuModelMatch = selectedGpuModels.length === 0 || selectedGpuModels.includes(node.gpuModel);
+            const gpuCountMatch = selectedGpuCounts.length === 0 || selectedGpuCounts.includes(node.gpuCount.toString()); // Convert to string for comparison
+
+            return gpuHealthMatch && statusMatch && roleMatch && versionMatch && architectureMatch && gpuPresentMatch && gpuModelMatch && gpuCountMatch;
+        });
+    }, [nodes, selectedGpuHealths, selectedStatuses, selectedRoles, selectedVersions, selectedArchitectures, selectedGpuPresents, selectedGpuModels, selectedGpuCounts]);
+
+    const uniqueGpuHealths = useMemo(() => [...new Set(nodes.map(node => node.gpuHealth))], [nodes]);
+    const uniqueStatuses = useMemo(() => [...new Set(nodes.map(node => (node.status === 'True' ? 'Ready' : 'Not Ready')))], [nodes]);
+    const uniqueRoles = useMemo(() => [...new Set(nodes.map(node => node.role))], [nodes]);
+    const uniqueVersions = useMemo(() => [...new Set(nodes.map(node => node.version))], [nodes]);
+    const uniqueArchitectures = useMemo(() => [...new Set(nodes.map(node => node.architecture))], [nodes]);
+    const uniqueGpuPresents = useMemo(() => [...new Set(nodes.map(node => node.gpuPresent))], [nodes]);
+    const uniqueGpuModels = useMemo(() => [...new Set(nodes.map(node => node.gpuModel))], [nodes]);
+    const uniqueGpuCounts = useMemo(() => [...new Set(nodes.map(node => node.gpuCount.toString()))], [nodes]); // Convert to string for unique values
+
+    const handleGpuHealthFilterChange = (selectedItems) => setSelectedGpuHealths(selectedItems);
+    const handleStatusFilterChange = (selectedItems) => setSelectedStatuses(selectedItems);
+    const handleRoleFilterChange = (selectedItems) => setSelectedRoles(selectedItems);
+    const handleVersionFilterChange = (selectedItems) => setSelectedVersions(selectedItems);
+    const handleArchitectureFilterChange = (selectedItems) => setSelectedArchitectures(selectedItems);
+    const handleGpuPresentFilterChange = (selectedItems) => setSelectedGpuPresents(selectedItems);
+    const handleGpuModelFilterChange = (selectedItems) => setSelectedGpuModels(selectedItems);
+    const handleGpuCountFilterChange = (selectedItems) => setSelectedGpuCounts(selectedItems);
+
     return (
         <ResponsiveTableContainer>
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell/>
+                        <TableCell />
                         <StyledTableCell>Node Name</StyledTableCell>
-                        <StyledTableCell>Status</StyledTableCell>
-                        <StyledTableCell>Role</StyledTableCell>
-                        <StyledTableCell>Version</StyledTableCell>
-                        <StyledTableCell>Architecture</StyledTableCell>
-                        <StyledTableCell>GPU Present</StyledTableCell>
-                        <StyledTableCell>GPU Type</StyledTableCell>
-                        <StyledTableCell>GPU Count</StyledTableCell>
-                        <StyledTableCell>GPU Health</StyledTableCell>
+                        <StyledTableCell>
+                            Status
+                            <ColumnFilter
+                                label="Status"
+                                items={uniqueStatuses}
+                                selectedFilters={selectedStatuses}
+                                onFilterChange={handleStatusFilterChange}
+                            />
+                        </StyledTableCell>
+                        <StyledTableCell>
+                            Role
+                            <ColumnFilter
+                                label="Role"
+                                items={uniqueRoles}
+                                selectedFilters={selectedRoles}
+                                onFilterChange={handleRoleFilterChange}
+                            />
+                        </StyledTableCell>
+                        <StyledTableCell>
+                            Version
+                            <ColumnFilter
+                                label="Version"
+                                items={uniqueVersions}
+                                selectedFilters={selectedVersions}
+                                onFilterChange={handleVersionFilterChange}
+                            />
+                        </StyledTableCell>
+                        <StyledTableCell>
+                            Architecture
+                            <ColumnFilter
+                                label="Architecture"
+                                items={uniqueArchitectures}
+                                selectedFilters={selectedArchitectures}
+                                onFilterChange={handleArchitectureFilterChange}
+                            />
+                        </StyledTableCell>
+                        <StyledTableCell>
+                            GPU Present
+                            <ColumnFilter
+                                label="GPU Present"
+                                items={uniqueGpuPresents}
+                                selectedFilters={selectedGpuPresents}
+                                onFilterChange={handleGpuPresentFilterChange}
+                            />
+                        </StyledTableCell>
+                        <StyledTableCell>
+                            GPU Type
+                            <ColumnFilter
+                                label="GPU Model"
+                                items={uniqueGpuModels}
+                                selectedFilters={selectedGpuModels}
+                                onFilterChange={handleGpuModelFilterChange}
+                            />
+                        </StyledTableCell>
+                        <StyledTableCell>
+                            GPU Count
+                            <ColumnFilter
+                                label="GPU Count"
+                                items={uniqueGpuCounts}
+                                selectedFilters={selectedGpuCounts}
+                                onFilterChange={handleGpuCountFilterChange}
+                            />
+                        </StyledTableCell>
+                        <StyledTableCell>
+                            GPU Health
+                            <ColumnFilter
+                                label="GPU Health"
+                                items={uniqueGpuHealths}
+                                selectedFilters={selectedGpuHealths}
+                                onFilterChange={handleGpuHealthFilterChange}
+                            />
+                        </StyledTableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {nodes.map((node) => (
+                    {filteredNodes.map((node) => (
                         <Row key={node.name} node={node} />
                     ))}
                 </TableBody>
@@ -168,32 +273,7 @@ function CollapsibleTable({ nodes }) {
     );
 }
 
-Row.propTypes = {
-    node: PropTypes.shape({
-        name: PropTypes.string.isRequired,
-        status: PropTypes.string.isRequired,
-        role: PropTypes.string.isRequired,
-        version: PropTypes.string.isRequired,
-        architecture: PropTypes.string.isRequired,
-        gpuHealth: PropTypes.string.isRequired,
-        gpuPresent: PropTypes.string.isRequired,
-        gpuModel: PropTypes.string.isRequired,
-        gpuCount: PropTypes.string.isRequired,
-        dcgmStatus: PropTypes.string.isRequired,
-        dcgmTimestamp: PropTypes.string.isRequired,
-        dcgmDetails: PropTypes.string.isRequired,
-        capacity: PropTypes.shape({
-            gpu: PropTypes.string.isRequired,
-            cpu: PropTypes.string.isRequired,
-            memory: PropTypes.string.isRequired,
-        }).isRequired,
-        allocatable: PropTypes.shape({
-            gpu: PropTypes.string.isRequired,
-            cpu: PropTypes.string.isRequired,
-            memory: PropTypes.string.isRequired,
-        }).isRequired,
-    }).isRequired,
-};
+
 
 CollapsibleTable.propTypes = {
     nodes: PropTypes.arrayOf(
@@ -203,9 +283,21 @@ CollapsibleTable.propTypes = {
             role: PropTypes.string.isRequired,
             version: PropTypes.string.isRequired,
             architecture: PropTypes.string.isRequired,
+            gpuPresent: PropTypes.string.isRequired,
+            gpuModel: PropTypes.string.isRequired,
+            gpuCount: PropTypes.number.isRequired,
             gpuHealth: PropTypes.string.isRequired,
-            gpuPresent: PropTypes.string.isRequired
-        }).isRequired
+            capacity: PropTypes.object.isRequired,
+            allocatable: PropTypes.object.isRequired,
+            dcgmStatus: PropTypes.string.isRequired,
+            dcgmTimestamp: PropTypes.string.isRequired,
+            dcgmDetails: PropTypes.arrayOf(
+                PropTypes.shape({
+                    testName: PropTypes.string.isRequired,
+                    gpuID: PropTypes.string.isRequired,
+                })
+            ).isRequired,
+        })
     ).isRequired,
 };
 

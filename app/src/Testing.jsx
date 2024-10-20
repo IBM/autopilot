@@ -82,6 +82,20 @@ function Testing() {
         setBatchValue(e.target.value);
     };
 
+    const getMaxItemLength = () => {
+        const combinedArray = [...nodes, ...tests];
+        let maxLength = 0;
+        for (let item of combinedArray) {
+            if (item.length > maxLength) {
+                maxLength = item.length;
+            }
+        }
+        return maxLength;
+    };
+
+    const maxLength = getMaxItemLength();
+    const dynamicWidth = Math.min(400, maxLength * 12);
+
     const HeaderStyle = {
         //fontSize: '2rem',
         //fontWeight: 'bold',
@@ -116,7 +130,7 @@ function Testing() {
 
                     <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
                         <div style={{
-                            width: '10vw'
+                            width: `${dynamicWidth}px`
                         }}>
                             <MultiSelect
                                 id="health-checks"
@@ -132,7 +146,7 @@ function Testing() {
                         <Button
                             kind="primary"
                             onClick={selectAllTests}
-                            style={{alignSelf: 'center', width: '10vw'}}
+                            style={{ alignSelf: 'center', width: '10vw', paddingRight: '0vw' }}
                         >
                             Select All Tests
                         </Button>
@@ -155,7 +169,7 @@ function Testing() {
 
                     <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
                         <div style={{
-                            width: '10vw'
+                            width: `${dynamicWidth}px`
                         }}>
                             <MultiSelect
                                 id="nodes"
@@ -171,7 +185,7 @@ function Testing() {
                         <Button
                             kind="primary"
                             onClick={selectAllNodes}
-                            style={{alignSelf: 'center', width: '10vw'}}
+                            style={{ alignSelf: 'center', width: '10vw', paddingRight: '0vw' }}
                         >
                             Select All Nodes
                         </Button>
