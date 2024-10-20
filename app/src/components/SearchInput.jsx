@@ -1,16 +1,16 @@
 import React from 'react';
-import TextField from '@mui/material/TextField'; // MUI TextField for search input
+import { Search } from '@carbon/react';
 
-// SearchInput component
-function SearchInput({ searchQuery, setSearchQuery }) {
+// SearchInput component with label prop
+function SearchInput({ searchQuery, setSearchQuery, label = "Search" }) {
     return (
-        <TextField
-            label="Search by Node Name"
-            variant="outlined"
-            fullWidth
-            margin="normal"
+        <Search
+            id="search-node-name"
+            labelText={label} 
+            placeHolder={label} 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)} // Update search query
+            size="md" 
         />
     );
 }

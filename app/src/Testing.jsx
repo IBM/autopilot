@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import Button from './components/Button';
-import MultiSelect from './components/MultiSelect';
 import Terminal from './components/Terminal';
 import runTests from './api/runTests';
 import listNodes from './api/getNodes';
-import Switch from './components/Switch';
 import { Helmet } from 'react-helmet';
-import NumberField from './components/NumberField';
+import { Button, MultiSelect, Toggle, NumberInput, TextInput } from '@carbon/react';
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
@@ -16,10 +13,13 @@ function Testing() {
     const [isSwitchOn, setIsSwitchOn] = useState(false);
     const [batchValue, setBatchValue] = useState('');
 
+    const [jobInput, setJobInput] = useState('');
+    const [labelInput, setLabelInput] = useState('');
+
     const [terminalValue, setTerminalValue] = useState('');
     const [nodes, setNodes] = useState([]);
 
-    const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc'];
+    const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc', 'gpumem'];
 
     useEffect(() => {
         listNodes()
@@ -39,12 +39,12 @@ function Testing() {
         setSelectedNodes(selected);
     };
 
-    const handleDcgmChange = (e) => {
-        setDcgmRValue(e.target.value);
+    const handleDcgmChange = (e, { value }) => {
+        setDcgmRValue(value.toString());
     };
 
     const submitTests = () => {
-        runTests(selectedTests, selectedNodes, batchValue, dcgmRValue)
+        runTests(selectedTests, selectedNodes, jobInput, labelInput, batchValue, dcgmRValue)
             .then((results) => {
                 setTerminalValue(results);
             })
@@ -67,8 +67,39 @@ function Testing() {
         setBatchValue('');
     };
 
-    const handleNumberChange = (e) => {
-        setBatchValue(e.target.value);
+    const handleBatchChange = (e, { value }) => {
+        setBatchValue(value.toString());
+    };
+
+    const handleJobChange = (e) => {
+        setJobInput(e.target.value);
+    };
+
+    const handleLabelChange = (e) => {
+        setLabelInput(e.target.value);
+    };
+
+    const getMaxItemLength = () => {
+        const combinedArray = [...nodes, ...tests];
+        let maxLength = 0;
+        for (let item of combinedArray) {
+            if (item.length > maxLength) {
+                maxLength = item.length;
+            }
+        }
+        return maxLength;
+    };
+
+    const maxLength = getMaxItemLength();
+    const dynamicWidth = Math.max(200, Math.min(400, maxLength * 12));
+
+    const HeaderStyle = {
+        //fontSize: '2rem',
+        //fontWeight: 'bold',
+        color: '#3D3D3D',
+        margin: '2vh 0',
+        padding: '1vh',
+        borderBottom: '0.2vh solid #E0E0E0',
     };
 
     return (
@@ -78,74 +109,152 @@ function Testing() {
                 <title>Testing</title>
             </Helmet>
 
-            <h1>Run Tests</h1>
+            <h1 style={{ textAlign: "center", ...HeaderStyle }}>Run Tests</h1>
 
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '20px' }}>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <h2>Test Parameters</h2>
 
-                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                        <MultiSelect
-                            options={tests}
-                            placeholder="Select Health Checks"
-                            selectedValues={selectedTests}
-                            handleChange={handleSelectTests}
-                            dcgmValue={dcgmRValue}
-                            handleDcgmChange={handleDcgmChange}
-                        />
+                <div style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '20px',
+                    padding: '20px',
+                    backgroundColor: '#f4f4f4',
+                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
+                    margin: '0 auto'
+                }}>
+                    <h2 style={{ textAlign: "center", ...HeaderStyle }}>Test Parameters</h2>
 
-                        <MultiSelect
-                            options={nodes}
-                            placeholder="Select Nodes"
-                            selectedValues={selectedNodes}
-                            handleChange={handleSelectNodes}
-                        />
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '50px', justifyContent: 'center' }}>
-                        <Switch
-                            isOn={isSwitchOn}
-                            handleToggle={handleToggle}
-                            onText="Batches: On"
-                            offText="Batches: Off"
-                            onColor="#4CAF50"
-                            offColor="#D32F2F"
-                        />
-
-                        <NumberField
-                            isDisabled={!isSwitchOn}
-                            value={batchValue}
-                            onChange={handleNumberChange}
-                            placeholder="Batch #"
-                            min={1}
-                            max={100}
-                        />
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-                        <Button
-                            text="Select All Nodes"
-                            color="green"
-                            onClick={selectAllNodes}
-                        />
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                        <div style={{
+                            width: `${dynamicWidth}px`
+                        }}>
+                            <MultiSelect
+                                id="health-checks"
+                                label="Select Tests"
+                                items={tests}
+                                selectedItems={selectedTests}
+                                itemToString={(item) => (item ? item : '')}
+                                onChange={({ selectedItems }) => handleSelectTests(selectedItems)}
+                                titleText="Health Checks"
+                            />
+                        </div>
 
                         <Button
-                            text="Select All Tests"
-                            color="green"
+                            kind="primary"
                             onClick={selectAllTests}
-                        />
+                            style={{ alignSelf: 'center', width: '10vw', paddingRight: '0vw' }}
+                        >
+                            Select All Tests
+                        </Button>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1vw', justifyContent: 'center' }}>
+                        {selectedTests.includes('dcgm') && (
+                            <div style={{ width: '10vw' }}>
+                                <NumberInput
+                                    id="dcgm-number"
+                                    label="DCGM R Value"
+                                    min={1}
+                                    max={100}
+                                    value={dcgmRValue ? dcgmRValue : 1}
+                                    onChange={handleDcgmChange}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                        <div style={{
+                            width: `${dynamicWidth}px`
+                        }}>
+                            <MultiSelect
+                                id="nodes"
+                                titleText="Nodes"
+                                label="Select Nodes"
+                                items={nodes}
+                                selectedItems={selectedNodes}
+                                itemToString={(item) => (item ? item : '')}
+                                onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
+                            />
+                        </div>
 
                         <Button
-                            text="Run Tests"
-                            color="blue"
-                            onClick={submitTests}
+                            kind="primary"
+                            onClick={selectAllNodes}
+                            style={{ alignSelf: 'center', width: '10vw', paddingRight: '0vw' }}
+                        >
+                            Select All Nodes
+                        </Button>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                        <div style={{
+                            width: `${dynamicWidth}px`
+                        }}>
+                            <TextInput
+                                id="jobInput"
+                                labelText="Select Job"
+                                placeholder="namespace:key=value"
+                                helperText="namespace:key=value"
+                                value={jobInput}
+                                onChange={handleJobChange}
+                            />
+                        </div>
+                        <div style={{
+                            width: '10vw'
+                        }}>
+                            <TextInput
+                                id="labelInput"
+                                labelText="Select Node Label"
+                                placeholder="key=value"
+                                helperText="key=value"
+                                value={labelInput}
+                                onChange={handleLabelChange}
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                        <Toggle
+                            id="batches-toggle"
+                            labelText={isSwitchOn ? "Batches: On" : "Batches: Off"}
+                            toggled={isSwitchOn}
+                            onToggle={handleToggle}
+                            labelA="Batches: Off"
+                            labelB="Batches: On"
                         />
+                        <div style={{
+                            width: '10vw'
+                        }}>
+                            <NumberInput
+                                id="batch-number"
+                                label="Batch #"
+                                min={1}
+                                value={batchValue ? batchValue : 1}
+                                disabled={!isSwitchOn}
+                                onChange={handleBatchChange}
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                        <Button
+                            kind="danger"
+                            onClick={submitTests}
+                        >
+                            Run Tests
+                        </Button>
                     </div>
                 </div>
 
-                <div style={{ flex: 1, marginLeft: '20px' }}>
-                    <h2>Test Results</h2>
-
+                <div style={{
+                    flex: 1,
+                    marginLeft: '20px',
+                    padding: '20px',
+                    borderLeft: '2px solid #ccc',
+                }}>
+                    <h2 style={{ textAlign: "center", ...HeaderStyle }}>Test Results</h2>
                     <Terminal output={terminalValue} />
                 </div>
             </div>
