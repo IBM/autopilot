@@ -26,7 +26,10 @@
    
    - [Sprint 2 Demo Slide](https://docs.google.com/presentation/d/1McQLv38CLnFPsv0KiufjC5g9H5iq3BwkFWDeaK6zTL4/edit?usp=sharing)
      
-3. Due October 23rd/October 30th
+3. ### [Sprint 3 Demo]()
+   
+   - [Sprint 3 Demo Slide](https://docs.google.com/presentation/d/1lOXK8GLUxTaVbzHugg61_txEEE_1HK5XjKPgHOLKdcM/edit?usp=sharing)
+   - [Deployment] (https://sprint3-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org)
 4. Due November 6th/November 13th
 5. Due November 20th/November 25th
 
