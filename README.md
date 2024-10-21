@@ -26,7 +26,7 @@
    
    - [Sprint 2 Demo Slide](https://docs.google.com/presentation/d/1McQLv38CLnFPsv0KiufjC5g9H5iq3BwkFWDeaK6zTL4/edit?usp=sharing)
      
-3. ### [Sprint 3 Demo]()
+3. ### [Sprint 3 Demo](https://youtu.be/6QA7rMSbpqo)
    
    - [Sprint 3 Demo Slide](https://docs.google.com/presentation/d/1lOXK8GLUxTaVbzHugg61_txEEE_1HK5XjKPgHOLKdcM/edit?usp=sharing)
    - [OpenShift Deployment](https://sprint3-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org)
