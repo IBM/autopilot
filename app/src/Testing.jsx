@@ -4,7 +4,7 @@ import runTests from './api/runTests';
 // import listNodes from './api/getNodes';
 import watchNodes from "./api/watchNodes.js";
 import { Helmet } from 'react-helmet';
-import { Button, MultiSelect, Toggle, NumberInput } from '@carbon/react';
+import { Button, MultiSelect, Toggle, NumberInput, TextInput } from '@carbon/react';
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
@@ -14,10 +14,13 @@ function Testing() {
     const [isSwitchOn, setIsSwitchOn] = useState(false);
     const [batchValue, setBatchValue] = useState('');
 
+    const [jobInput, setJobInput] = useState('');
+    const [labelInput, setLabelInput] = useState('');
+
     const [terminalValue, setTerminalValue] = useState('');
     const [nodes, setNodes] = useState([]);
 
-    const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc'];
+    const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc', 'gpumem'];
 
     useEffect(() => {
         const handleNodeChange = (node, isDeleted) => {
@@ -50,12 +53,12 @@ function Testing() {
         setSelectedNodes(selected);
     };
 
-    const handleDcgmChange = (e) => {
-        setDcgmRValue(e.target.value);
+    const handleDcgmChange = (e, { value }) => {
+        setDcgmRValue(value.toString());
     };
 
     const submitTests = () => {
-        runTests(selectedTests, selectedNodes, batchValue, dcgmRValue)
+        runTests(selectedTests, selectedNodes, jobInput, labelInput, batchValue, dcgmRValue)
             .then((results) => {
                 setTerminalValue(results);
             })
@@ -78,8 +81,16 @@ function Testing() {
         setBatchValue('');
     };
 
-    const handleNumberChange = (e) => {
-        setBatchValue(e.target.value);
+    const handleBatchChange = (e, { value }) => {
+        setBatchValue(value.toString());
+    };
+
+    const handleJobChange = (e) => {
+        setJobInput(e.target.value);
+    };
+
+    const handleLabelChange = (e) => {
+        setLabelInput(e.target.value);
     };
 
     const getMaxItemLength = () => {
@@ -94,7 +105,7 @@ function Testing() {
     };
 
     const maxLength = getMaxItemLength();
-    const dynamicWidth = Math.min(400, maxLength * 12);
+    const dynamicWidth = Math.max(200, Math.min(400, maxLength * 12));
 
     const HeaderStyle = {
         //fontSize: '2rem',
@@ -161,7 +172,7 @@ function Testing() {
                                     min={1}
                                     max={100}
                                     value={dcgmRValue ? dcgmRValue : 1}
-                                    onChange={(e) => handleDcgmChange(e)}
+                                    onChange={handleDcgmChange}
                                 />
                             </div>
                         )}
@@ -191,7 +202,34 @@ function Testing() {
                         </Button>
                     </div>
 
-                    <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                        <div style={{
+                            width: `${dynamicWidth}px`
+                        }}>
+                            <TextInput
+                                id="jobInput"
+                                labelText="Select Job"
+                                placeholder="namespace:key=value"
+                                helperText="namespace:key=value"
+                                value={jobInput}
+                                onChange={handleJobChange}
+                            />
+                        </div>
+                        <div style={{
+                            width: '10vw'
+                        }}>
+                            <TextInput
+                                id="labelInput"
+                                labelText="Select Node Label"
+                                placeholder="key=value"
+                                helperText="key=value"
+                                value={labelInput}
+                                onChange={handleLabelChange}
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
                         <Toggle
                             id="batches-toggle"
                             labelText={isSwitchOn ? "Batches: On" : "Batches: Off"}
@@ -209,7 +247,7 @@ function Testing() {
                                 min={1}
                                 value={batchValue ? batchValue : 1}
                                 disabled={!isSwitchOn}
-                                onChange={(e) => handleNumberChange(e)}
+                                onChange={handleBatchChange}
                             />
                         </div>
                     </div>

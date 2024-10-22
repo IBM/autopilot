@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import styled from "styled-components";
-import {useNodesWithStatus} from "./api/getNodesWithStatus.js";
+import { useNodesWithStatus } from "./api/getNodesWithStatus.js";
 import CollapsibleTable from "./components/CollapsibleTable.jsx";
-import SearchInput from './components/SearchInput'; 
+import SearchInput from './components/SearchInput';
 import { Helmet } from 'react-helmet';
 
 // Displaying live node labels and status + current health checks
@@ -17,12 +17,18 @@ const MonitorWrapper = styled.div`
         padding-top: 70px;
         
     }
+
+    h1 {
+        text-align: center;
+        padding-bottom: 20px;
+    }
 `;
 
 function Monitor() {
     const { nodes, error } = useNodesWithStatus();
     const [searchQuery, setSearchQuery] = useState(''); // State for search query
 
+    /*
     if (error) {
         return <div>Error loading node status</div>;
     }
@@ -30,6 +36,7 @@ function Monitor() {
     if (!nodes.length) {
         return <div>Loading...</div>;
     }
+    */
 
     // Log the first node for debugging purposes
     console.log(nodes[0]);
@@ -57,7 +64,7 @@ function Monitor() {
             dcgmStatus.toLowerCase().includes(searchQueryLower) ||
             dcgmTimestamp.toLowerCase().includes(searchQueryLower) ||
             capacity.gpu.toLowerCase().includes(searchQueryLower) ||
-            capacity.cpu.toLowerCase().includes(searchQueryLower) || 
+            capacity.cpu.toLowerCase().includes(searchQueryLower) ||
             allocatable.gpu.toLowerCase().includes(searchQueryLower) ||
             allocatable.cpu.toLowerCase().includes(searchQueryLower)
         );
@@ -72,7 +79,7 @@ function Monitor() {
             <SearchInput
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
-                label="Search Features" 
+                label="Search Features"
             />
             <CollapsibleTable nodes={filteredNodes.map(node => ({
                 ...node,
