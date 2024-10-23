@@ -361,7 +361,7 @@ Once the application is running locally, you can access various pages as follows
 - Click on **Login** to get access to login page.
 - Enter your username and password.
 - Click the **Login** button to authenticate.
--  ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/raw/documentation/images/login.jpg)
+   ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/raw/documentation/images/login.jpg)
 
 
 #### Monitor Cluster Page
@@ -374,7 +374,7 @@ Once the application is running locally, you can access various pages as follows
    - This will reveal detailed information about the selected node, including live status updates and GPU health checks and any related details.
    - Under the **GPU Health** section, we can click on the funnel icon to filter the nodes. You can choose to display nodes where GPU health is either "Pass" or "Not Pass".
  ![monitor Image 1](https://github.com/EC528-Fall-2024/autopilot-dashboard/raw/documentation/images/monitor1.jpg)
- ![monitor Image 2](https://github.com/EC528-Fall-2024/autopilot-dashboard/raw/documentation/images/monitor1.jpg)
+ ![monitor Image 2](https://github.com/EC528-Fall-2024/autopilot-dashboard/raw/documentation/images/monitor2.jpg)
 
 #### Testing Page
 - Click on **Run Tests** to get access to testing page.
