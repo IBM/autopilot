@@ -361,6 +361,8 @@ Once the application is running locally, you can access various pages as follows
 - Click on **Login** to get access to login page.
 - Enter your username and password.
 - Click the **Login** button to authenticate.
+-  ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/raw/documentation/images/login.jpg)
+
 
 #### Monitor Cluster Page
 - Click on **Monitor Cluster** to get access to monitor cluster page.
@@ -371,11 +373,14 @@ Once the application is running locally, you can access various pages as follows
    - Click on any node in the collapsible table to expand it.
    - This will reveal detailed information about the selected node, including live status updates and GPU health checks and any related details.
    - Under the **GPU Health** section, we can click on the funnel icon to filter the nodes. You can choose to display nodes where GPU health is either "Pass" or "Not Pass".
+ ![monitor Image 1](https://github.com/EC528-Fall-2024/autopilot-dashboard/raw/documentation/images/monitor1.jpg)
+ ![monitor Image 2](https://github.com/EC528-Fall-2024/autopilot-dashboard/raw/documentation/images/monitor1.jpg)
 
 #### Testing Page
 - Click on **Run Tests** to get access to testing page.
 - Use the **Health Checks** menu  to select one or more tests and nodes.
 - Optionally, toggle the **Batches** switch to run tests in batches and enter the batch number.
-- For **Select Node Label**, enter a key-value pair (e.g., `testlabel=not2`) to specify the node to be tested.
+- For **Select Node Label**, enter a key-value pair (key=value just means the label so labelName=labelValue, e.g., `testlabel=not2`) to specify the node to be tested.
 - Click the **Run Tests** button to start the test.
 - Test results will be displayed in real-time in the terminal output section.
+![test Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/raw/documentation/images/testing.jpg)
