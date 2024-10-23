@@ -279,3 +279,103 @@ cd app
 npm i
 npm run dev
 ```
+
+
+## Structure:
+Here is an overview of the project structure:
+```plaintext
+.github/
+ └── workflows/
+     └── set_done_date.yml          # GitHub Actions for CI/CD
+  
+.app/
+ └── src/
+     └── api/
+         ├── getNodes.js                  # Fetches node data
+         ├── getNodesWithStatus.js        # Fetches node data with status
+         └── runTests.js                  # Runs tests on nodes
+     └── components/
+         ├── Button.jsx                   # Button component
+         ├── CollapsibleTable.jsx         # Collapsible table component
+         ├── ColumnFilter.jsx             # Column filter component for tables
+         ├── Dropdown.jsx                 # Dropdown menu component
+         ├── MultiSelect.jsx              # Multi-select input component
+         ├── NumberField.jsx              # Numeric input field component
+         ├── SearchInput.jsx              # Search input component
+         ├── Sidebar.jsx                  # Sidebar navigation component
+         ├── SidebarCarbon.jsx            # Sidebar with Carbon design
+         ├── Switch.jsx                   # Toggle switch component
+         └──  Terminal.jsx                # Terminal-like display component
+     ├── App.jsx                          # Main application component
+     ├── Login.jsx                        # Login page component
+     ├── Monitor.jsx                      # Monitoring page component
+     ├── Testing.jsx                      # Testing page component
+     └── Main.jsx                         # Main entry point for the ap
+ ├── gitignore                      # Specifies files to be ignored by git
+ ├── Dockerfile                     # Docker configuration
+ ├── eslint.config.js               # Linter configuration for the project
+ ├── index.html                     # Main HTML entry point for the frontend
+ ├── nginx.conf                     # Nginx server configuration
+ ├── package-lock.json              # Package lock file 
+ ├── package.json                   # Project metadata and dependencies
+ └── vite.config.js                 # Vite configuration for building the project
+
+.images/
+ └── architecture.png               # Architecture diagram  
+ ├── login-page.png                 # Login page screenshot  
+ ├── monitor-page.png               # Monitoring page screenshot
+ └── test-page.png                  # Testing page screenshot
+
+LICENSE                             # License information
+README.md                           # Project Documentation
+```
+## User Instructions and UI
+
+1. **Clone the repository**:
+```
+   git clone [https://github.com/EC528-Fall-2024/autopilot-dashboard.git]
+   cd autopilot-dashboard
+```
+2. **Install Dependencies**:
+Ensure you have Node.js installed. Then follow these commands to install the necessary dependencies and start the front-end application:
+```
+cd app
+npm i
+npm run dev
+```
+
+3. **Running the Application (User Interaction)**:
+Once the application is running, you should see the following output indicating that the server is ready:
+```
+VITE v5.4.7  ready in 136 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+```
+- Open your browser and go to [http://localhost:5173/](http://localhost:5173/) to access the application.
+
+Once the application is running locally, you can access various pages as follows:
+
+#### Login Page
+- Click on **Login** to get access to login page.
+- Enter your username and password.
+- Click the **Login** button to authenticate.
+
+#### Monitor Cluster Page
+- Click on **Monitor Cluster** to get access to monitor cluster page.
+- **Use Search Filters**: 
+   - At the top of the page, you will find a search input called Search Features.
+   - Enter part or all of a node's name to filter the list of nodes and view only the relevant system metrics.
+- **View Node Details**:
+   - Click on any node in the collapsible table to expand it.
+   - This will reveal detailed information about the selected node, including live status updates and GPU health checks and any related details.
+   - Under the **GPU Health** section, we can click on the funnel icon to filter the nodes. You can choose to display nodes where GPU health is either "Pass" or "Not Pass".
+
+#### Testing Page
+- Click on **Run Tests** to get access to testing page.
+- Use the **Health Checks** menu  to select one or more tests and nodes.
+- Optionally, toggle the **Batches** switch to run tests in batches and enter the batch number.
+- For **Select Node Label**, enter a key-value pair (e.g., `testlabel=not2`) to specify the node to be tested.
+- Click the **Run Tests** button to start the test.
+- Test results will be displayed in real-time in the terminal output section.
