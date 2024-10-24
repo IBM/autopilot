@@ -9,7 +9,7 @@ spec:
   groups:
   - name: Alerts on GPU related issues
     rules:
-    - alert: LowPCIeBandwidth
+    - alert: AutopilotLowPCIeBandwidth
       annotations:
         description: |
           GPU device {{ $labels.deviceid }} on node {{ $labels.node }} has a PCIE bandwidth of {{ $value }} {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
@@ -20,7 +20,7 @@ spec:
       labels:
         severity: warning
         alert: autopilot
-    - alert: DCGMLevel1Errors
+    - alert: AutopilotDCGMLevel1Errors
       annotations:
         description: |
           GPUs on node {{ $labels.node }} have DCGM Level 1 failures '{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
@@ -31,7 +31,7 @@ spec:
       labels:
         severity: warning
         alert: autopilot
-    - alert: GPUPowerSlowdownEnabled
+    - alert: AutopilotGPUPowerSlowdownEnabled
       annotations:
         description: |
           GPU device {{ $labels.deviceid }} on node {{ $labels.node }} has power slowdown enabled
@@ -42,7 +42,7 @@ spec:
       labels:
         severity: warning
         alert: autopilot
-    - alert: RemappedRowsActive
+    - alert: AutopilotRemappedRowsActive
       annotations:
         description: |
           GPU device {{ $labels.deviceid}} on node {{ $labels.node }} with incorrect remapped rows in memory {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
@@ -53,7 +53,7 @@ spec:
       labels:
         severity: warning
         alert: autopilot
-    - alert: DCGMLevel3Errors
+    - alert: AutopilotDCGMLevel3Errors
       annotations:
         description: |
           A node reported errors after running DCGM level 3 - check health of nodes {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
@@ -66,7 +66,7 @@ spec:
         alert: autopilot
   - name: Alerts on network related issues
     rules:
-      - alert: PingFailures
+      - alert: AutopilotPingFailures
         annotations:
           description: |
              Node {{ $labels.node }} cannot reach IP {{ $labels.deviceid }} {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
@@ -79,7 +79,7 @@ spec:
           alert: autopilot
   - name: Alerts on PVC related issues
     rules:
-    - alert: PVCAlert
+    - alert: AutopilotPVCAlert
       annotations:
         description: |
           PVC creation by Autopilot on node {{ $labels.node }} failed {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
@@ -92,7 +92,7 @@ spec:
         alert: autopilot
   - name: Generic alert on periodic check failure
     rules:
-    - alert: GPUNodeHealth
+    - alert: AutopilotGPUNodeHealth
       annotations:
         description: |
           Node {{ $labels.node }} reported errors after running Autopilot's periodic health checks {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.

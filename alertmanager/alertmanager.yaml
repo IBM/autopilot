@@ -48,7 +48,6 @@ receivers:
         link_names: true
         send_resolved: true
         text: |-
-          {{ template "slack.default.text" .}}
           {{ range .Alerts -}}
                   *Alert:* {{ .Annotations.title }}{{ if .Labels.severity }} - `{{ .Labels.severity }}`{{ end }}
                   *Description:* {{ .Annotations.description }}
@@ -56,6 +55,10 @@ receivers:
                     {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
                     {{ end }}
                   {{ end }}
+        title: >-
+          [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing
+          | len }}{{ end }}] {{ .CommonLabels.alertname }} for {{
+          .CommonLabels.job }}
   - name: Default
   - name: 'null'
   - name: Watchdog
