@@ -12,7 +12,7 @@ spec:
     - alert: AutopilotLowPCIeBandwidth
       annotations:
         description: |
-          GPU device {{ $labels.deviceid }} on node {{ $labels.node }} has a PCIE bandwidth of {{ $value }} {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
+          GPU device {{ $labels.deviceid }} on node {{ $labels.node }} has a PCIE bandwidth of {{ $value }}{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
         summary: GPU with a PCIe bandwidth of 4 or less 
       expr: |
         sum (autopilot_health_checks{health="pciebw"}<=4) by (node, deviceid, value) > 0
@@ -23,7 +23,7 @@ spec:
     - alert: AutopilotDCGMLevel1Errors
       annotations:
         description: |
-          GPUs on node {{ $labels.node }} have DCGM Level 1 failures '{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
+          GPUs on node {{ $labels.node }} have DCGM Level 1 failures{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
         summary: GPUs have DCGM failures
       expr: |
         sum (autopilot_health_checks{health="dcgm"}==1) by (node)
@@ -35,7 +35,7 @@ spec:
       annotations:
         description: |
           GPU device {{ $labels.deviceid }} on node {{ $labels.node }} has power slowdown enabled
-        summary: A GPU has power slowdown enabled {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
+        summary: A GPU has power slowdown enabled{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
       expr: |
         sum (autopilot_health_checks{health="power-slowdown"}==1) by (node, deviceid)
       for: 1m
@@ -45,7 +45,7 @@ spec:
     - alert: AutopilotRemappedRowsActive
       annotations:
         description: |
-          GPU device {{ $labels.deviceid}} on node {{ $labels.node }} with incorrect remapped rows in memory {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
+          GPU device {{ $labels.deviceid}} on node {{ $labels.node }} with incorrect remapped rows in memory{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
         summary: A GPU device has incorrect remapped rows
       expr: |
         sum (autopilot_health_checks{health="remapped"}==1) by (node, deviceid)
@@ -56,7 +56,7 @@ spec:
     - alert: AutopilotDCGMLevel3Errors
       annotations:
         description: |
-          A node reported errors after running DCGM level 3 - check health of nodes {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
+          A node reported errors after running DCGM level 3 - check health of nodes{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
         summary: Node {{ $labels.node }} has GPU errors
       expr: |  
         kube_node_labels{label_autopilot_ibm_com_dcgm_level_3=~".*ERR.*"} and kube_node_labels{label_autopilot_ibm_com_dcgm_level_3!~""} and kube_node_labels{label_autopilot_ibm_com_dcgm_level_3!~".*page_retirement_row_remap.*"}
@@ -69,7 +69,7 @@ spec:
       - alert: AutopilotPingFailures
         annotations:
           description: |
-             Node {{ $labels.node }} cannot reach IP {{ $labels.deviceid }} {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
+             Node {{ $labels.node }} cannot reach IP {{ $labels.deviceid }}{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
           summary: Node has unreachable IPs
         expr: |
           sum (autopilot_health_checks{health="ping"} > 0) by (deviceid)
@@ -82,7 +82,7 @@ spec:
     - alert: AutopilotPVCAlert
       annotations:
         description: |
-          PVC creation by Autopilot on node {{ $labels.node }} failed {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
+          PVC creation by Autopilot on node {{ $labels.node }} failed{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
         summary: PVC cannot be created
       expr: |
         sum (autopilot_health_checks{health="pvc"}==1) by (node)
@@ -95,7 +95,7 @@ spec:
     - alert: AutopilotGPUNodeHealth
       annotations:
         description: |
-          Node {{ $labels.node }} reported errors after running Autopilot's periodic health checks {{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
+          Node {{ $labels.node }} reported errors after running Autopilot's periodic health checks{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
         summary: Node {{ $labels.node }} has errors
       expr: |
         kube_node_labels{label_autopilot_ibm_com_gpuhealth=~".*ERR.*"} and kube_node_labels{label_autopilot_ibm_com_gpuhealth!~""}
@@ -107,7 +107,7 @@ spec:
     rules:
     - alert: AutopilotPodsNotReady
       annotations:
-        description: Autopilot pod on node {{ $labels.node }} is not ready {{ with $console_url := "console_url" | query }}{{ if ne
+        description: Autopilot pod on node {{ $labels.node }} is not ready{{ with $console_url := "console_url" | query }}{{ if ne
             (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url
             ) }}{{ end }}{{ end }}.
         summary: Autopilot pod on node {{ $labels.node }} is not ready
