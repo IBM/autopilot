@@ -94,6 +94,7 @@ async def iperf_start_servers(node_map, num_servers, port_start):
         )
         for node in node_map
     ]
+    
     await asyncio.gather(*tasks)
 
 async def iperf_stop_servers(node_map):

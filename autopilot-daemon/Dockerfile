@@ -99,7 +99,7 @@ COPY gpu-power/power-throttle.sh /home/autopilot/gpu-power/power-throttle.sh
 
 # Last touches
 RUN pip install --upgrade pip && pip install kubernetes netifaces aiohttp[speedups]
-RUN apt -y update && apt install -y vim && apt -y clean && apt -y autoremove
+RUN apt -y update && apt install -y vim curl && apt -y clean && apt -y autoremove
 RUN chmod 755 /usr/local/bin/autopilot && chown -hR autopilot /home/autopilot && chmod -R g=u /home/autopilot
 RUN chmod 777 /tmp
 

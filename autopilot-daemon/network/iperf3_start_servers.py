@@ -26,13 +26,58 @@ args = vars(parser.parse_args())
 def main():
     num_server = args["numservers"]
     port = args["startport"]
+    interfaces = []
+    entrylist = json.loads('{}')
+    # interfaces = [
+    #     iface
+    #     for iface in netifaces.interfaces()
+    #     if "net" in iface and iface not in ("lo", "eth0")
+    # ]
 
-    interfaces = [
-        iface
-        for iface in netifaces.interfaces()
-        if "net" in iface and iface not in ("lo", "eth0")
-    ]
+    # if not interfaces:
+    #     log.error(
+    #         f'Secondary nics not found for "{CURR_POD_NAME}" on "{CURR_WORKER_NODE_NAME}".'
+    #     )
+    #     sys.exit(1)
 
+    try:
+        config.load_incluster_config()
+        v1 = client.CoreV1Api()
+    except:
+        log.error("Failed to load Kubernetes CoreV1API.")
+        exit(1)
+    try:
+        autopilot_pods = v1.list_namespaced_pod(
+                namespace=AUTOPILOT_NAMESPACE, field_selector="metadata.name="+CURR_POD_NAME
+                )
+    except ApiException as e:
+        log.error(
+            "Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e
+        )
+        exit(1)
+
+    pod = autopilot_pods.items[0]
+    try:
+        entrylist = json.loads(
+                pod.metadata.annotations["k8s.v1.cni.cncf.io/network-status"]
+        )
+    except KeyError:
+        log.info(
+            f'Key k8s.v1.cni.cncf.io/network-status not found on pod "{CURR_POD_NAME}" on "{CURR_WORKER_NODE_NAME}"')
+    if len(entrylist) > 0:
+        interfaces = [
+            iface
+            for iface in netifaces.interfaces()
+            if "net" in iface and iface not in ("lo", "eth0", "tunl0")
+        ]
+    else:
+        interfaces = [
+            iface
+            for iface in netifaces.interfaces()
+            if iface not in ("lo", "tunl0")
+        ]
+
+    
     if not interfaces:
         log.error(
             f'Secondary nics not found for "{CURR_POD_NAME}" on "{CURR_WORKER_NODE_NAME}".'
