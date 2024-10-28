@@ -3,13 +3,6 @@
 
 Autopilot can be installed through Helm and need enough privileges to create objects like services, serviceaccounts, namespaces and relevant RBAC.
 
-## Requirements
-
-- Install `helm-git` plugin
-
-```bash
-helm plugin install https://github.com/aslafy-z/helm-git --version 0.15.1
-```
 
 ## Helm Chart customization
 
@@ -20,10 +13,10 @@ Helm charts values and how-to for customization can be found [here](autopilot-da
 1) Add autopilot repo
 
 ```bash
-helm repo add autopilot git+https://github.com/IBM/autopilot.git@autopilot-daemon/helm-charts/autopilot?ref=gh-pages
+helm repo add autopilot https://ibm.github.io/autopilot/
 ```
 
-2) Install autopilot (idempotent command). The config file is for customizing the helm values. Namespace is where the helm chart will live, not the namespace where Autopilot runs
+2) Install autopilot (idempotent command). The config file is for customizing the helm values. It is not mandatory. If the default values work for you, omit the `-f`. The `--namespace` parameter says where the helm chart will be deployed
 
 ```bash
 helm upgrade autopilot autopilot/autopilot --install --namespace=autopilot --create-namespace -f your-config.yml
