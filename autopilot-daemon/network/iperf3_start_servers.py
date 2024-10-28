@@ -28,17 +28,6 @@ def main():
     port = args["startport"]
     interfaces = []
     entrylist = json.loads('{}')
-    # interfaces = [
-    #     iface
-    #     for iface in netifaces.interfaces()
-    #     if "net" in iface and iface not in ("lo", "eth0")
-    # ]
-
-    # if not interfaces:
-    #     log.error(
-    #         f'Secondary nics not found for "{CURR_POD_NAME}" on "{CURR_WORKER_NODE_NAME}".'
-    #     )
-    #     sys.exit(1)
 
     try:
         config.load_incluster_config()

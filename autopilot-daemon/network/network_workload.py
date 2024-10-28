@@ -43,7 +43,8 @@ class NetworkWorkload:
                     pod.metadata.annotations["k8s.v1.cni.cncf.io/network-status"]
                 )
             except KeyError:
-                print("Key k8s.v1.cni.cncf.io/network-status not found on pod", pod.metadata.name, "- node", pod.spec.node_name)
+                log.info(
+                    f'Key k8s.v1.cni.cncf.io/network-status not found on pod "{CURR_POD_NAME}" on "{CURR_WORKER_NODE_NAME}"')
             if len(entrylist) > 0:
                 for entry in entrylist:
                     try:
@@ -55,7 +56,6 @@ class NetworkWorkload:
                         address_map[iface] = []
                     address_map.get(iface).append((pod.spec.node_name, entry["ips"]))
             else:
-                print("**********ENTRYLIST IS EMPTY***********")
                 pod_ips = pod.status.pod_i_ps
                 if pod_ips != None:
                     iface = "default"
