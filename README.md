@@ -191,7 +191,7 @@ Stretch Goals:
 
 The release planning of this project will be based on the EC528 lecture regarding vertical and horizontal user story agile methodology. We wish to use **vertical slicing** to divide up the project, ensuring each sprint results in working, demonstrable software. We also aim to fulfill most required features for the user before implementing more additional features.  
 
-1) **<i> September </i> [9/14 - 9/30]**
+1) **<i> September </i> [09/10 - 09/23]**
 
    Exploring Autopilot and initial setup
    
@@ -201,7 +201,7 @@ The release planning of this project will be based on the EC528 lecture regardin
    
    - Initial setup of the skeleton of the web application.
 
-2) **<i> Early - Mid October </i> [10/2 - 10/16]**
+2) **<i> Late September - Early October </i> [09/24 - 10/07]**
 
    Get access to Kubernetes cluster running instance of Autopilot from mentors. Use dummy data as replacement in the meantime, so that front-end development is not blocked. Make sure that dummy data closely mimics real data so that transferring is easy.
 
@@ -229,7 +229,7 @@ The release planning of this project will be based on the EC528 lecture regardin
 
    - Return test results in any format to the user (do not worry about embedded terminal windows for now).
 
-3) **<i> Late October - Early November </i> [10/21 - 11/4]**
+3) **<i> Early October - Late October </i> [10/08 - 10/21]**
 
    **<ins> Monitoring Page </ins>**
   
@@ -243,7 +243,7 @@ The release planning of this project will be based on the EC528 lecture regardin
 
    - Implement an embedded terminal window to show results of the tests in a more clean format.
    
-4) **<i> Mid - Late November </i> [11/11 - 11/25]**
+4) **<i> Late October - Early November </i> [10/22 - 11/04]**
 
    Testing and refinement
 
@@ -255,7 +255,7 @@ The release planning of this project will be based on the EC528 lecture regardin
 
    - Implement feedback suggested by mentors, including adding any features which improve usability.
 
-5) **<i> Late November - Early December </i> [11/27 - 12/10]**
+5) **<i> Early November - Late November </i> [11/05 - 11/18]**
 
    Stretch goals and final release
 
