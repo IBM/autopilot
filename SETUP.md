@@ -3,10 +3,9 @@
 
 Autopilot can be installed through Helm and need enough privileges to create objects like services, serviceaccounts, namespaces and relevant RBAC.
 
-
 ## Helm Chart customization
 
-Helm charts values and how-to for customization can be found [here](autopilot-daemon/helm-charts/autopilot/README.md).
+Helm charts values and how-to for customization can be found [here](helm-charts/autopilot/README.md).
 
 ## Install
 
