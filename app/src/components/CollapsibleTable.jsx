@@ -283,7 +283,7 @@ Row.propTypes = {
         architecture: PropTypes.string.isRequired,
         gpuPresent: PropTypes.string.isRequired,
         gpuModel: PropTypes.string.isRequired,
-        gpuCount: PropTypes.number.isRequired,
+        gpuCount: PropTypes.string.isRequired,
         gpuHealth: PropTypes.string.isRequired,
         capacity: PropTypes.shape({
             gpu: PropTypes.string.isRequired,
