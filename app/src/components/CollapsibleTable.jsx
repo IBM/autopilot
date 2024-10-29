@@ -6,8 +6,8 @@ import { Table, TableHead, TableRow, TableBody, TableCell, TableContainer, Butto
 import { ChevronDown, ChevronUp } from '@carbon/icons-react';
 import ColumnFilter from './ColumnFilter';
 
-const lightGreen = "#90EE90";
-const lightRed = "#FAA0A0";
+const lightGreen = "#c2fdc2";
+const lightRed = "#ffb4b4";
 
 const ResponsiveTableContainer = styled(TableContainer)`
     width: 100%;
@@ -40,7 +40,7 @@ const Row = ({ node }) => {
                 <TableCell style={{ padding: 0, height: '3rem' }}>
                     <Button
                         kind="ghost"
-                        size="small"
+                        size="sm"
                         renderIcon={open ? ChevronUp : ChevronDown}
                         iconDescription={open ? 'Collapse' : 'Expand'}
                         onClick={() => setOpen(!open)}
@@ -273,6 +273,38 @@ function CollapsibleTable({ nodes }) {
     );
 }
 
+// PropTypes for Row and CollapsibleTable
+Row.propTypes = {
+    node: PropTypes.shape({
+        name: PropTypes.string.isRequired,
+        status: PropTypes.string.isRequired,
+        role: PropTypes.string.isRequired,
+        version: PropTypes.string.isRequired,
+        architecture: PropTypes.string.isRequired,
+        gpuPresent: PropTypes.string.isRequired,
+        gpuModel: PropTypes.string.isRequired,
+        gpuCount: PropTypes.number.isRequired,
+        gpuHealth: PropTypes.string.isRequired,
+        capacity: PropTypes.shape({
+            gpu: PropTypes.string.isRequired,
+            cpu: PropTypes.string.isRequired,
+            memory: PropTypes.string.isRequired,
+        }).isRequired,
+        allocatable: PropTypes.shape({
+            gpu: PropTypes.string.isRequired,
+            cpu: PropTypes.string.isRequired,
+            memory: PropTypes.string.isRequired,
+        }).isRequired,
+        dcgmStatus: PropTypes.string.isRequired,
+        dcgmTimestamp: PropTypes.string.isRequired,
+        dcgmDetails: PropTypes.arrayOf(
+            PropTypes.shape({
+                testName: PropTypes.string.isRequired,
+                gpuID: PropTypes.string.isRequired,
+            })
+        ).isRequired,
+    }).isRequired,
+};
 
 
 CollapsibleTable.propTypes = {
@@ -285,7 +317,7 @@ CollapsibleTable.propTypes = {
             architecture: PropTypes.string.isRequired,
             gpuPresent: PropTypes.string.isRequired,
             gpuModel: PropTypes.string.isRequired,
-            gpuCount: PropTypes.number.isRequired,
+            gpuCount: PropTypes.string.isRequired,
             gpuHealth: PropTypes.string.isRequired,
             capacity: PropTypes.object.isRequired,
             allocatable: PropTypes.object.isRequired,
