@@ -4,7 +4,6 @@ metadata:
   labels:
     app: autopilot
   name: {{ printf "%s" .Chart.Name }}
-  namespace: {{ .Values.namespace.name }}
 spec:
   selector:
     matchLabels:
@@ -39,32 +38,29 @@ spec:
           command:
           - sh
           - -c
-          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+          image: {{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}
           imagePullPolicy: Always
           name: device-plugin-validation
           securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
             runAsNonRoot: true
+            runAsUser: 1000910000
       {{- end}}
       containers:
-        - image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+        - image: {{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}
           command:
            - sh
            - -c
            - |
-             iperf3 -s -p 6310 -D 
              /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }} --invasive-check-timer {{ .Values.invasive }}
           imagePullPolicy: {{ .Values.image.pullPolicy }} 
           name: autopilot
           securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
             runAsNonRoot: true
+            runAsUser: 1000910000
+            capabilities:
+                add:
+                - NET_RAW
+                - NET_ADMIN
           env:
           {{- range .Values.env }}
             - name: {{ .name }}
