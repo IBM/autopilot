@@ -3,6 +3,16 @@ entries:
   autopilot:
   - apiVersion: v2
     appVersion: latest
+    created: "2024-10-30T20:52:26.118512591Z"
+    description: A Helm chart for Kubernetes
+    digest: 40cac8f7dba4f08e6ba9ac93f438c93667becd7fb5fe82da1d428d3a7adedac3
+    name: autopilot
+    type: application
+    urls:
+    - autopilot-v2.0.0.tgz
+    version: v2.0.0
+  - apiVersion: v2
+    appVersion: latest
     created: "2024-10-04T16:02:27.459262-04:00"
     description: A Helm chart for Kubernetes
     digest: 6f773be7c85f0dbaab8df4987fd8e6f138e064514bf34c88500ca589cae28561
@@ -62,4 +72,4 @@ entries:
     urls:
     - https://ibm.github.io/autopilot/autopilot-daemon-1.5.0.tgz
     version: 1.5.0
-generated: "2024-10-04T16:02:27.445609-04:00"
+generated: "2024-10-30T20:52:26.118526186Z"
