@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Terminal from './components/Terminal';
 import runTests from './api/runTests';
 // import listNodes from './api/getNodes';
-import watchNodes from "./api/watchNodes.js";
+// import watchNodes from "./api/watchNodes.js";
+import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
 import { Helmet } from 'react-helmet';
 import { Button, MultiSelect, Toggle, NumberInput, TextInput } from '@carbon/react';
 import * as styles from './Styles';
@@ -25,20 +26,19 @@ function Testing() {
 
     useEffect(() => {
         const handleNodeChange = (node, isDeleted) => {
+            const nodeName = node.name;
             setNodes((prevNodes) => {
-                if (isDeleted) { // Removing deleted node
-                    return prevNodes.filter(n => n.metadata.name !== node.metadata.name);
+                if (isDeleted) {
+                    return prevNodes.filter(n => n.name !== nodeName);
                 }
-                // Updating node name
-                const existingNode = prevNodes.find(n => n.metadata.name === node.metadata.name);
-                if (existingNode) {
-                    return prevNodes.map(n => n.metadata.name === node.metadata.name ? node : n);
+                if (!prevNodes.includes(nodeName)) {
+                    return [...prevNodes, nodeName];
                 }
-                return [...prevNodes, node];
+                return prevNodes;
             });
         };
 
-        watchNodes(handleNodeChange)
+        watchNodesWithStatus(handleNodeChange)
             .then(() => console.log('Started watching nodes'))
             .catch((err) => {
                 console.error('Error fetching nodes:', err);
@@ -95,7 +95,7 @@ function Testing() {
     };
 
     const getMaxItemLength = () => {
-        const combinedArray = [...nodes, ...tests];
+        const combinedArray = [...(nodes || []), ...(tests || [])];
         let maxLength = 0;
         for (let item of combinedArray) {
             if (item.length > maxLength) {
@@ -154,7 +154,7 @@ function Testing() {
                                 id="nodes"
                                 titleText="Nodes"
                                 label="Select Nodes"
-                                items={nodes.map(node => node.metadata.name)}
+                                items= {nodes}
                                 selectedItems={selectedNodes}
                                 itemToString={(item) => (item ? item : '')}
                                 onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
