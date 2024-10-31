@@ -36,21 +36,35 @@ class NetworkWorkload:
                 "Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e
             )
             exit(1)
-
+        entrylist = json.loads('{}')
         for pod in autopilot_pods.items:
-            entrylist = json.loads(
-                pod.metadata.annotations["k8s.v1.cni.cncf.io/network-status"]
-            )
+            try:
+                entrylist = json.loads(
+                    pod.metadata.annotations["k8s.v1.cni.cncf.io/network-status"]
+                )
+            except KeyError:
+                log.info(
+                    f'Key k8s.v1.cni.cncf.io/network-status not found on pod "{CURR_POD_NAME}" on "{CURR_WORKER_NODE_NAME}"')
             if len(entrylist) > 0:
                 for entry in entrylist:
                     try:
                         iface = entry["interface"]
                     except KeyError:
-                        self.log.info("Interface key not found, assigning default.")
-                        iface = "default"
+                        self.log.info("Interface key name not found, assigning 'k8s-pod-network'.")
+                        iface = "k8s-pod-network"
                     if address_map.get(iface) == None:
                         address_map[iface] = []
                     address_map.get(iface).append((pod.spec.node_name, entry["ips"]))
+            else:
+                pod_ips = pod.status.pod_i_ps
+                if pod_ips != None:
+                    iface = "default"
+                    if address_map.get(iface) == None:
+                        address_map[iface] = []
+                    ips = []
+                    for pod_ip in pod_ips:
+                        ips.append(pod_ip.ip)
+                    address_map.get(iface).append((pod.spec.node_name, ips))
 
         if len(address_map) == 0:
             self.log.error("No interfaces found. FAIL.")

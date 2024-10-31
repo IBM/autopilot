@@ -54,20 +54,16 @@ async def main():
         print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
         exit()
 
-    for pod in autopilot_pods.items:
-        if not 'k8s.v1.cni.cncf.io/network-status' in pod.metadata.annotations:
-            print("[PING] Pod", pod.metadata.name, "misses network annotation. Skip node", pod.spec.node_name)
-
     # run through all pods and create a map of all interfaces
     print("Creating a list of interfaces and IPs")
+    entrylist = json.loads('{}')
     for pod in autopilot_pods.items:
         if pod.spec.node_name != nodename_self and (allnodes or (pod.spec.node_name in nodemap.keys())):
             try:
                 entrylist = json.loads(pod.metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
             except KeyError:
-                print("Key k8s.v1.cni.cncf.io/network-status not found on pod", pod.metadata.name, "- Skipping node", pod.spec.node_name)
-                continue
-            else:
+                print("Key k8s.v1.cni.cncf.io/network-status not found on pod", pod.metadata.name, "- node", pod.spec.node_name)
+            if len(entrylist) > 0 :
                 node={}
                 nodes[pod.spec.node_name] = node
                 for entry in entrylist:
@@ -81,6 +77,22 @@ async def main():
                         'ips': entry['ips'],
                         'pod': pod.metadata.name
                     }
+            else:
+                node={}
+                nodes[pod.spec.node_name] = node
+                pod_ips = pod.status.pod_i_ps
+                if pod_ips != None:
+                    iface = "default"
+                    ifaces = ifaces | {iface}
+                    iplist = []
+                    for pod_ip in pod_ips:
+                        iplist.append(pod_ip.ip)
+                    node[iface] = {
+                        'ips': iplist,
+                        'pod': pod.metadata.name
+                    }
+
+
 
     if len(nodes.keys()) == 0:
         print("[PING] No nodes found. ABORT")
@@ -99,7 +111,8 @@ async def main():
                 continue
             for index, ip in enumerate(ips):
                 command = ['ping',ip,'-t','45','-c','10']
-                clients.append((subprocess.Popen(command, start_new_session=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE), nodename, ip, "net-"+str(index)))
+                indexed_iface = iface+("-"+str(index) if len(ips)>1 else "")
+                clients.append((subprocess.Popen(command, start_new_session=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE), nodename, ip, indexed_iface))
     for c in clients:
         try:
             c[0].wait(50)
@@ -111,7 +124,7 @@ async def main():
         stdout, stderr = c[0].communicate()
         if stderr:
             print("[PING] output parse exited with error: " + stderr)
-            print("FAIL")
+            fail = True
         else:
             if "Unreachable" in stdout or "100% packet loss" in stdout:
                 print("Node", c[1], c[2], c[3], "1")
@@ -128,24 +141,36 @@ def check_local_ifaces():
     pod_list = kubeapi.list_namespaced_pod(namespace=namespace_self, field_selector="metadata.name="+podname)
     ips = []
     iface_count = 0
-    pod_self = pod_list.items[0] 
+    pod_self = pod_list.items[0]
+    entrylist = json.loads('{}')
+    ip_addresses = [netifaces.ifaddresses(iface)[netifaces.AF_INET][0]['addr'] for iface in netifaces.interfaces() if netifaces.AF_INET in netifaces.ifaddresses(iface)]
     try:
         entrylist = json.loads(pod_self.metadata.annotations['k8s.v1.cni.cncf.io/network-status'])
     except KeyError:
-        print("Key k8s.v1.cni.cncf.io/network-status not found on pod", pod_self.metadata.name, "- Skipping node", pod_self.spec.node_name)
-    for entry in entrylist:
-        try:
-            iface=entry['interface']
-        except KeyError:
-            continue
-        ips.append(entry['ips'])
-        iface_count += len(entry['ips'])
-    ifaces = netifaces.interfaces()
-    ifaces.remove('lo')
-    
-    if iface_count != len(ifaces) :
-        print("[PING] IFACES count inconsistent. Pod annotation reports", ips, ", not found in the pod among", ifaces, "ABORT")
-        exit()
+        print("Key k8s.v1.cni.cncf.io/network-status not found on pod", pod_self.metadata.name, "-  node", pod_self.spec.node_name)
+    if len(entrylist) > 0:
+        for entry in entrylist:
+            try:
+                iface=entry['interface']
+            except KeyError:
+                continue
+            for ip in entry['ips']:
+                if ip not in ip_addresses:
+                    print("[PING] IFACES count inconsistent. Pod annotation reports", entry['ips'], ", not found in the pod among", ip_addresses, "ABORT")
+                    exit()
+            ips.append(entry['ips'])
+            iface_count += len(entry['ips'])
+    else:
+        pod_ips = pod_self.status.pod_i_ps
+        if pod_ips != None:
+            for pod_ip in pod_ips:
+                if pod_ip.ip not in ip_addresses:
+                    print("[PING] IFACES count inconsistent. Pod annotation reports", pod_ip.ip, ", not found in the pod among", ip_addresses, "ABORT")
+                    exit()
+                ips.append(pod_ip.ip)
+        iface_count += len(pod_ips)
+
+
 
 def get_job_nodes(nodelist):
     v1 = client.CoreV1Api()

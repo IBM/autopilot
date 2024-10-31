@@ -4,7 +4,6 @@ metadata:
   labels:
     app: autopilot
   name: autopilot-metrics-service
-  namespace: {{ .Values.namespace.name }}
 spec:
   ports:
   - name: http

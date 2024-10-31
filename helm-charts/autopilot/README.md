@@ -1,27 +1,31 @@
 # Helm Chart Customization
 
+## Latest tag
+
+At every PR merge, we automatically build the `latest` tag that can be pulled by using `quay.io/autopilot/autopilot:latest`.
+
+This tag contains the latest changes and it must be considered as a dev image. For stable releases, always refer to the published ones.
+
+## Customize Helm chart
+
 Autopilot is set to run on NVidia GPU nodes. It is possible to run it on heterogeneous nodes (i.e., CPU only and GPU only), GPU only nodes or CPU only nodes.
+
 ```yaml
 onlyOnGPUNodes: true
 ```
+
 Running on GPU nodes only, will:
-1) add the `nvidia.com/gpu.present: 'true'` label and 
+
+1) add the `nvidia.com/gpu.present: 'true'` label and
 2) enable the init container, which checks on the nvidia device plug-in to be setup
 
 Alternatively, `onlyOnGPUNodes` can be set to false and Autopilot will run on all worker nodes, regardless of the accelerators.
-
-By default, it will create a namespace named `autopilot` where to run the components. Users workloads do not run in the autopilot namespace. The creation of the namespace can be disabled by setting `create` to false in the namespace block of the `Values.yaml` file.
-
-```yaml
-namespace: 
-  create: true
-  name: autopilot
-```
+Notice that, in this heterogeneous case, the GPU health checks will error out in the non-GPU nodes.
 
 If you do not want to create a new namespace and use an existing one, then set `create: false` and specify the namespace name.
-On OpenShift, please ntice that you **must** label the namespace `oc label ns <namespace> openshift.io/cluster-monitoring=true` to have Prometheus scrape metrics from Autopilot.
+On OpenShift, please notice that you **must** label the namespace `oc label ns <namespace> openshift.io/cluster-monitoring=true` to have Prometheus scrape metrics from Autopilot.
 
-- To pull the image from a private registry, the admin needs to add `imagePullSecret` data in one of the helm charts. It is possible to avoid the creation of the pull secret by setting the value `create` to false in the imagePullSecret block, and by setting the name of the one that will be used (i.e., `autopilot-pull-secret`).
+- To pull the image from a private registry, i.e., in case of development, the admin needs to add `imagePullSecret` data in one of the helm charts. It is possible to avoid the creation of the pull secret by setting the value `create` to false in the imagePullSecret block, and by setting the name of the one that will be used (i.e., `autopilot-pull-secret`).
 
 ```yaml
 pullSecrets:
@@ -34,7 +38,7 @@ pullSecrets:
 
 ```yaml
 repeat: <hours> # periodic health checks timer (default 1h)
-intrusive: <hours> # deeper diagnostic timer (default 4h, 0 to disable)
+invasive: <hours> # deeper diagnostic timer (default 4h, 0 to disable)
 ```
 
 - PCIe bandwidth critical value is defaulted to 4GB/s. It can be customized by changing the following
@@ -62,8 +66,12 @@ env:
     value: "example-storage-class"
 ```
 
-All these values can be saved in a `config.yaml` file, which can be passed to the `helm` install command
+All these values can be saved in a `config.yaml` file.
+
+## Install
+
+If you have your own configuration file, it can be passed to the `helm` install command with the `-f` parameter. If you want to install the default values, just omit the parameter.
 
 ```bash
-helm upgrade autopilot autopilot/autopilot --install --namespace=<default> -f your-config.yml
+helm upgrade autopilot autopilot/autopilot --install --namespace=autopilot --create-namespace <-f your-config.yml>
 ```
