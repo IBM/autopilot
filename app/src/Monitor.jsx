@@ -43,22 +43,6 @@ function Monitor() {
     // Log the first node for debugging purposes
     // console.log(nodes[0]);
 
-    // const handleNodeChange = (node, isDeleted = false) => {
-    //     setNodes(prevNodes => {
-    //         if (isDeleted) { // Removing deleted node
-    //             return prevNodes.filter(n => n.name !== node.name);
-    //         } else {
-    //             // Update the existing node with new details
-    //             const existingNodeIndex = prevNodes.findIndex(n => n.name === node.name);
-    //             if (existingNodeIndex >= 0) {
-    //                 return prevNodes.map((n, i) => (i === existingNodeIndex ? node : n));
-    //             }
-    //             // Add new node
-    //             return [...prevNodes, node];
-    //         }
-    //     });
-    // };
-
     useEffect(() => {
         const handleNodeChange = (node, isDeleted = false) => {
             setNodes(prevNodes => {
