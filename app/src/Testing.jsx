@@ -4,7 +4,7 @@ import runTests from './api/runTests';
 // import listNodes from './api/getNodes';
 import watchNodes from "./api/watchNodes.js";
 import { Helmet } from 'react-helmet';
-import { Button, MultiSelect, Toggle, NumberInput, TextInput } from '@carbon/react';
+import { Button, Toggle, NumberInput, TextInput, FilterableMultiSelect } from '@carbon/react';
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
@@ -123,9 +123,9 @@ function Testing() {
                 <title>Testing</title>
             </Helmet>
 
-            <h1 style={{textAlign: "center", ...HeaderStyle}}>Run Tests</h1>
+            <h1 style={{ textAlign: "center", ...HeaderStyle }}>Run Tests</h1>
 
-            <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '20px'}}>
+            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '20px' }}>
 
                 <div style={{
                     flex: 1,
@@ -137,19 +137,19 @@ function Testing() {
                     boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
                     margin: '0 auto'
                 }}>
-                    <h2 style={{textAlign: "center", ...HeaderStyle}}>Test Parameters</h2>
+                    <h2 style={{ textAlign: "center", ...HeaderStyle }}>Test Parameters</h2>
 
-                    <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
                         <div style={{
                             width: `${dynamicWidth}px`
                         }}>
-                            <MultiSelect
+                            <FilterableMultiSelect
                                 id="health-checks"
-                                label="Select Tests"
+                                placeholder="Select Tests"
                                 items={tests}
                                 selectedItems={selectedTests}
                                 itemToString={(item) => (item ? item : '')}
-                                onChange={({selectedItems}) => handleSelectTests(selectedItems)}
+                                onChange={({ selectedItems }) => handleSelectTests(selectedItems)}
                                 titleText="Health Checks"
                             />
                         </div>
@@ -163,9 +163,9 @@ function Testing() {
                         </Button>
                     </div>
 
-                    <div style={{display: 'flex', gap: '1vw', justifyContent: 'center'}}>
+                    <div style={{ display: 'flex', gap: '1vw', justifyContent: 'center' }}>
                         {selectedTests.includes('dcgm') && (
-                            <div style={{width: '10vw'}}>
+                            <div style={{ width: '10vw' }}>
                                 <NumberInput
                                     id="dcgm-number"
                                     label="DCGM R Value"
@@ -178,18 +178,19 @@ function Testing() {
                         )}
                     </div>
 
-                    <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
                         <div style={{
                             width: `${dynamicWidth}px`
                         }}>
-                            <MultiSelect
+                            <FilterableMultiSelect
                                 id="nodes"
                                 titleText="Nodes"
-                                label="Select Nodes"
+                                placeholder="Select Nodes"
                                 items={nodes.map(node => node.metadata.name)} // mapping node objects to names
                                 selectedItems={selectedNodes}
                                 itemToString={(item) => (item ? item : '')}
-                                onChange={({selectedItems}) => handleSelectNodes(selectedItems)}
+                                onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
+                                filterable
                             />
                         </div>
 
@@ -252,7 +253,7 @@ function Testing() {
                         </div>
                     </div>
 
-                    <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
+                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
                         <Button
                             kind="danger"
                             onClick={submitTests}
@@ -268,8 +269,8 @@ function Testing() {
                     padding: '20px',
                     borderLeft: '2px solid #ccc',
                 }}>
-                    <h2 style={{textAlign: "center", ...HeaderStyle}}>Test Results</h2>
-                    <Terminal output={terminalValue}/>
+                    <h2 style={{ textAlign: "center", ...HeaderStyle }}>Test Results</h2>
+                    <Terminal output={terminalValue} />
                 </div>
             </div>
         </div>
