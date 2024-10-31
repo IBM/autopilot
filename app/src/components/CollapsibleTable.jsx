@@ -74,7 +74,7 @@ const Row = ({ node }) => {
                     <TableCell colSpan={10}>
                         <ExpandableTableWrapper>
                             <h4><strong>Capacity / Allocatable Resources:</strong></h4>
-                            <Table size="small" aria-label="resources">
+                            <Table size="sm" aria-label="resources">
                                 <TableHead>
                                     <TableRow>
                                         <StyledTableCell>Resource</StyledTableCell>
@@ -104,7 +104,7 @@ const Row = ({ node }) => {
                         <br />
                         <ExpandableTableWrapper>
                             <h4><strong>GPU DCGM Level 3 Diagnostics:</strong></h4>
-                            <Table size="small" aria-label="resources">
+                            <Table size="sm" aria-label="resources">
                                 <TableHead>
                                     <TableRow>
                                         <StyledTableCell>DCGM Status</StyledTableCell>

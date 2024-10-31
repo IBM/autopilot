@@ -58,6 +58,8 @@ function processBuffer(buffer, onNodeChange) {
                 let dcgmTimestamp = 'Unknown';
                 let dcgmDetails = [];
 
+                // ERR_Year-Month-Date_Hour.Minute.UTC_Diagnostic_One.gpuNumber,Diagnostic_Two.gpuNumber
+                // Example: ERR_2024-10-10_19.12.03UTC_page_retirement_row_remap.0
                 if (dcgmLevel3Label.startsWith('ERR')) {
                     const [status, date, timeUTC, ...details] = dcgmLevel3Label.split('_');
 
@@ -69,6 +71,7 @@ function processBuffer(buffer, onNodeChange) {
                     });
                 } else if (dcgmLevel3Label.startsWith('PASS')) {
                     const [status, date, timeUTC] = dcgmLevel3Label.split('_');
+
                     dcgmStatus = status;
                     dcgmTimestamp = `${date} ${timeUTC.replace('UTC', ' UTC')}`;
                     dcgmDetails = `Pass All Tests`;
