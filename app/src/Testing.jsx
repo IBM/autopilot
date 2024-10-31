@@ -5,6 +5,7 @@ import runTests from './api/runTests';
 import watchNodes from "./api/watchNodes.js";
 import { Helmet } from 'react-helmet';
 import { Button, MultiSelect, Toggle, NumberInput, TextInput } from '@carbon/react';
+import * as styles from './Styles';
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
@@ -105,67 +106,36 @@ function Testing() {
     };
 
     const maxLength = getMaxItemLength();
-    const dynamicWidth = Math.max(200, Math.min(400, maxLength * 12));
-
-    const HeaderStyle = {
-        //fontSize: '2rem',
-        //fontWeight: 'bold',
-        color: '#3D3D3D',
-        margin: '2vh 0',
-        padding: '1vh',
-        borderBottom: '0.2vh solid #E0E0E0',
-    };
-
     return (
         <div>
-
             <Helmet>
                 <title>Testing</title>
             </Helmet>
-
-            <h1 style={{textAlign: "center", ...HeaderStyle}}>Run Tests</h1>
-
-            <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '20px'}}>
-
-                <div style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '20px',
-                    padding: '20px',
-                    backgroundColor: '#f4f4f4',
-                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
-                    margin: '0 auto'
-                }}>
-                    <h2 style={{textAlign: "center", ...HeaderStyle}}>Test Parameters</h2>
-
-                    <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
-                        <div style={{
-                            width: `${dynamicWidth}px`
-                        }}>
+            <h1 style={styles.headerStyle}>Run Tests</h1>
+            <div style={styles.containerStyle}>
+                <div style={styles.sectionStyle}>
+                    <h2 style={styles.headerStyle}>Test Parameters</h2>
+                    
+                    <div style={styles.testParameterStyle}>
+                        <div style={styles.dynamicWidth(maxLength)}>
                             <MultiSelect
                                 id="health-checks"
                                 label="Select Tests"
                                 items={tests}
                                 selectedItems={selectedTests}
                                 itemToString={(item) => (item ? item : '')}
-                                onChange={({selectedItems}) => handleSelectTests(selectedItems)}
+                                onChange={({ selectedItems }) => handleSelectTests(selectedItems)}
                                 titleText="Health Checks"
                             />
                         </div>
-
-                        <Button
-                            kind="primary"
-                            onClick={selectAllTests}
-                            style={{ alignSelf: 'center', width: '10vw', paddingRight: '0vw' }}
-                        >
+                        <Button kind="primary" onClick={selectAllTests} style={styles.buttonStyle}>
                             Select All Tests
                         </Button>
                     </div>
 
-                    <div style={{display: 'flex', gap: '1vw', justifyContent: 'center'}}>
-                        {selectedTests.includes('dcgm') && (
-                            <div style={{width: '10vw'}}>
+                    {selectedTests.includes('dcgm') && (
+                        <div style={styles.testParameterStyle}>
+                            <div style={{ width: '10vw' }}>
                                 <NumberInput
                                     id="dcgm-number"
                                     label="DCGM R Value"
@@ -175,37 +145,28 @@ function Testing() {
                                     onChange={handleDcgmChange}
                                 />
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
-                    <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
-                        <div style={{
-                            width: `${dynamicWidth}px`
-                        }}>
+                    <div style={styles.testParameterStyle}>
+                        <div style={styles.dynamicWidth(maxLength)}>
                             <MultiSelect
                                 id="nodes"
                                 titleText="Nodes"
                                 label="Select Nodes"
-                                items={nodes.map(node => node.metadata.name)} // mapping node objects to names
+                                items={nodes.map(node => node.metadata.name)}
                                 selectedItems={selectedNodes}
                                 itemToString={(item) => (item ? item : '')}
-                                onChange={({selectedItems}) => handleSelectNodes(selectedItems)}
+                                onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
                             />
                         </div>
-
-                        <Button
-                            kind="primary"
-                            onClick={selectAllNodes}
-                            style={{ alignSelf: 'center', width: '10vw', paddingRight: '0vw' }}
-                        >
+                        <Button kind="primary" onClick={selectAllNodes} style={styles.buttonStyle}>
                             Select All Nodes
                         </Button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
-                        <div style={{
-                            width: `${dynamicWidth}px`
-                        }}>
+                    <div style={styles.testParameterStyle}>
+                        <div style={styles.dynamicWidth(maxLength)}>
                             <TextInput
                                 id="jobInput"
                                 labelText="Select Job"
@@ -215,9 +176,7 @@ function Testing() {
                                 onChange={handleJobChange}
                             />
                         </div>
-                        <div style={{
-                            width: '10vw'
-                        }}>
+                        <div style={{ width: '10vw' }}>
                             <TextInput
                                 id="labelInput"
                                 labelText="Select Node Label"
@@ -229,7 +188,7 @@ function Testing() {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                    <div style={styles.testParameterStyle}>
                         <Toggle
                             id="batches-toggle"
                             labelText={isSwitchOn ? "Batches: On" : "Batches: Off"}
@@ -238,9 +197,7 @@ function Testing() {
                             labelA="Batches: Off"
                             labelB="Batches: On"
                         />
-                        <div style={{
-                            width: '10vw'
-                        }}>
+                        <div style={{ width: '10vw' }}>
                             <NumberInput
                                 id="batch-number"
                                 label="Batch #"
@@ -252,24 +209,16 @@ function Testing() {
                         </div>
                     </div>
 
-                    <div style={{display: 'flex', gap: '2.5vw', justifyContent: 'center'}}>
-                        <Button
-                            kind="danger"
-                            onClick={submitTests}
-                        >
+                    <div style={styles.testParameterStyle}>
+                        <Button kind="danger" onClick={submitTests}>
                             Run Tests
                         </Button>
                     </div>
                 </div>
 
-                <div style={{
-                    flex: 1,
-                    marginLeft: '20px',
-                    padding: '20px',
-                    borderLeft: '2px solid #ccc',
-                }}>
-                    <h2 style={{textAlign: "center", ...HeaderStyle}}>Test Results</h2>
-                    <Terminal output={terminalValue}/>
+                <div style={{ ...styles.sectionStyle, borderLeft: '2px solid #ccc', marginLeft: '20px' }}>
+                    <h2 style={styles.headerStyle}>Test Results</h2>
+                    <Terminal output={terminalValue} />
                 </div>
             </div>
         </div>
