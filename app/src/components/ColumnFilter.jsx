@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button, MultiSelect } from '@carbon/react';
-import { Filter } from '@carbon/icons-react';
+import { Filter, FilterEdit } from '@carbon/icons-react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
@@ -48,11 +48,11 @@ const ColumnFilter = ({ label, items, selectedFilters, onFilterChange }) => {
         const maxContentWidth = Math.max(...itemWidths, labelWidth);
         
         
-        const padding = 100;
+        const padding = 150;
         
         // Set minimum and maximum constraints
         const minWidth = 200;
-        const maxWidth = Math.min(400, window.innerWidth - 40);
+        const maxWidth = Math.min(600, window.innerWidth - 40);
         
         return Math.max(minWidth, Math.min(maxContentWidth + padding, maxWidth));
     };
@@ -103,18 +103,19 @@ const ColumnFilter = ({ label, items, selectedFilters, onFilterChange }) => {
         };
     }, [filterOpen]);
 
+    const IconToRender = selectedFilters.length > 0 ? FilterEdit : Filter;
+
     return (
         <>
             <Button
                 ref={buttonRef}
-                hasIconOnly
-                renderIcon={Filter}
                 onClick={handleFilterToggle}
-                iconDescription="Filter"
                 kind="ghost"
                 aria-haspopup="true"
                 aria-expanded={filterOpen}
-            />
+            >
+                <IconToRender />
+            </Button>
             {filterOpen && ReactDOM.createPortal(
                 <DropdownContainer 
                     ref={dropdownRef}

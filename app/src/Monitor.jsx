@@ -26,7 +26,6 @@ const MonitorWrapper = styled.div`
 `;
 
 function Monitor() {
-    // const { nodes, error } = useNodesWithStatus();
     const[nodes, setNodes] = useState([]);
     const [searchQuery, setSearchQuery] = useState(''); // State for search query
 
@@ -68,7 +67,7 @@ function Monitor() {
     return (
         <MonitorWrapper>
             <Helmet>
-                <title>Monitor Cluster</title> {/* Set the page title here */}
+                <title>Monitor Cluster</title>
             </Helmet>
             <h1>Monitor Cluster</h1>
             <SearchInput
@@ -77,10 +76,6 @@ function Monitor() {
                 label="Search Features"
             />
             <CollapsibleTable nodes={filteredNodes} />
-            {/*<CollapsibleTable nodes={filteredNodes.map(node => ({*/}
-            {/*    ...node,*/}
-            {/*    readiness: node.status === 'True' ? 'Ready' : 'Not Ready' // Add readiness status to the node object*/}
-            {/*}))} /> /!* Display filtered nodes with readiness status *!/*/}
         </MonitorWrapper>
     );
 }
