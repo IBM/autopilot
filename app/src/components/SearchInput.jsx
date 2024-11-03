@@ -7,7 +7,7 @@ function SearchInput({ searchQuery, setSearchQuery, label = "Search" }) {
         <Search
             id="search-node-name"
             labelText={label} 
-            placeHolder={label} 
+            placeholder={label}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)} // Update search query
             size="md" 

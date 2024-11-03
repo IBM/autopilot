@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Terminal from './components/Terminal';
 import runTests from './api/runTests';
 // import listNodes from './api/getNodes';
-import watchNodes from "./api/watchNodes.js";
+// import watchNodes from "./api/watchNodes.js";
+import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
 import { Helmet } from 'react-helmet';
+import * as styles from './Styles';
 import { Button, Toggle, NumberInput, TextInput, FilterableMultiSelect } from '@carbon/react';
 
 function Testing() {
@@ -24,26 +26,27 @@ function Testing() {
 
     useEffect(() => {
         const handleNodeChange = (node, isDeleted) => {
+            const nodeName = node.name;
             setNodes((prevNodes) => {
-                if (isDeleted) { // Removing deleted node
-                    return prevNodes.filter(n => n.metadata.name !== node.metadata.name);
+                if (isDeleted) {
+                    return prevNodes.filter(n => n.name !== nodeName);
                 }
-                // Updating node name
-                const existingNode = prevNodes.find(n => n.metadata.name === node.metadata.name);
-                if (existingNode) {
-                    return prevNodes.map(n => n.metadata.name === node.metadata.name ? node : n);
+                if (!prevNodes.includes(nodeName)) {
+                    return [...prevNodes, nodeName];
                 }
-                return [...prevNodes, node];
+                return prevNodes;
             });
         };
 
-        watchNodes(handleNodeChange)
+        watchNodesWithStatus(handleNodeChange)
             .then(() => console.log('Started watching nodes'))
             .catch((err) => {
                 console.error('Error fetching nodes:', err);
             });
     }, []);
 
+    // Filter nodes for worker nodes only
+    const workerNodes = nodes.filter(node => node.startsWith('wrk'));
 
     const handleSelectTests = (selected) => {
         setSelectedTests(selected);
@@ -69,7 +72,7 @@ function Testing() {
     };
 
     const selectAllNodes = () => {
-        setSelectedNodes(nodes);
+        setSelectedNodes(workerNodes);
     };
 
     const selectAllTests = () => {
@@ -94,7 +97,7 @@ function Testing() {
     };
 
     const getMaxItemLength = () => {
-        const combinedArray = [...nodes, ...tests];
+        const combinedArray = [...(workerNodes || []), ...(tests || [])];
         let maxLength = 0;
         for (let item of combinedArray) {
             if (item.length > maxLength) {
@@ -105,44 +108,18 @@ function Testing() {
     };
 
     const maxLength = getMaxItemLength();
-    const dynamicWidth = Math.max(200, Math.min(400, maxLength * 12));
-
-    const HeaderStyle = {
-        //fontSize: '2rem',
-        //fontWeight: 'bold',
-        color: '#3D3D3D',
-        margin: '2vh 0',
-        padding: '1vh',
-        borderBottom: '0.2vh solid #E0E0E0',
-    };
-
     return (
         <div>
-
             <Helmet>
                 <title>Testing</title>
             </Helmet>
-
-            <h1 style={{ textAlign: "center", ...HeaderStyle }}>Run Tests</h1>
-
-            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', padding: '20px' }}>
-
-                <div style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '20px',
-                    padding: '20px',
-                    backgroundColor: '#f4f4f4',
-                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
-                    margin: '0 auto'
-                }}>
-                    <h2 style={{ textAlign: "center", ...HeaderStyle }}>Test Parameters</h2>
-
-                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
-                        <div style={{
-                            width: `${dynamicWidth}px`
-                        }}>
+            <h1 style={styles.headerStyle}>Run Tests</h1>
+            <div style={styles.containerStyle}>
+                <div style={styles.sectionStyle}>
+                    <h2 style={styles.headerStyle}>Test Parameters</h2>
+                    
+                    <div style={styles.testParameterStyle}>
+                        <div style={styles.dynamicWidth(maxLength)}>
                             <FilterableMultiSelect
                                 id="health-checks"
                                 placeholder="Select Tests"
@@ -153,12 +130,7 @@ function Testing() {
                                 titleText="Health Checks"
                             />
                         </div>
-
-                        <Button
-                            kind="primary"
-                            onClick={selectAllTests}
-                            style={{ alignSelf: 'center', width: '10vw', paddingRight: '0vw' }}
-                        >
+                        <Button kind="primary" onClick={selectAllTests} style={styles.buttonStyle}>
                             Select All Tests
                         </Button>
                     </div>
@@ -175,13 +147,11 @@ function Testing() {
                                     onChange={handleDcgmChange}
                                 />
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
-                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
-                        <div style={{
-                            width: `${dynamicWidth}px`
-                        }}>
+                    <div style={styles.testParameterStyle}>
+                        <div style={styles.dynamicWidth(maxLength)}>
                             <FilterableMultiSelect
                                 id="nodes"
                                 titleText="Nodes"
@@ -193,20 +163,13 @@ function Testing() {
                                 filterable
                             />
                         </div>
-
-                        <Button
-                            kind="primary"
-                            onClick={selectAllNodes}
-                            style={{ alignSelf: 'center', width: '10vw', paddingRight: '0vw' }}
-                        >
+                        <Button kind="primary" onClick={selectAllNodes} style={styles.buttonStyle}>
                             Select All Nodes
                         </Button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
-                        <div style={{
-                            width: `${dynamicWidth}px`
-                        }}>
+                    <div style={styles.testParameterStyle}>
+                        <div style={styles.dynamicWidth(maxLength)}>
                             <TextInput
                                 id="jobInput"
                                 labelText="Select Job"
@@ -216,9 +179,7 @@ function Testing() {
                                 onChange={handleJobChange}
                             />
                         </div>
-                        <div style={{
-                            width: '10vw'
-                        }}>
+                        <div style={{ width: '10vw' }}>
                             <TextInput
                                 id="labelInput"
                                 labelText="Select Node Label"
@@ -230,7 +191,7 @@ function Testing() {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
+                    <div style={styles.testParameterStyle}>
                         <Toggle
                             id="batches-toggle"
                             labelText={isSwitchOn ? "Batches: On" : "Batches: Off"}
@@ -239,9 +200,7 @@ function Testing() {
                             labelA="Batches: Off"
                             labelB="Batches: On"
                         />
-                        <div style={{
-                            width: '10vw'
-                        }}>
+                        <div style={{ width: '10vw' }}>
                             <NumberInput
                                 id="batch-number"
                                 label="Batch #"
@@ -253,23 +212,15 @@ function Testing() {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '2.5vw', justifyContent: 'center' }}>
-                        <Button
-                            kind="danger"
-                            onClick={submitTests}
-                        >
+                    <div style={styles.testParameterStyle}>
+                        <Button kind="danger" onClick={submitTests}>
                             Run Tests
                         </Button>
                     </div>
                 </div>
 
-                <div style={{
-                    flex: 1,
-                    marginLeft: '20px',
-                    padding: '20px',
-                    borderLeft: '2px solid #ccc',
-                }}>
-                    <h2 style={{ textAlign: "center", ...HeaderStyle }}>Test Results</h2>
+                <div style={{ ...styles.sectionStyle, borderLeft: '2px solid #ccc', marginLeft: '20px' }}>
+                    <h2 style={styles.headerStyle}>Test Results</h2>
                     <Terminal output={terminalValue} />
                 </div>
             </div>
