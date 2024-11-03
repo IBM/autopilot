@@ -12,7 +12,7 @@ const DropdownContainer = styled.div`
     border-radius: 4px;
     padding: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    width: ${(props) => props.dropdownWidth}px;
+    width: ${(props) => props.$dropdownWidth}px;
 `;
 
 
@@ -123,7 +123,7 @@ const ColumnFilter = ({ label, items, selectedFilters, onFilterChange }) => {
                         top: dropdownPosition.top,
                         left: dropdownPosition.left,
                     }}
-                    dropdownWidth={dropdownWidth}
+                    $dropdownWidth={dropdownWidth}
                 >
                     <MultiSelect
                         size="sm"

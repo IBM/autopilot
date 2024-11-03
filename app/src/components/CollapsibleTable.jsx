@@ -24,7 +24,7 @@ const StyledTableCell = styled(TableCell)`
 `;
 
 const StyledTableRow = styled(TableRow)`
-    background-color: ${(props) => (props.pass ? lightGreen : lightRed)};
+    background-color: ${(props) => (props.$pass ? lightGreen : lightRed)};
 `;
 
 const ExpandableTableWrapper = styled.div`
@@ -36,7 +36,7 @@ const Row = ({ node }) => {
 
     return (
         <>
-            <StyledTableRow pass={node.gpuHealth === 'PASS'}>
+            <StyledTableRow $pass={node.gpuHealth === 'PASS'}>
                 <TableCell style={{ padding: 0, height: '3rem' }}>
                     <Button
                         kind="ghost"
@@ -138,17 +138,31 @@ const Row = ({ node }) => {
     );
 };
 
-function CollapsibleTable({ nodes }) {
-    const [selectedGpuHealths, setSelectedGpuHealths] = useState([]);
-    const [selectedStatuses, setSelectedStatuses] = useState([]);
-    const [selectedRoles, setSelectedRoles] = useState([]);
-    const [selectedVersions, setSelectedVersions] = useState([]);
-    const [selectedArchitectures, setSelectedArchitectures] = useState([]);
-    const [selectedGpuPresents, setSelectedGpuPresents] = useState([]);
-    const [selectedGpuModels, setSelectedGpuModels] = useState([]);
-    const [selectedGpuCounts, setSelectedGpuCounts] = useState([]);
+function CollapsibleTable({ nodes, filters, onFilterChange }) {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    // Replace individual filter states with props
+    const {
+        gpuHealths: selectedGpuHealths,
+        statuses: selectedStatuses,
+        roles: selectedRoles,
+        versions: selectedVersions,
+        architectures: selectedArchitectures,
+        gpuPresents: selectedGpuPresents,
+        gpuModels: selectedGpuModels,
+        gpuCounts: selectedGpuCounts
+    } = filters;
+
+    // Update filter handlers to use onFilterChange prop
+    const handleGpuHealthFilterChange = (selectedItems) => onFilterChange('gpuHealths', selectedItems);
+    const handleStatusFilterChange = (selectedItems) => onFilterChange('statuses', selectedItems);
+    const handleRoleFilterChange = (selectedItems) => onFilterChange('roles', selectedItems);
+    const handleVersionFilterChange = (selectedItems) => onFilterChange('versions', selectedItems);
+    const handleArchitectureFilterChange = (selectedItems) => onFilterChange('architectures', selectedItems);
+    const handleGpuPresentFilterChange = (selectedItems) => onFilterChange('gpuPresents', selectedItems);
+    const handleGpuModelFilterChange = (selectedItems) => onFilterChange('gpuModels', selectedItems);
+    const handleGpuCountFilterChange = (selectedItems) => onFilterChange('gpuCounts', selectedItems);
 
     // Memoized filtered nodes
     const filteredNodes = useMemo(() => {
@@ -201,15 +215,6 @@ function CollapsibleTable({ nodes }) {
     const uniqueGpuPresents = useMemo(() => [...new Set(nodes.map(node => node.gpuPresent))], [nodes]);
     const uniqueGpuModels = useMemo(() => [...new Set(nodes.map(node => node.gpuModel))], [nodes]);
     const uniqueGpuCounts = useMemo(() => [...new Set(nodes.map(node => node.gpuCount.toString()))], [nodes]); // Convert to string for unique values
-
-    const handleGpuHealthFilterChange = (selectedItems) => setSelectedGpuHealths(selectedItems);
-    const handleStatusFilterChange = (selectedItems) => setSelectedStatuses(selectedItems);
-    const handleRoleFilterChange = (selectedItems) => setSelectedRoles(selectedItems);
-    const handleVersionFilterChange = (selectedItems) => setSelectedVersions(selectedItems);
-    const handleArchitectureFilterChange = (selectedItems) => setSelectedArchitectures(selectedItems);
-    const handleGpuPresentFilterChange = (selectedItems) => setSelectedGpuPresents(selectedItems);
-    const handleGpuModelFilterChange = (selectedItems) => setSelectedGpuModels(selectedItems);
-    const handleGpuCountFilterChange = (selectedItems) => setSelectedGpuCounts(selectedItems);
 
     return (
         <>
@@ -293,11 +298,15 @@ function CollapsibleTable({ nodes }) {
                             </StyledTableCell>
                         </TableRow>
                     </TableHead>
-                    <TableBody>
-                        {nodesToDisplay.map((node) => (
-                            <Row key={node.name} node={node} />
-                        ))}
-                    </TableBody>
+                    {filteredNodes.length > 0 ? (
+                        <TableBody>
+                            {nodesToDisplay.map((node) => (
+                                <Row key={node.name} node={node} />
+                            ))}
+                        </TableBody>
+                    ) : (
+                        <p>No matching nodes found.</p>
+                    )}
                 </Table>
             </ResponsiveTableContainer>
             <Pagination
@@ -369,6 +378,17 @@ CollapsibleTable.propTypes = {
             ).isRequired,
         })
     ).isRequired,
+    filters: PropTypes.shape({
+        gpuHealths: PropTypes.arrayOf(PropTypes.string).isRequired,
+        statuses: PropTypes.arrayOf(PropTypes.string).isRequired,
+        roles: PropTypes.arrayOf(PropTypes.string).isRequired,
+        versions: PropTypes.arrayOf(PropTypes.string).isRequired,
+        architectures: PropTypes.arrayOf(PropTypes.string).isRequired,
+        gpuPresents: PropTypes.arrayOf(PropTypes.string).isRequired,
+        gpuModels: PropTypes.arrayOf(PropTypes.string).isRequired,
+        gpuCounts: PropTypes.arrayOf(PropTypes.string).isRequired
+    }).isRequired,
+    onFilterChange: PropTypes.func.isRequired
 };
 
 export default CollapsibleTable;
