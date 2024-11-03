@@ -157,7 +157,7 @@ function Testing() {
                                 id="nodes"
                                 titleText="Nodes"
                                 placeholder="Select Nodes"
-                                items={nodes.map(node => node.metadata.name)} // mapping node objects to names
+                                items={workerNodes}
                                 selectedItems={selectedNodes}
                                 itemToString={(item) => (item ? item : '')}
                                 onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
