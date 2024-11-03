@@ -13,38 +13,6 @@ const DropdownContainer = styled.div`
     padding: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     width: ${(props) => props.dropdownWidth}px;
-
-    /* Override Carbon's default styles to maximize text space */
-    .cds--multi-select {
-        width: 100%;
-    }
-
-    .cds--list-box__menu {
-        width: 100%;
-    }
-
-    /* Give more space to the text by reducing padding */
-    .cds--list-box__menu-item {
-        padding-right: 8px;
-    }
-
-    .cds--list-box__menu-item__option {
-        margin-right: 8px;
-    }
-
-    /* Ensure checkbox doesn't take too much space */
-    .cds--checkbox-wrapper {
-        min-width: 16px;
-        margin-right: 4px;
-    }
-
-    /* Adjust the text container */
-    .cds--list-box__menu-item-text {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: calc(100% - 28px); /* Account for checkbox width */
-    }
 `;
 
 
@@ -55,23 +23,38 @@ const ColumnFilter = ({ label, items, selectedFilters, onFilterChange }) => {
     const dropdownRef = useRef(null);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
     const [dropdownWidth, setDropdownWidth] = useState(175);
+    const calculateDropdownWidth = () => {
+        // Measure text width
+        const measuringDiv = document.createElement('div');
+        measuringDiv.style.position = 'absolute';
+        measuringDiv.style.visibility = 'hidden';
+        measuringDiv.style.whiteSpace = 'nowrap';
+        measuringDiv.style.fontFamily = 'IBM Plex Sans, sans-serif';
+        measuringDiv.style.fontSize = '14px';
+        document.body.appendChild(measuringDiv);
 
-    const calculateMaxWidth = () => {
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        context.font = '14px IBM Plex Sans';
-
+        // Measure each item
         const itemWidths = items.map(item => {
-            const metrics = context.measureText(item);
-            return metrics.width;
+            measuringDiv.textContent = item;
+            return measuringDiv.offsetWidth;
         });
 
-        const maxTextWidth = Math.max(...itemWidths);
-        // Increased padding to account for checkbox and other UI elements
-        const totalWidth = maxTextWidth + 90; // Increased padding
+        measuringDiv.textContent = label;
+        const labelWidth = measuringDiv.offsetWidth;
 
-        // Adjusted min/max values
-        return Math.min(Math.max(totalWidth, 200), 400); // Increased min and max width
+        document.body.removeChild(measuringDiv);
+
+        // Calculate the required width
+        const maxContentWidth = Math.max(...itemWidths, labelWidth);
+        
+        
+        const padding = 100;
+        
+        // Set minimum and maximum constraints
+        const minWidth = 200;
+        const maxWidth = Math.min(400, window.innerWidth - 40);
+        
+        return Math.max(minWidth, Math.min(maxContentWidth + padding, maxWidth));
     };
 
     const handleFilterToggle = () => {
@@ -80,7 +63,7 @@ const ColumnFilter = ({ label, items, selectedFilters, onFilterChange }) => {
         } else {
             const buttonRect = buttonRef.current.getBoundingClientRect();
             const dropdownHeight = 300;
-            const calculatedWidth = calculateMaxWidth();
+            const calculatedWidth = calculateDropdownWidth();
             setDropdownWidth(calculatedWidth);
 
             let top = buttonRect.bottom + window.scrollY + 5;
