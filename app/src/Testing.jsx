@@ -45,6 +45,8 @@ function Testing() {
             });
     }, []);
 
+    // Filter nodes for worker nodes only
+    const workerNodes = nodes.filter(node => node.startsWith('wrk'));
 
     const handleSelectTests = (selected) => {
         setSelectedTests(selected);
@@ -70,7 +72,7 @@ function Testing() {
     };
 
     const selectAllNodes = () => {
-        setSelectedNodes(nodes);
+        setSelectedNodes(workerNodes);
     };
 
     const selectAllTests = () => {
@@ -95,7 +97,7 @@ function Testing() {
     };
 
     const getMaxItemLength = () => {
-        const combinedArray = [...(nodes || []), ...(tests || [])];
+        const combinedArray = [...(workerNodes || []), ...(tests || [])];
         let maxLength = 0;
         for (let item of combinedArray) {
             if (item.length > maxLength) {
@@ -154,7 +156,7 @@ function Testing() {
                                 id="nodes"
                                 titleText="Nodes"
                                 label="Select Nodes"
-                                items= {nodes}
+                                items= {workerNodes}
                                 selectedItems={selectedNodes}
                                 itemToString={(item) => (item ? item : '')}
                                 onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
