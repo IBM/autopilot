@@ -5,8 +5,8 @@ import runTests from './api/runTests';
 // import watchNodes from "./api/watchNodes.js";
 import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
 import { Helmet } from 'react-helmet';
-import { Button, MultiSelect, Toggle, NumberInput, TextInput } from '@carbon/react';
 import * as styles from './Styles';
+import { Button, Toggle, NumberInput, TextInput, FilterableMultiSelect } from '@carbon/react';
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
@@ -120,9 +120,9 @@ function Testing() {
                     
                     <div style={styles.testParameterStyle}>
                         <div style={styles.dynamicWidth(maxLength)}>
-                            <MultiSelect
+                            <FilterableMultiSelect
                                 id="health-checks"
-                                label="Select Tests"
+                                placeholder="Select Tests"
                                 items={tests}
                                 selectedItems={selectedTests}
                                 itemToString={(item) => (item ? item : '')}
@@ -135,8 +135,8 @@ function Testing() {
                         </Button>
                     </div>
 
-                    {selectedTests.includes('dcgm') && (
-                        <div style={styles.testParameterStyle}>
+                    <div style={{ display: 'flex', gap: '1vw', justifyContent: 'center' }}>
+                        {selectedTests.includes('dcgm') && (
                             <div style={{ width: '10vw' }}>
                                 <NumberInput
                                     id="dcgm-number"
@@ -152,14 +152,15 @@ function Testing() {
 
                     <div style={styles.testParameterStyle}>
                         <div style={styles.dynamicWidth(maxLength)}>
-                            <MultiSelect
+                            <FilterableMultiSelect
                                 id="nodes"
                                 titleText="Nodes"
-                                label="Select Nodes"
-                                items= {workerNodes}
+                                placeholder="Select Nodes"
+                                items={nodes.map(node => node.metadata.name)} // mapping node objects to names
                                 selectedItems={selectedNodes}
                                 itemToString={(item) => (item ? item : '')}
                                 onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
+                                filterable
                             />
                         </div>
                         <Button kind="primary" onClick={selectAllNodes} style={styles.buttonStyle}>
