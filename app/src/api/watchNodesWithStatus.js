@@ -3,9 +3,15 @@
 export default async function watchNodesWithStatus(onNodeChange) {
     const endpoint = import.meta.env.VITE_KUBERNETES_ENDPOINT;
     const apiUrl = `${endpoint}/api/v1/nodes?watch=true`;
+    const token = import.meta.env.VITE_SERVICE_ACC_TOKEN;
 
     try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
         const reader = response.body.getReader();
         const utf8Decoder = new TextDecoder('utf-8');
         let buffer = '';

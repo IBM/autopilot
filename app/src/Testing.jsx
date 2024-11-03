@@ -117,7 +117,7 @@ function Testing() {
             <div style={styles.containerStyle}>
                 <div style={styles.sectionStyle}>
                     <h2 style={styles.headerStyle}>Test Parameters</h2>
-                    
+
                     <div style={styles.testParameterStyle}>
                         <div style={styles.dynamicWidth(maxLength)}>
                             <FilterableMultiSelect
@@ -147,8 +147,9 @@ function Testing() {
                                     onChange={handleDcgmChange}
                                 />
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
+
 
                     <div style={styles.testParameterStyle}>
                         <div style={styles.dynamicWidth(maxLength)}>
