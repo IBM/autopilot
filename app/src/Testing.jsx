@@ -5,8 +5,8 @@ import runTests from './api/runTests';
 // import watchNodes from "./api/watchNodes.js";
 import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
 import { Helmet } from 'react-helmet';
-import { Button, MultiSelect, Toggle, NumberInput, TextInput } from '@carbon/react';
 import * as styles from './Styles';
+import { Button, Toggle, NumberInput, TextInput, FilterableMultiSelect } from '@carbon/react';
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
@@ -45,6 +45,8 @@ function Testing() {
             });
     }, []);
 
+    // Filter nodes for worker nodes only
+    const workerNodes = nodes.filter(node => node.startsWith('wrk'));
 
     const handleSelectTests = (selected) => {
         setSelectedTests(selected);
@@ -70,7 +72,7 @@ function Testing() {
     };
 
     const selectAllNodes = () => {
-        setSelectedNodes(nodes);
+        setSelectedNodes(workerNodes);
     };
 
     const selectAllTests = () => {
@@ -95,7 +97,7 @@ function Testing() {
     };
 
     const getMaxItemLength = () => {
-        const combinedArray = [...(nodes || []), ...(tests || [])];
+        const combinedArray = [...(workerNodes || []), ...(tests || [])];
         let maxLength = 0;
         for (let item of combinedArray) {
             if (item.length > maxLength) {
@@ -115,12 +117,12 @@ function Testing() {
             <div style={styles.containerStyle}>
                 <div style={styles.sectionStyle}>
                     <h2 style={styles.headerStyle}>Test Parameters</h2>
-                    
+
                     <div style={styles.testParameterStyle}>
                         <div style={styles.dynamicWidth(maxLength)}>
-                            <MultiSelect
+                            <FilterableMultiSelect
                                 id="health-checks"
-                                label="Select Tests"
+                                placeholder="Select Tests"
                                 items={tests}
                                 selectedItems={selectedTests}
                                 itemToString={(item) => (item ? item : '')}
@@ -133,8 +135,8 @@ function Testing() {
                         </Button>
                     </div>
 
-                    {selectedTests.includes('dcgm') && (
-                        <div style={styles.testParameterStyle}>
+                    <div style={{ display: 'flex', gap: '1vw', justifyContent: 'center' }}>
+                        {selectedTests.includes('dcgm') && (
                             <div style={{ width: '10vw' }}>
                                 <NumberInput
                                     id="dcgm-number"
@@ -145,19 +147,21 @@ function Testing() {
                                     onChange={handleDcgmChange}
                                 />
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
+
 
                     <div style={styles.testParameterStyle}>
                         <div style={styles.dynamicWidth(maxLength)}>
-                            <MultiSelect
+                            <FilterableMultiSelect
                                 id="nodes"
                                 titleText="Nodes"
-                                label="Select Nodes"
-                                items= {nodes}
+                                placeholder="Select Nodes"
+                                items={workerNodes}
                                 selectedItems={selectedNodes}
                                 itemToString={(item) => (item ? item : '')}
                                 onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
+                                filterable
                             />
                         </div>
                         <Button kind="primary" onClick={selectAllNodes} style={styles.buttonStyle}>

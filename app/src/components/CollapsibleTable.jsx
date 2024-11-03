@@ -60,7 +60,6 @@ const Row = ({ node }) => {
 
                 <TableCell>{node.name}</TableCell>
                 <TableCell align="left">{node.status === 'True' ? 'Ready' : 'Not Ready'}</TableCell>
-                <TableCell align="left">{node.role}</TableCell>
                 <TableCell align="left">{node.version}</TableCell>
                 <TableCell align="left">{node.architecture}</TableCell>
                 <TableCell align="left">{node.gpuPresent}</TableCell>
@@ -146,7 +145,6 @@ function CollapsibleTable({ nodes, filters, onFilterChange }) {
     const {
         gpuHealths: selectedGpuHealths,
         statuses: selectedStatuses,
-        roles: selectedRoles,
         versions: selectedVersions,
         architectures: selectedArchitectures,
         gpuPresents: selectedGpuPresents,
@@ -157,7 +155,6 @@ function CollapsibleTable({ nodes, filters, onFilterChange }) {
     // Update filter handlers to use onFilterChange prop
     const handleGpuHealthFilterChange = (selectedItems) => onFilterChange('gpuHealths', selectedItems);
     const handleStatusFilterChange = (selectedItems) => onFilterChange('statuses', selectedItems);
-    const handleRoleFilterChange = (selectedItems) => onFilterChange('roles', selectedItems);
     const handleVersionFilterChange = (selectedItems) => onFilterChange('versions', selectedItems);
     const handleArchitectureFilterChange = (selectedItems) => onFilterChange('architectures', selectedItems);
     const handleGpuPresentFilterChange = (selectedItems) => onFilterChange('gpuPresents', selectedItems);
@@ -169,16 +166,15 @@ function CollapsibleTable({ nodes, filters, onFilterChange }) {
         return nodes.filter(node => {
             const gpuHealthMatch = selectedGpuHealths.length === 0 || selectedGpuHealths.includes(node.gpuHealth);
             const statusMatch = selectedStatuses.length === 0 || selectedStatuses.includes(node.status === 'True' ? 'Ready' : 'Not Ready');
-            const roleMatch = selectedRoles.length === 0 || selectedRoles.includes(node.role);
             const versionMatch = selectedVersions.length === 0 || selectedVersions.includes(node.version);
             const architectureMatch = selectedArchitectures.length === 0 || selectedArchitectures.includes(node.architecture);
             const gpuPresentMatch = selectedGpuPresents.length === 0 || selectedGpuPresents.includes(node.gpuPresent);
             const gpuModelMatch = selectedGpuModels.length === 0 || selectedGpuModels.includes(node.gpuModel);
             const gpuCountMatch = selectedGpuCounts.length === 0 || selectedGpuCounts.includes(node.gpuCount.toString()); // Convert to string for comparison
 
-            return gpuHealthMatch && statusMatch && roleMatch && versionMatch && architectureMatch && gpuPresentMatch && gpuModelMatch && gpuCountMatch;
+            return gpuHealthMatch && statusMatch && versionMatch && architectureMatch && gpuPresentMatch && gpuModelMatch && gpuCountMatch;
         });
-    }, [nodes, selectedGpuHealths, selectedStatuses, selectedRoles, selectedVersions, selectedArchitectures, selectedGpuPresents, selectedGpuModels, selectedGpuCounts]);
+    }, [nodes, selectedGpuHealths, selectedStatuses, selectedVersions, selectedArchitectures, selectedGpuPresents, selectedGpuModels, selectedGpuCounts]);
 
     // Calculate total pages and slice nodes
     const totalItems = filteredNodes.length;
@@ -199,7 +195,6 @@ function CollapsibleTable({ nodes, filters, onFilterChange }) {
     }, [
         selectedGpuHealths,
         selectedStatuses,
-        selectedRoles,
         selectedVersions,
         selectedArchitectures,
         selectedGpuPresents,
@@ -209,7 +204,6 @@ function CollapsibleTable({ nodes, filters, onFilterChange }) {
 
     const uniqueGpuHealths = useMemo(() => [...new Set(nodes.map(node => node.gpuHealth))], [nodes]);
     const uniqueStatuses = useMemo(() => [...new Set(nodes.map(node => (node.status === 'True' ? 'Ready' : 'Not Ready')))], [nodes]);
-    const uniqueRoles = useMemo(() => [...new Set(nodes.map(node => node.role))], [nodes]);
     const uniqueVersions = useMemo(() => [...new Set(nodes.map(node => node.version))], [nodes]);
     const uniqueArchitectures = useMemo(() => [...new Set(nodes.map(node => node.architecture))], [nodes]);
     const uniqueGpuPresents = useMemo(() => [...new Set(nodes.map(node => node.gpuPresent))], [nodes]);
@@ -231,15 +225,6 @@ function CollapsibleTable({ nodes, filters, onFilterChange }) {
                                     items={uniqueStatuses}
                                     selectedFilters={selectedStatuses}
                                     onFilterChange={handleStatusFilterChange}
-                                />
-                            </StyledTableCell>
-                            <StyledTableCell>
-                                Role
-                                <ColumnFilter
-                                    label="Role"
-                                    items={uniqueRoles}
-                                    selectedFilters={selectedRoles}
-                                    onFilterChange={handleRoleFilterChange}
                                 />
                             </StyledTableCell>
                             <StyledTableCell>
@@ -325,7 +310,6 @@ Row.propTypes = {
     node: PropTypes.shape({
         name: PropTypes.string.isRequired,
         status: PropTypes.string.isRequired,
-        role: PropTypes.string.isRequired,
         version: PropTypes.string.isRequired,
         architecture: PropTypes.string.isRequired,
         gpuPresent: PropTypes.string.isRequired,
@@ -359,7 +343,6 @@ CollapsibleTable.propTypes = {
         PropTypes.shape({
             name: PropTypes.string.isRequired,
             status: PropTypes.string.isRequired,
-            role: PropTypes.string.isRequired,
             version: PropTypes.string.isRequired,
             architecture: PropTypes.string.isRequired,
             gpuPresent: PropTypes.string.isRequired,
@@ -381,7 +364,6 @@ CollapsibleTable.propTypes = {
     filters: PropTypes.shape({
         gpuHealths: PropTypes.arrayOf(PropTypes.string).isRequired,
         statuses: PropTypes.arrayOf(PropTypes.string).isRequired,
-        roles: PropTypes.arrayOf(PropTypes.string).isRequired,
         versions: PropTypes.arrayOf(PropTypes.string).isRequired,
         architectures: PropTypes.arrayOf(PropTypes.string).isRequired,
         gpuPresents: PropTypes.arrayOf(PropTypes.string).isRequired,

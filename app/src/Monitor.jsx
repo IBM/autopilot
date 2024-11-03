@@ -197,8 +197,11 @@ function Monitor() {
             });
     }, []);
 
+    // Filter nodes for worker nodes only
+    const workerNodes = nodes.filter(node => node.name.startsWith('wrk'));
+
     // Filter nodes based on search query
-    const filteredNodes = nodes.filter(node => {
+    const filteredNodes = workerNodes.filter(node => {
         const searchQueryLower = searchQuery.toLowerCase();
         return Object.values(node).some(value =>
             value.toString().toLowerCase().includes(searchQueryLower)
