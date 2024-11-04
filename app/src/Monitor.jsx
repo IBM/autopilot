@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled from "styled-components";
 // import { useNodesWithStatus } from "./api/getNodesWithStatus.js";
 import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
 import CollapsibleTable from "./components/CollapsibleTable.jsx";
 import SearchInput from './components/SearchInput';
 import { Helmet } from 'react-helmet';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Displaying live node labels and status + current health checks
 
@@ -26,22 +27,151 @@ const MonitorWrapper = styled.div`
 `;
 
 function Monitor() {
-    // const { nodes, error } = useNodesWithStatus();
+    const navigate = useNavigate();
+    const location = useLocation();
     const[nodes, setNodes] = useState([]);
     const [searchQuery, setSearchQuery] = useState(''); // State for search query
+    const [filters, setFilters] = useState({
+        gpuHealths: [],
+        statuses: [],
+        roles: [],
+        versions: [],
+        architectures: [],
+        gpuPresents: [],
+        gpuModels: [],
+        gpuCounts: []
+    });
 
-    /*
-    if (error) {
-        return <div>Error loading node status</div>;
-    }
+    // Unique filter values
+    const uniqueGpuHealths = useMemo(() => [...new Set(nodes.map(node => node.gpuHealth))], [nodes]);
+    const uniqueStatuses = useMemo(() => [...new Set(nodes.map(node => (node.status === 'True' ? 'Ready' : 'Not Ready')))], [nodes]);
+    const uniqueRoles = useMemo(() => [...new Set(nodes.map(node => node.role))], [nodes]);
+    const uniqueVersions = useMemo(() => [...new Set(nodes.map(node => node.version))], [nodes]);
+    const uniqueArchitectures = useMemo(() => [...new Set(nodes.map(node => node.architecture))], [nodes]);
+    const uniqueGpuPresents = useMemo(() => [...new Set(nodes.map(node => node.gpuPresent))], [nodes]);
+    const uniqueGpuModels = useMemo(() => [...new Set(nodes.map(node => node.gpuModel))], [nodes]);
+    const uniqueGpuCounts = useMemo(() => [...new Set(nodes.map(node => node.gpuCount.toString()))], [nodes]); // Convert to string for unique values
 
-    if (!nodes.length) {
-        return <div>Loading...</div>;
-    }
-    */
+    // Validate and sanitize filters
+    useEffect(() => {
+        const validFilters = {
+            gpuHealths: uniqueGpuHealths,
+            statuses: uniqueStatuses,
+            roles: uniqueRoles,
+            versions: uniqueVersions,
+            architectures: uniqueArchitectures,
+            gpuPresents: uniqueGpuPresents,
+            gpuModels: uniqueGpuModels,
+            gpuCounts: uniqueGpuCounts
+        };
 
-    // Log the first node for debugging purposes
-    // console.log(nodes[0]);
+        let isValid = true;
+        const sanitizedFilters = { ...filters };
+
+        Object.keys(sanitizedFilters).forEach(key => {
+            sanitizedFilters[key] = sanitizedFilters[key].filter(value => validFilters[key].includes(value));
+            if (sanitizedFilters[key].length !== filters[key].length) {
+                isValid = false;
+            }
+        });
+
+        if (!isValid) {
+            setFilters(sanitizedFilters);
+            updateURL(sanitizedFilters, searchQuery);
+        }
+    }, [
+        uniqueGpuHealths,
+        uniqueStatuses,
+        uniqueRoles,
+        uniqueVersions,
+        uniqueArchitectures,
+        uniqueGpuPresents,
+        uniqueGpuModels,
+        uniqueGpuCounts
+    ]);
+
+    // Initialize filters from URL on component mount
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+
+        // If there are no search params, don't set any filters
+        if (params.toString() === '') {
+            setFilters({
+                gpuHealths: [],
+                statuses: [],
+                roles: [],
+                versions: [],
+                architectures: [],
+                gpuPresents: [],
+                gpuModels: [],
+                gpuCounts: []
+            });
+            setSearchQuery('');
+            return;
+        }
+
+        // Otherwise process URL parameters
+        const initialFilters = {
+            gpuHealths: params.getAll('gpuHealth'),
+            statuses: params.getAll('status'),
+            roles: params.getAll('role'),
+            versions: params.getAll('version'),
+            architectures: params.getAll('architecture'),
+            gpuPresents: params.getAll('gpuPresent'),
+            gpuModels: params.getAll('gpuModel'),
+            gpuCounts: params.getAll('gpuCount')
+        };
+        setFilters(initialFilters);
+        setSearchQuery(params.get('search') || '');
+    }, [location.search]);
+
+    // Update URL when filters change
+    const updateURL = (newFilters, newSearch) => {
+        const params = new URLSearchParams();
+        let hasFilters = false;
+        
+        if (newSearch) {
+            params.set('search', newSearch);
+            hasFilters = true;
+        }
+        
+        const pluralToSingular = {
+            gpuHealths: 'gpuHealth',
+            statuses: 'status',
+            roles: 'role',
+            versions: 'version',
+            architectures: 'architecture',
+            gpuPresents: 'gpuPresent',
+            gpuModels: 'gpuModel',
+            gpuCounts: 'gpuCount'
+        };
+        
+        Object.entries(newFilters).forEach(([key, values]) => {
+            if (values.length > 0) {
+                const paramKey = pluralToSingular[key] || key.replace(/s$/, '');
+                values.forEach(value => {
+                    params.append(paramKey, value);
+                });
+                hasFilters = true;
+            }
+        });
+
+        // Only update URL if there are filters, otherwise clear search params
+        navigate({ search: hasFilters ? params.toString() : '' }, { replace: true });
+    };
+
+    // Handle search query changes
+    const handleSearchChange = (newQuery) => {
+        setSearchQuery(newQuery);
+        updateURL(filters, newQuery);
+    };
+
+    // Handle filter changes
+    const handleFilterChange = (filterType, values) => {
+        const newFilters = { ...filters, [filterType]: values };
+        setFilters(newFilters);
+        updateURL(newFilters, searchQuery);
+    };
 
     useEffect(() => {
         const handleNodeChange = (node, isDeleted = false) => {
@@ -78,51 +208,26 @@ function Monitor() {
         );
     });
 
-    // // Filter nodes by all fields except memory, including the readiness condition for status
-    // const filteredNodes = nodes.filter(node => {
-    //     const {
-    //         name, role, status, version, architecture, gpuPresent,
-    //         gpuHealth, gpuCount, gpuModel, dcgmStatus, dcgmTimestamp, capacity, allocatable
-    //     } = node;
-    //
-    //     const readinessStatus = status === 'True' ? 'Ready' : 'Not Ready'; // Convert status to Ready/Not Ready
-    //     const searchQueryLower = searchQuery.toLowerCase();
-    //
-    //     return (
-    //         name.toLowerCase().includes(searchQueryLower) ||
-    //         role.toLowerCase().includes(searchQueryLower) ||
-    //         readinessStatus.toLowerCase().includes(searchQueryLower) || // Add readiness condition to filtering
-    //         version.toLowerCase().includes(searchQueryLower) ||
-    //         architecture.toLowerCase().includes(searchQueryLower) ||
-    //         gpuPresent.toLowerCase().includes(searchQueryLower) ||
-    //         gpuHealth.toLowerCase().includes(searchQueryLower) ||
-    //         gpuCount.toLowerCase().includes(searchQueryLower) ||
-    //         gpuModel.toLowerCase().includes(searchQueryLower) ||
-    //         dcgmStatus.toLowerCase().includes(searchQueryLower) ||
-    //         dcgmTimestamp.toLowerCase().includes(searchQueryLower) ||
-    //         capacity.gpu.toLowerCase().includes(searchQueryLower) ||
-    //         capacity.cpu.toLowerCase().includes(searchQueryLower) ||
-    //         allocatable.gpu.toLowerCase().includes(searchQueryLower) ||
-    //         allocatable.cpu.toLowerCase().includes(searchQueryLower)
-    //     );
-    // });
+    
 
     return (
         <MonitorWrapper>
             <Helmet>
-                <title>Monitor Cluster</title> {/* Set the page title here */}
+                <title>Monitor Cluster</title>
+                <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg" />
             </Helmet>
             <h1>Monitor Cluster</h1>
             <SearchInput
                 searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
+                setSearchQuery={handleSearchChange}
                 label="Search Features"
             />
-            <CollapsibleTable nodes={filteredNodes} />
-            {/*<CollapsibleTable nodes={filteredNodes.map(node => ({*/}
-            {/*    ...node,*/}
-            {/*    readiness: node.status === 'True' ? 'Ready' : 'Not Ready' // Add readiness status to the node object*/}
-            {/*}))} /> /!* Display filtered nodes with readiness status *!/*/}
+            
+            <CollapsibleTable 
+                nodes={filteredNodes}
+                filters={filters}
+                onFilterChange={handleFilterChange}
+            />
         </MonitorWrapper>
     );
 }

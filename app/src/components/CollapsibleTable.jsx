@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
-import { Table, TableHead, TableRow, TableBody, TableCell, TableContainer, Button } from '@carbon/react';
+import { Table, TableHead, TableRow, TableBody, TableCell, TableContainer, Button, Pagination } from '@carbon/react';
 import { ChevronDown, ChevronUp } from '@carbon/icons-react';
 import ColumnFilter from './ColumnFilter';
 
@@ -24,7 +24,7 @@ const StyledTableCell = styled(TableCell)`
 `;
 
 const StyledTableRow = styled(TableRow)`
-    background-color: ${(props) => (props.pass ? lightGreen : lightRed)};
+    background-color: ${(props) => (props.$pass ? lightGreen : lightRed)};
 `;
 
 const ExpandableTableWrapper = styled.div`
@@ -36,7 +36,7 @@ const Row = ({ node }) => {
 
     return (
         <>
-            <StyledTableRow pass={node.gpuHealth === 'PASS'}>
+            <StyledTableRow $pass={node.gpuHealth === 'PASS'}>
                 <TableCell style={{ padding: 0, height: '3rem' }}>
                     <Button
                         kind="ghost"
@@ -137,14 +137,29 @@ const Row = ({ node }) => {
     );
 };
 
-function CollapsibleTable({ nodes }) {
-    const [selectedGpuHealths, setSelectedGpuHealths] = useState([]);
-    const [selectedStatuses, setSelectedStatuses] = useState([]);
-    const [selectedVersions, setSelectedVersions] = useState([]);
-    const [selectedArchitectures, setSelectedArchitectures] = useState([]);
-    const [selectedGpuPresents, setSelectedGpuPresents] = useState([]);
-    const [selectedGpuModels, setSelectedGpuModels] = useState([]);
-    const [selectedGpuCounts, setSelectedGpuCounts] = useState([]);
+function CollapsibleTable({ nodes, filters, onFilterChange }) {
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    // Replace individual filter states with props
+    const {
+        gpuHealths: selectedGpuHealths,
+        statuses: selectedStatuses,
+        versions: selectedVersions,
+        architectures: selectedArchitectures,
+        gpuPresents: selectedGpuPresents,
+        gpuModels: selectedGpuModels,
+        gpuCounts: selectedGpuCounts
+    } = filters;
+
+    // Update filter handlers to use onFilterChange prop
+    const handleGpuHealthFilterChange = (selectedItems) => onFilterChange('gpuHealths', selectedItems);
+    const handleStatusFilterChange = (selectedItems) => onFilterChange('statuses', selectedItems);
+    const handleVersionFilterChange = (selectedItems) => onFilterChange('versions', selectedItems);
+    const handleArchitectureFilterChange = (selectedItems) => onFilterChange('architectures', selectedItems);
+    const handleGpuPresentFilterChange = (selectedItems) => onFilterChange('gpuPresents', selectedItems);
+    const handleGpuModelFilterChange = (selectedItems) => onFilterChange('gpuModels', selectedItems);
+    const handleGpuCountFilterChange = (selectedItems) => onFilterChange('gpuCounts', selectedItems);
 
     // Memoized filtered nodes
     const filteredNodes = useMemo(() => {
@@ -157,9 +172,35 @@ function CollapsibleTable({ nodes }) {
             const gpuModelMatch = selectedGpuModels.length === 0 || selectedGpuModels.includes(node.gpuModel);
             const gpuCountMatch = selectedGpuCounts.length === 0 || selectedGpuCounts.includes(node.gpuCount.toString()); // Convert to string for comparison
 
-            return gpuHealthMatch && statusMatch  && versionMatch && architectureMatch && gpuPresentMatch && gpuModelMatch && gpuCountMatch;
+            return gpuHealthMatch && statusMatch && versionMatch && architectureMatch && gpuPresentMatch && gpuModelMatch && gpuCountMatch;
         });
     }, [nodes, selectedGpuHealths, selectedStatuses, selectedVersions, selectedArchitectures, selectedGpuPresents, selectedGpuModels, selectedGpuCounts]);
+
+    // Calculate total pages and slice nodes
+    const totalItems = filteredNodes.length;
+    const nodesToDisplay = filteredNodes.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    // Handle page change
+    const handlePageChange = ({ page, pageSize }) => {
+        setCurrentPage(page);
+        setItemsPerPage(pageSize);
+    };
+
+    // Reset current page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [
+        selectedGpuHealths,
+        selectedStatuses,
+        selectedVersions,
+        selectedArchitectures,
+        selectedGpuPresents,
+        selectedGpuModels,
+        selectedGpuCounts
+    ]);
 
     const uniqueGpuHealths = useMemo(() => [...new Set(nodes.map(node => node.gpuHealth))], [nodes]);
     const uniqueStatuses = useMemo(() => [...new Set(nodes.map(node => (node.status === 'True' ? 'Ready' : 'Not Ready')))], [nodes]);
@@ -169,93 +210,98 @@ function CollapsibleTable({ nodes }) {
     const uniqueGpuModels = useMemo(() => [...new Set(nodes.map(node => node.gpuModel))], [nodes]);
     const uniqueGpuCounts = useMemo(() => [...new Set(nodes.map(node => node.gpuCount.toString()))], [nodes]); // Convert to string for unique values
 
-    const handleGpuHealthFilterChange = (selectedItems) => setSelectedGpuHealths(selectedItems);
-    const handleStatusFilterChange = (selectedItems) => setSelectedStatuses(selectedItems);
-    const handleVersionFilterChange = (selectedItems) => setSelectedVersions(selectedItems);
-    const handleArchitectureFilterChange = (selectedItems) => setSelectedArchitectures(selectedItems);
-    const handleGpuPresentFilterChange = (selectedItems) => setSelectedGpuPresents(selectedItems);
-    const handleGpuModelFilterChange = (selectedItems) => setSelectedGpuModels(selectedItems);
-    const handleGpuCountFilterChange = (selectedItems) => setSelectedGpuCounts(selectedItems);
-
     return (
-        <ResponsiveTableContainer>
-            <Table>
-                <TableHead>
-                    <TableRow>
-                        <TableCell />
-                        <StyledTableCell>Node Name</StyledTableCell>
-                        <StyledTableCell>
-                            Status
-                            <ColumnFilter
-                                label="Status"
-                                items={uniqueStatuses}
-                                selectedFilters={selectedStatuses}
-                                onFilterChange={handleStatusFilterChange}
-                            />
-                        </StyledTableCell>
-                        <StyledTableCell>
-                            Version
-                            <ColumnFilter
-                                label="Version"
-                                items={uniqueVersions}
-                                selectedFilters={selectedVersions}
-                                onFilterChange={handleVersionFilterChange}
-                            />
-                        </StyledTableCell>
-                        <StyledTableCell>
-                            Architecture
-                            <ColumnFilter
-                                label="Architecture"
-                                items={uniqueArchitectures}
-                                selectedFilters={selectedArchitectures}
-                                onFilterChange={handleArchitectureFilterChange}
-                            />
-                        </StyledTableCell>
-                        <StyledTableCell>
-                            GPU Present
-                            <ColumnFilter
-                                label="GPU Present"
-                                items={uniqueGpuPresents}
-                                selectedFilters={selectedGpuPresents}
-                                onFilterChange={handleGpuPresentFilterChange}
-                            />
-                        </StyledTableCell>
-                        <StyledTableCell>
-                            GPU Type
-                            <ColumnFilter
-                                label="GPU Model"
-                                items={uniqueGpuModels}
-                                selectedFilters={selectedGpuModels}
-                                onFilterChange={handleGpuModelFilterChange}
-                            />
-                        </StyledTableCell>
-                        <StyledTableCell>
-                            GPU Count
-                            <ColumnFilter
-                                label="GPU Count"
-                                items={uniqueGpuCounts}
-                                selectedFilters={selectedGpuCounts}
-                                onFilterChange={handleGpuCountFilterChange}
-                            />
-                        </StyledTableCell>
-                        <StyledTableCell>
-                            GPU Health
-                            <ColumnFilter
-                                label="GPU Health"
-                                items={uniqueGpuHealths}
-                                selectedFilters={selectedGpuHealths}
-                                onFilterChange={handleGpuHealthFilterChange}
-                            />
-                        </StyledTableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {filteredNodes.map((node) => (
-                        <Row key={node.name} node={node} />
-                    ))}
-                </TableBody>
-            </Table>
-        </ResponsiveTableContainer>
+        <>
+            <ResponsiveTableContainer>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell />
+                            <StyledTableCell>Node Name</StyledTableCell>
+                            <StyledTableCell>
+                                Status
+                                <ColumnFilter
+                                    label="Status"
+                                    items={uniqueStatuses}
+                                    selectedFilters={selectedStatuses}
+                                    onFilterChange={handleStatusFilterChange}
+                                />
+                            </StyledTableCell>
+                            <StyledTableCell>
+                                Version
+                                <ColumnFilter
+                                    label="Version"
+                                    items={uniqueVersions}
+                                    selectedFilters={selectedVersions}
+                                    onFilterChange={handleVersionFilterChange}
+                                />
+                            </StyledTableCell>
+                            <StyledTableCell>
+                                Architecture
+                                <ColumnFilter
+                                    label="Architecture"
+                                    items={uniqueArchitectures}
+                                    selectedFilters={selectedArchitectures}
+                                    onFilterChange={handleArchitectureFilterChange}
+                                />
+                            </StyledTableCell>
+                            <StyledTableCell>
+                                GPU Present
+                                <ColumnFilter
+                                    label="GPU Present"
+                                    items={uniqueGpuPresents}
+                                    selectedFilters={selectedGpuPresents}
+                                    onFilterChange={handleGpuPresentFilterChange}
+                                />
+                            </StyledTableCell>
+                            <StyledTableCell>
+                                GPU Type
+                                <ColumnFilter
+                                    label="GPU Model"
+                                    items={uniqueGpuModels}
+                                    selectedFilters={selectedGpuModels}
+                                    onFilterChange={handleGpuModelFilterChange}
+                                />
+                            </StyledTableCell>
+                            <StyledTableCell>
+                                GPU Count
+                                <ColumnFilter
+                                    label="GPU Count"
+                                    items={uniqueGpuCounts}
+                                    selectedFilters={selectedGpuCounts}
+                                    onFilterChange={handleGpuCountFilterChange}
+                                />
+                            </StyledTableCell>
+                            <StyledTableCell>
+                                GPU Health
+                                <ColumnFilter
+                                    label="GPU Health"
+                                    items={uniqueGpuHealths}
+                                    selectedFilters={selectedGpuHealths}
+                                    onFilterChange={handleGpuHealthFilterChange}
+                                />
+                            </StyledTableCell>
+                        </TableRow>
+                    </TableHead>
+                    {filteredNodes.length > 0 ? (
+                        <TableBody>
+                            {nodesToDisplay.map((node) => (
+                                <Row key={node.name} node={node} />
+                            ))}
+                        </TableBody>
+                    ) : (
+                        <p>No matching nodes found.</p>
+                    )}
+                </Table>
+            </ResponsiveTableContainer>
+            <Pagination
+                totalItems={totalItems}
+                page={currentPage}
+                pageSize={itemsPerPage}
+                pageSizes={[5, 10, 20, 50]}
+                onChange={handlePageChange}
+            />
+        </>
     );
 }
 
@@ -315,6 +361,16 @@ CollapsibleTable.propTypes = {
             ).isRequired,
         })
     ).isRequired,
+    filters: PropTypes.shape({
+        gpuHealths: PropTypes.arrayOf(PropTypes.string).isRequired,
+        statuses: PropTypes.arrayOf(PropTypes.string).isRequired,
+        versions: PropTypes.arrayOf(PropTypes.string).isRequired,
+        architectures: PropTypes.arrayOf(PropTypes.string).isRequired,
+        gpuPresents: PropTypes.arrayOf(PropTypes.string).isRequired,
+        gpuModels: PropTypes.arrayOf(PropTypes.string).isRequired,
+        gpuCounts: PropTypes.arrayOf(PropTypes.string).isRequired
+    }).isRequired,
+    onFilterChange: PropTypes.func.isRequired
 };
 
 export default CollapsibleTable;
