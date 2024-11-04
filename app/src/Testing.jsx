@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Terminal from './components/Terminal';
 import runTests from './api/runTests';
-// import listNodes from './api/getNodes';
-// import watchNodes from "./api/watchNodes.js";
 import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
 import { Helmet } from 'react-helmet';
 import * as styles from './Styles';
@@ -72,11 +70,11 @@ function Testing() {
     };
 
     const selectAllNodes = () => {
-        setSelectedNodes(workerNodes);
+        setSelectedNodes(['all']);
     };
 
     const selectAllTests = () => {
-        setSelectedTests(tests);
+        setSelectedTests(['all']);
     };
 
     const handleToggle = () => {
@@ -123,7 +121,7 @@ function Testing() {
                             <FilterableMultiSelect
                                 id="health-checks"
                                 placeholder="Select Tests"
-                                items={tests}
+                                items={[...tests, 'all']}
                                 selectedItems={selectedTests}
                                 itemToString={(item) => (item ? item : '')}
                                 onChange={({ selectedItems }) => handleSelectTests(selectedItems)}
@@ -157,7 +155,7 @@ function Testing() {
                                 id="nodes"
                                 titleText="Nodes"
                                 placeholder="Select Nodes"
-                                items={workerNodes}
+                                items={[...workerNodes, 'all']}
                                 selectedItems={selectedNodes}
                                 itemToString={(item) => (item ? item : '')}
                                 onChange={({ selectedItems }) => handleSelectNodes(selectedItems)}
