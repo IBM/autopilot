@@ -31,7 +31,11 @@
    - [Sprint 3 Demo Slide](https://docs.google.com/presentation/d/1lOXK8GLUxTaVbzHugg61_txEEE_1HK5XjKPgHOLKdcM/edit?usp=sharing)
    - [OpenShift Deployment](https://sprint3-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org)
 
-4. Due November 6th/November 13th
+4. ### [Sprint 4 Demo](https://youtu.be/rCoLDlV7pDA)
+
+- [Sprint 4 Demo Slide](https://docs.google.com/presentation/d/1kNkAz926yURKGQpXppM6pAH3eHPI8d_wr_910gF1358/edit#slide=id.g308583e7967_0_285)
+- [OpenShift Deployment](https://sprint4-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org/monitor)
+  
 5. Due November 20th/November 25th
 
 Final Presentation: Due December 9th/December 11th
