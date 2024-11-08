@@ -39,6 +39,8 @@ All tests can be tailored by a combination of:
 - `batch=<#hosts>`, how many hosts to check at a single moment. Requests to the batch are run in parallel asynchronously. Batching is done to avoid running too many requests in parallel when the number of worker nodes increases. Defaults to all nodes.
 
 Some health checks provide further customization. More details on all the tests can be found [here](https://github.com/IBM/autopilot/autopilot-daemon/HEALTH_CHECKS.md)
+Note that if multiple node selection parameters (`host`, `job`, `nodelabel`) are provided together, Autopilot will run tests on nodes that match _any_  of the specified parameters (set union). For example, the following command will run the `pciebw` test on all nodes that either have the label `label1` OR are running the job `jobKey=job2` because both `nodelabel` and `job` parameters are provided in the input:
+`curl "http://<route-name>/status?check=pciebw&nodelabel=label1&job=default:jobKey=job2"`
 
 ## DCGM
 
