@@ -4,7 +4,7 @@ import runTests from './api/runTests';
 import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
 import { Helmet } from 'react-helmet';
 import * as styles from './Styles';
-import { Button, Toggle, NumberInput, TextInput, FilterableMultiSelect } from '@carbon/react';
+import { Button, Toggle, NumberInput, TextInput, FilterableMultiSelect, Loading } from '@carbon/react';
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
@@ -19,6 +19,7 @@ function Testing() {
 
     const [terminalValue, setTerminalValue] = useState('');
     const [nodes, setNodes] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     const tests = ['pciebw', 'dcgm', 'remapped', 'ping', 'iperf', 'pvc', 'gpumem'];
 
@@ -45,6 +46,8 @@ function Testing() {
 
     // Filter nodes for worker nodes only
     const workerNodes = nodes.filter(node => node.startsWith('wrk'));
+    // const workerNodes = nodes.filter(node => node.includes('worker'));
+
 
     const handleSelectTests = (selected) => {
         setSelectedTests(selected);
@@ -59,13 +62,16 @@ function Testing() {
     };
 
     const submitTests = () => {
+        setIsLoading(true);
         runTests(selectedTests, selectedNodes, jobInput, labelInput, batchValue, dcgmRValue)
             .then((results) => {
                 setTerminalValue(results);
+                setIsLoading(false);
             })
             .catch((error) => {
                 console.error('Error fetching test results:', error);
                 setTerminalValue('Error: ' + error.message);
+                setIsLoading(false);
             });
     };
 
@@ -223,6 +229,7 @@ function Testing() {
                     <Terminal output={terminalValue} />
                 </div>
             </div>
+            {isLoading && <Loading />}
         </div>
     );
 }
