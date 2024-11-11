@@ -290,7 +290,13 @@ function CollapsibleTable({ nodes, filters, onFilterChange }) {
                             ))}
                         </TableBody>
                     ) : (
-                        <p>No matching nodes found.</p>
+                        <TableBody>
+                            <TableRow>
+                                <TableCell colSpan="10" align="center">
+                                    No matching nodes found.
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
                     )}
                 </Table>
             </ResponsiveTableContainer>
