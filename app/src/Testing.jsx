@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Terminal from './components/Terminal';
 import runTests from './api/runTests';
 import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
-import { Helmet } from 'react-helmet';
 import * as styles from './Styles';
 import { Button, Toggle, NumberInput, TextInput, FilterableMultiSelect, Loading } from '@carbon/react';
 
@@ -42,6 +41,10 @@ function Testing() {
             .catch((err) => {
                 console.error('Error fetching nodes:', err);
             });
+    }, []);
+
+    useEffect(() => {
+        document.title = 'Testing';
     }, []);
 
     // Filter nodes for worker nodes only
@@ -114,9 +117,6 @@ function Testing() {
     const maxLength = getMaxItemLength();
     return (
         <div>
-            <Helmet>
-                <title>Testing</title>
-            </Helmet>
             <h1 style={styles.headerStyle}>Run Tests</h1>
             <div style={styles.containerStyle}>
                 <div style={styles.sectionStyle}>

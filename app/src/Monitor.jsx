@@ -4,7 +4,6 @@ import styled from "styled-components";
 import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
 import CollapsibleTable from "./components/CollapsibleTable.jsx";
 import SearchInput from './components/SearchInput';
-import { Helmet } from 'react-helmet';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // Displaying live node labels and status + current health checks
@@ -199,6 +198,7 @@ function Monitor() {
 
     // Filter nodes for worker nodes only
     const workerNodes = nodes.filter(node => node.name.startsWith('wrk'));
+    // const workerNodes = nodes.filter(node => node.name.includes('worker'));
 
     // Filter nodes based on search query
     const filteredNodes = workerNodes.filter(node => {
@@ -208,14 +208,12 @@ function Monitor() {
         );
     });
 
-    
+    useEffect(() => {
+        document.title = 'Monitor Cluster';
+    }, []);
 
     return (
         <MonitorWrapper>
-            <Helmet>
-                <title>Monitor Cluster</title>
-                <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg" />
-            </Helmet>
             <h1>Monitor Cluster</h1>
             <SearchInput
                 searchQuery={searchQuery}
