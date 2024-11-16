@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autopilot-dashboard
+  labels:
+    app: autopilot-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: autopilot-dashboard
+  template:
+    metadata:
+      labels:
+        app: autopilot-dashboard
+    spec:
+      containers:
+        - name: autopilot-dashboard
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          ports:
+            - containerPort: {{ .Values.container.port }}
