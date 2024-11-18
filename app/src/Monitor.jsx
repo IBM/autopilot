@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import styled from "styled-components";
-// import { useNodesWithStatus } from "./api/getNodesWithStatus.js";
 import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
 import CollapsibleTable from "./components/CollapsibleTable.jsx";
 import SearchInput from './components/SearchInput';

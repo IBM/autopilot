@@ -1,38 +1,65 @@
 // Referenced from https://learnk8s.io/real-time-dashboard
+// Tracking events with resource version
+let resourceVersion = null;
+
 // Callbacks (onNodeChange) are used to handle changes in node names incrementally
 export default async function watchNodesWithStatus(onNodeChange) {
     const endpoint = import.meta.env.VITE_KUBERNETES_ENDPOINT;
-    const apiUrl = `${endpoint}/api/v1/nodes?watch=true`;
     const token = import.meta.env.VITE_SERVICE_ACC_TOKEN;
 
-    try {
-        const response = await fetch(apiUrl, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        const reader = response.body.getReader();
-        const utf8Decoder = new TextDecoder('utf-8');
-        let buffer = '';
+    async function startWatching() {
+        // Helper fn. to reconnect watch
+        function reconnect() {
+            console.log('Reconnecting to Kubernetes watch...');
+            startWatching();
+        }
 
-        async function readStream() {
-            const { done, value } = await reader.read();
-            if (done) {
-                console.log('Watch request terminated.');
+        try {
+            const apiUrl = `${endpoint}/api/v1/nodes?watch=true${resourceVersion 
+                                    ? `&resourceVersion=${resourceVersion}` : ''}`;
+            const response = await fetch(apiUrl, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            // If resource version is stale, do full refresh
+            if (!response.ok) {
+                if (response.status === 401) {
+                    console.warn(`ResourceVersion stale, doing full refresh...`);
+                    resourceVersion = null; // Resetting for a full refresh
+                }
+                console.error(`Failed to connect: ${response.statusText}`);
                 return;
             }
 
-            buffer += utf8Decoder.decode(value, { stream: true });
-            buffer = processBuffer(buffer, onNodeChange);
+            const reader = response.body.getReader();
+            const utf8Decoder = new TextDecoder('utf-8');
+            let buffer = '';
+
+            async function readStream() {
+                const {done, value} = await reader.read();
+                if (done) {
+                    console.log('Watch request terminated; attempting reconnection...');
+                    reconnect();
+                    return;
+                }
+
+                buffer += utf8Decoder.decode(value, {stream: true});
+                buffer = processBuffer(buffer, onNodeChange);
+
+                await readStream();
+            }
 
             await readStream();
+        } catch (error) {
+            console.error('Error watching nodes:', error);
+            setTimeout(reconnect, 5000); // Non-blocking retry
         }
-        await readStream();
-    } catch (error) {
-        console.error('Error watching nodes:', error);
-        throw error;
     }
+
+    await startWatching();
 }
 
 // Helper fn to process buffer
@@ -42,6 +69,9 @@ function processBuffer(buffer, onNodeChange) {
         try {
             const event = JSON.parse(line);
             const node = event.object;
+
+            resourceVersion = node.metadata.resourceVersion;
+
             const nodeName = node.metadata.name;
 
             if (event.type === "ADDED" || event.type === "MODIFIED") {
