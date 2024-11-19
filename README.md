@@ -361,12 +361,26 @@ VITE v5.4.7  ready in 136 ms
 
 Once the application is running locally, you can access various pages as follows:
 
-#### Login Page
-- Click on **Login** to get access to login page.
-- Enter your username and password.
-- Click the **Login** button to authenticate.
-   ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/login.jpg)
 
+#### Login Page
+- **Overview**:
+   - This login page utilizes **Keycloak** to provide secure authentication, with **GitHub** as the identity service provider.
+   - The system employs **Role-Based Access Control (RBAC)** to manage user permissions based on their roles.
+
+- **Key Functionalities**:
+   - **Secure Authentication**: User identities are verified through Keycloak to ensure secure system access.
+   - **Permission Management**:
+      - **Admin**: Full access to all features, including the ability to run tests and manage resources.
+      - **User**: Limited functionality, unable to run tests.
+   - Unauthorized users will be automatically logged out to maintain system security.
+
+- **Steps to Use**:
+   - Enter your GitHub username and password in the provided fields.
+   - Click the **Sign in** button to authenticate:
+      - Upon successful login, permissions will be loaded based on your role.
+      - If authentication fails, the system will automatically log you out.
+   - Or can also click **Sign in with github** directly
+   ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/login-keycloak.png)
 
 #### Monitor Cluster Page
 - Click on **Monitor Cluster** to get access to monitor cluster page.
