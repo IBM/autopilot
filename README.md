@@ -36,7 +36,11 @@
    - [Sprint 4 Demo Slide](https://docs.google.com/presentation/d/1kNkAz926yURKGQpXppM6pAH3eHPI8d_wr_910gF1358/edit#slide=id.g308583e7967_0_285)
    - [OpenShift Deployment](https://sprint4-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org)
   
-5. Due November 20th/November 25th
+5. ### [Sprint 5 Demo](https://youtu.be/EWgDT14xfbg)
+
+   - [Sprint 5 Demo Slide](https://docs.google.com/presentation/d/1XyQrheZqX_s2Irwf9fgHQ32YFUtESQtHBdJspb1SWDY/edit?usp=sharing)
+   - [OpenShift Deployment](https://sprint5-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org/)
+
 
 Final Presentation: Due December 9th/December 11th
 
@@ -333,7 +337,7 @@ Here is an overview of the project structure:
 LICENSE                             # License information
 README.md                           # Project Documentation
 ```
-## User Instructions and UI
+## User Instructions
 
 1. **Clone the repository**:
 ```
@@ -361,22 +365,26 @@ VITE v5.4.7  ready in 136 ms
 
 Once the application is running locally, you can access various pages as follows:
 
+## UI
+
 #### Login Page
-- Click on **Login** to get access to login page.
+- Click on **Login** to access the login page.
 - Enter your username and password.
 - Click the **Login** button to authenticate.
    ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/login.jpg)
 
 
-#### Monitor Cluster Page
-- Click on **Monitor Cluster** to get access to monitor cluster page.
-- **Use Search Filters**: 
+#### Monitoring Page
+- Click on **Monitor Cluster** to access the monitoring cluster page.
+- **Search Bar**: 
    - At the top of the page, you will find a search input called Search Features.
    - Enter part or all of a node's name to filter the list of nodes and view only the relevant system metrics.
+- **Filtering feature for each columns**
+  - On each column, click on the funnel icon to filter the nodes.
+  - e.g. Under the **GPU Health** column, click on the funnel icon to filter nodes and display nodes according to their GPU health ("Pass" or "Not Pass").
 - **View Node Details**:
-   - Click on any node in the collapsible table to expand it.
-   - This will reveal detailed information about the selected node, including live status updates and GPU health checks and any related details.
-   - Under the **GPU Health** section, we can click on the funnel icon to filter the nodes. You can choose to display nodes where GPU health is either "Pass" or "Not Pass".
+   - Click on the chevron on any node in the collapsible table to expand it.
+   - This will reveal detailed information about the selected node, including capacity/allocatable resources, and a detailed DCGM level-3 health checks when applicable.
  ![monitor Image 1](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor1.jpg)
  ![monitor Image 2](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor2.jpg)
 
