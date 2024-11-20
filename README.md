@@ -385,8 +385,10 @@ Once the application is running locally, you can access various pages as follows
 - **View Node Details**:
    - Click on the chevron on any node in the collapsible table to expand it.
    - This will reveal detailed information about the selected node, including capacity/allocatable resources, and a detailed DCGM level-3 health checks when applicable.
- ![monitor Image 1](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor1.jpg)
- ![monitor Image 2](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor2.jpg)
+ ![monitor Image table](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor-updated-table.png)
+ ![monitor Image filter col](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor-filtering.png)
+![monitor Image pagination](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor-cluster-pagination.png)
+
 
 #### Testing Page
 - Click on **Run Tests** to get access to testing page.
