@@ -40,6 +40,12 @@ All tests can be tailored by a combination of:
 
 Some health checks provide further customization. More details on all the tests can be found [here](https://github.com/IBM/autopilot/autopilot-daemon/HEALTH_CHECKS.md)
 
+Note that if multiple node selection parameters (`host`, `job`, `nodelabel`) are provided together, Autopilot will run tests on nodes that match _any_  of the specified parameters (set union). For example, the following command will run the `pciebw` test on all nodes that either have the label `label1` OR are running the job `jobKey=job2` because both `nodelabel` and `job` parameters are provided in the input:
+
+```bash
+curl "http://<route-name>/status?check=pciebw&nodelabel=label1&job=default:jobKey=job2"
+```
+
 ## DCGM
 
 This test runs `dcgmi diag`, and we support only `r` as [parameter](https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/dcgm-diagnostics.html#command-line-options).
