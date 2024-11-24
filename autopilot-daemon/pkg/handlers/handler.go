@@ -66,8 +66,8 @@ func SystemStatusHandler() http.Handler {
 		}
 		if checks != "" {
 			if hosts == os.Getenv("NODE_NAME") {
-				klog.Info("Checking system status of host " + hosts + " (localhost)")
-				w.Write([]byte("Checking system status of host " + hosts + " (localhost) \n\n"))
+				klog.Info("Running iperf3 on all hosts")
+				w.Write([]byte("Running iperf3 on all hosts\n\n"))
 				utils.HealthcheckLock.Lock()
 				defer utils.HealthcheckLock.Unlock()
 				out, err := runAllTestsLocal(hosts, checks, dcgmR, jobName, nodelabel, r)
