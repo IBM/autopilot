@@ -51,23 +51,12 @@ async def run_iperf_client(dstip, dstport, iteration, duration_seconds):
         output_filename = f"{dstip}_{dstport}_client.log"
         with open(output_filename, "w") as f:
             f.write(stdout.decode())
-    except asyncio.TimeoutError:
-        log.error(
-            f"iperf3 client {iteration} on {dstip}:{dstport} failed, time-out exceeded: {stderr.decode()}"
-        )
-        return {"interface": {"ip": dstip, "port": dstport}, "results": default_res}
     except Exception as e:
-        log.error(
-            f"iperf3 client {iteration} on {dstip}:{dstport} failed with {e}: {stderr.decode()}"
-        )
         return {"interface": {"ip": dstip, "port": dstport}, "results": default_res}
 
     # In theory this should not occur since we catch this above...but just to be safe let's ensure
     # the return code is zero...
     if process.returncode != 0:
-        log.error(
-            f"iperf3 client {iteration} on {dstip}:{dstport} failed: {stderr.decode()}"
-        )
         return {"interface": {"ip": dstip, "port": dstport}, "results": default_res}
 
     iperf3_stdout = stdout.decode().strip().splitlines()

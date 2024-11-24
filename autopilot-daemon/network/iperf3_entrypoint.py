@@ -59,20 +59,33 @@ async def make_server_connection(event, address, handle):
     async with aiohttp.ClientSession(timeout=total_timeout) as session:
         async with session.get(url) as resp:
             reply = await resp.text()
+            log.info(reply)
 
 
 async def make_client_connection(event, iface, src, dst, address, handle):
     # Task waits for the event to be set before starting its work.
-    if event != None:
-        await event.wait()
-    url = f"http://{address}:{AUTOPILOT_PORT}{handle}"
-    total_timeout = aiohttp.ClientTimeout(total=60 * 10)
-    async with aiohttp.ClientSession(timeout=total_timeout) as session:
-        async with session.get(url) as resp:
-            reply = await resp.text()
-            reply = reply.strip()
-            json_reply = json.loads(reply)
-            return {"src": src, "dst": dst, "iface": iface, "data": json_reply}
+    try:
+        if event != None:
+            await event.wait()
+        url = f"http://{address}:{AUTOPILOT_PORT}{handle}"
+        total_timeout = aiohttp.ClientTimeout(total=60 * 10)
+        async with aiohttp.ClientSession(timeout=total_timeout) as session:
+            async with session.get(url) as resp:
+                reply = await resp.text()
+                try:
+                    reply = reply.strip()
+                    json_reply = json.loads(reply)
+                except json.JSONDecodeError as e:
+                    log.error(
+                        f"Failed to decode JSON from response: {e}. Response: {reply}"
+                    )
+                    return {"src": src, "dst": dst, "iface": iface, "data": {}}
+
+                return {"src": src, "dst": dst, "iface": iface, "data": json_reply}
+    except Exception as e:
+        log.error(f"Error during client connection to {address} at {handle}: {e}")
+        log.error(f"Failure occured with from src {src} to dst {dst} on iface {iface}")
+        return {"src": src, "dst": dst, "iface": iface, "data": {}}
 
 
 async def iperf_start_servers(node_map, num_servers, port_start):
@@ -96,16 +109,6 @@ async def iperf_start_servers(node_map, num_servers, port_start):
     ]
     await asyncio.gather(*tasks)
 
-async def iperf_stop_servers(node_map):
-    tasks = [
-        make_server_connection(
-            None,
-            node_map[node]["endpoint"],
-            f"/iperfstopservers",
-        )
-        for node in node_map
-    ]
-    await asyncio.gather(*tasks)
 
 async def run_workload(workload_type, nodemap, workload, num_clients, port_start):
     """
@@ -121,10 +124,11 @@ async def run_workload(workload_type, nodemap, workload, num_clients, port_start
     if SupportedWorkload.RING.value == workload_type:
         event = asyncio.Event()
         # All the nodes "should have" the same amount of interfaces...let's just get the first node and check how many there are...
+        # This is also assuming that the ordering of the ifaces in this list are accurate...i.e., starting with net1-0 and so forth
         netifaces_count = len(nodemap[next(iter(nodemap))]["netifaces"])
         results = []
         for iface in range(netifaces_count):
-            interface_results=[]
+            interface_results = []
             log.info(f"Running Interface net1-{iface}")
             for step in workload:
                 tasks = []
@@ -145,26 +149,33 @@ async def run_workload(workload_type, nodemap, workload, num_clients, port_start
                 interface_results.append(res)
             results.append(interface_results)
 
-        grids=[]
-        for i,el in enumerate(results):
+        grids = []
+        summary_avg = []
+        for i, el in enumerate(results):
             grid = {}
-            total_bitrate=0
-            count=0
+            total_bitrate = 0
+            count = 0
             for l in el:
                 for host in l:
                     src = host["src"]
                     dst = host["dst"]
-                    bitrate = float(host["data"]["receiver"]["aggregate"]["bitrate"])
+                    if host["data"] == {}:
+                        # Failure had occured resulting in a 0.0 bitrate.
+                        bitrate = 0.0
+                    else:
+                        bitrate = float(
+                            host["data"]["receiver"]["aggregate"]["bitrate"]
+                        )
                     count = count + 1
                     total_bitrate = total_bitrate + bitrate
                     if src not in grid:
                         grid[src] = {}
                     grid[src][dst] = bitrate
-            avg=str(round(Decimal(total_bitrate/count),2))
-            print(f"net1-{i} Average Bandwidth Gb/s: {avg}")
+            avg = str(round(Decimal(total_bitrate / count), 2))
+            summary_avg.append(f"net1-{i} Average Bandwidth Gb/s: {avg}")
             grids.append(grid)
 
-        for i,grid in enumerate(grids):
+        for i, grid in enumerate(grids):
             print(f"Network Throughput net1-{i}:")
             pods = sorted(grid.keys())
             print(f"{'src/dst':<40}" + "".join(f"{dst:<40}" for pod in pods))
@@ -172,6 +183,10 @@ async def run_workload(workload_type, nodemap, workload, num_clients, port_start
                 row = [f"{grid[src_pod].get(dst_pod, 'N/A'):<40}" for dst_pod in pods]
                 print(f"{src_pod:<40}" + "".join(row))
             print()
+
+        print("Overall Network Interface Average Bandwidth:")
+        for i in summary_avg:
+            print(i)
 
     else:
         log.error("Unsupported Workload Attempted")
@@ -217,8 +232,6 @@ async def main():
                 num_parallel_clients,
                 port_start,
             )
-
-      #      await iperf_stop_servers(autopilot_node_map)
 
         else:
             #
