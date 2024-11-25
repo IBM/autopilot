@@ -59,7 +59,6 @@ async def make_server_connection(event, address, handle):
     async with aiohttp.ClientSession(timeout=total_timeout) as session:
         async with session.get(url) as resp:
             reply = await resp.text()
-            log.info(reply)
 
 
 async def make_client_connection(event, iface, src, dst, address, handle):
