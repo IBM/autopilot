@@ -51,14 +51,19 @@ async def make_server_connection(event, address, handle):
         handle (str): The endpoint handle for the connection.
 
     """
-    # Task waits for the event to be set before starting its work.
-    if event != None:
-        await event.wait()
-    url = f"http://{address}:{AUTOPILOT_PORT}{handle}"
-    total_timeout = aiohttp.ClientTimeout(total=60 * 10)
-    async with aiohttp.ClientSession(timeout=total_timeout) as session:
-        async with session.get(url) as resp:
-            reply = await resp.text()
+    try:
+        if event != None:
+            await event.wait()
+        url = f"http://{address}:{AUTOPILOT_PORT}{handle}"
+        total_timeout = aiohttp.ClientTimeout(total=60 * 10)
+        async with aiohttp.ClientSession(timeout=total_timeout) as session:
+            async with session.get(url) as resp:
+                reply = await resp.text()
+    except Exception as e:
+        # If we can't create servers we'll need to exit...something has gone wrong
+        # with the network.
+        log.error(f"Error when creating server on {address} at {handle}: {e}")
+        sys.exit(1)
 
 
 async def make_client_connection(event, iface, src, dst, address, handle):
