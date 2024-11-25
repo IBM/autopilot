@@ -59,12 +59,18 @@ async def run_iperf_client(dstip, dstport, iteration, duration_seconds):
     if process.returncode != 0:
         return {"interface": {"ip": dstip, "port": dstport}, "results": default_res}
 
+    result = {
+        "sender": {
+            "transfer": {"rate": 0.0, "units": "n/a"},
+            "bitrate": {"rate": 0.0, "units": "n/a"},
+        },
+        "receiver": {
+            "transfer": {"rate": 0.0, "units": "n/a"},
+            "bitrate": {"rate": 0.0, "units": "n/a"},
+        },
+    }
     iperf3_stdout = stdout.decode().strip().splitlines()
     for line in iperf3_stdout:
-        result = {
-            "sender": {"transfer": {}, "bitrate": {}},
-            "receiver": {"transfer": {}, "bitrate": {}},
-        }
         line = line.lower()
         if "sender" in line:
             parts = line.split()
@@ -74,7 +80,6 @@ async def run_iperf_client(dstip, dstport, iteration, duration_seconds):
             parts = line.split()
             result["receiver"]["transfer"] = {"rate": parts[4], "units": parts[5]}
             result["receiver"]["bitrate"] = {"rate": parts[6], "units": parts[7]}
-
     return {"interface": {"ip": dstip, "port": dstport}, "results": result}
 
 
@@ -90,11 +95,11 @@ def calculate_stats(values, num_clients):
         },
         "min": {
             "transfer": str(round(Decimal(min(values["transfer"])), 2)),
-            "bitrate": str(round(Decimal(min(values["bitrate"]))), 2),
+            "bitrate": str(round(Decimal(min(values["bitrate"])), 2)),
         },
         "max": {
             "transfer": str(round(Decimal(max(values["transfer"])), 2)),
-            "bitrate": str(round(Decimal(max(values["bitrate"]))), 2),
+            "bitrate": str(round(Decimal(max(values["bitrate"])), 2)),
         },
     }
 
@@ -137,9 +142,9 @@ async def main():
     summary_file = f"{dstip}_summary.json"
     with open(summary_file, "w") as f:
         json.dump(total_results, f, indent=4)
-
     print(json.dumps(stats, indent=4))
 
 
 if __name__ == "__main__":
     asyncio.run(main())
+

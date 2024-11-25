@@ -72,8 +72,8 @@ async def make_client_connection(event, iface, src, dst, address, handle):
         async with aiohttp.ClientSession(timeout=total_timeout) as session:
             async with session.get(url) as resp:
                 reply = await resp.text()
+                reply = "".join(reply.split())
                 try:
-                    reply = reply.strip()
                     json_reply = json.loads(reply)
                 except json.JSONDecodeError as e:
                     log.error(
@@ -249,3 +249,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
