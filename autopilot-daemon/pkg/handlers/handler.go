@@ -41,8 +41,17 @@ func SystemStatusHandler() http.Handler {
 			w.Write([]byte("Running iperf3 on hosts " + hosts + " or job " + jobName + "\n\n"))
 			checks = strings.Trim(checks, "iperf")
 			workload := r.URL.Query().Get("workload")
+			if workload == "" {
+				workload = "ring"
+			}
 			pclients := r.URL.Query().Get("pclients")
+			if pclients == "" {
+				pclients = "8"
+			}
 			startport := r.URL.Query().Get("startport")
+			if startport == "" {
+				startport = "5200"
+			}
 			cleanup := ""
 			if r.URL.Query().Has("cleanup") {
 				cleanup = "--cleanup"
@@ -57,8 +66,8 @@ func SystemStatusHandler() http.Handler {
 		}
 		if checks != "" {
 			if hosts == os.Getenv("NODE_NAME") {
-				klog.Info("Checking system status of host " + hosts + " (localhost)")
-				w.Write([]byte("Checking system status of host " + hosts + " (localhost) \n\n"))
+				klog.Info("Running iperf3 on all hosts")
+				w.Write([]byte("Running iperf3 on all hosts\n\n"))
 				utils.HealthcheckLock.Lock()
 				defer utils.HealthcheckLock.Unlock()
 				out, err := runAllTestsLocal(hosts, checks, dcgmR, jobName, nodelabel, r)
@@ -149,8 +158,17 @@ func IperfHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		
 		workload := r.URL.Query().Get("workload")
+		if workload == "" {
+			workload = "ring"
+		}
 		pclients := r.URL.Query().Get("pclients")
+		if pclients == "" {
+			pclients = "8"
+		}
 		startport := r.URL.Query().Get("startport")
+		if startport == "" {
+			startport = "5200"
+		}
 		cleanup := ""
 		if r.URL.Query().Has("cleanup") {
 			cleanup = "--cleanup"
@@ -169,7 +187,13 @@ func IperfHandler() http.Handler {
 func StartIperfServersHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		numservers := r.URL.Query().Get("numservers")
+		if numservers == "" {
+			numservers = "8"
+		}
 		startport := r.URL.Query().Get("startport")
+		if startport == "" {
+			startport = "5200"
+		}
 		out, err := startIperfServers(numservers, startport)
 
 		if err != nil {
