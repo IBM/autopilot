@@ -344,11 +344,6 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 
 func runIperf(workload string, pclients string, startport string, cleanup string) (*[]byte, error) {
 
-	if workload == "" || pclients == "" || startport == "" {
-		klog.Error("Must provide arguments \"workload\", \"pclients\" and \"startport\".")
-		return nil, nil
-	}
-
 	args := []string{"./network/iperf3_entrypoint.py", "--workload", workload, "--pclients", pclients, "--startport", startport}
 
 	if cleanup != "" {
@@ -363,10 +358,6 @@ func runIperf(workload string, pclients string, startport string, cleanup string
 }
 
 func startIperfServers(numservers string, startport string) (*[]byte, error) {
-	if numservers == "" || startport == "" {
-		klog.Error("Must provide arguments \"numservers\" and \"startport\".")
-		return nil, nil
-	}
 	out, err := exec.Command("python3", "./network/iperf3_start_servers.py", "--numservers", numservers, "--startport", startport).CombinedOutput()
 	if err != nil {
 		klog.Info(string(out))

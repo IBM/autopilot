@@ -48,8 +48,8 @@ Invocation from the exposed Autopilot API is as follows below:
 
 ```bash
     # Invoked via the `status` handle:
-curl "http://autopilot-healthchecks-autopilot.<domain>/status?check=iperf&workload=ring&pclients=<NUMBER_OF_IPERF3_CLIENTS>&startport=<STARTING_IPERF3_SERVER_PORT>"
+curl "http://127.0.0.1:3333/status?check=iperf&workload=ring&pclients=<NUMBER_OF_IPERF3_CLIENTS>&startport=<STARTING_IPERF3_SERVER_PORT>"
 
     # Invoked via the `iperf` handle directly:
-curl "http://autopilot-healthchecks-autopilot.<domain>/iperf?workload=ring&pclients=<NUMBER_OF_IPERF3_CLIENTS>&startport=<STARTING_IPERF3_SERVER_PORT>"
+curl "http://127.0.0.1:3333/iperf?workload=ring&pclients=<NUMBER_OF_IPERF3_CLIENTS>&startport=<STARTING_IPERF3_SERVER_PORT>"
 ```
