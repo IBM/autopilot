@@ -9,7 +9,7 @@ replicaCount: 1
 image:
   repository: quay.io/anish2sinha/autopilot-dashboard
   # This sets the pull policy for images.
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: latest
 
