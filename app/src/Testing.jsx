@@ -5,6 +5,8 @@ import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
 import * as styles from './Styles';
 import { Button, Toggle, NumberInput, TextInput, FilterableMultiSelect, Loading } from '@carbon/react';
 
+const workerNodePrefix = import.meta.env.VITE_WORKER_NODE_PREFIX
+
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);
     const [selectedNodes, setSelectedNodes] = useState([]);
@@ -37,7 +39,7 @@ function Testing() {
         };
 
         watchNodesWithStatus(handleNodeChange)
-            .then(() => console.log('Started watching nodes'))
+            .then(() => { })
             .catch((err) => {
                 console.error('Error fetching nodes:', err);
             });
@@ -48,7 +50,7 @@ function Testing() {
     }, []);
 
     // Filter nodes for worker nodes only
-    const workerNodes = nodes.filter(node => node.startsWith('wrk'));
+    const workerNodes = nodes.filter(node => node.startsWith(workerNodePrefix));
     // const workerNodes = nodes.filter(node => node.includes('worker'));
 
 

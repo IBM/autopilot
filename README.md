@@ -46,6 +46,161 @@ Final Presentation: Due December 9th/December 11th
 
 ** **
 
+## User Instructions for Running Locally
+
+**1. Install Autopilot**
+
+For these instructions, we assume you already have a Kubernetes cluster configured. If you do not yet have Autopilot installed, please follow the [installation instructions](https://github.com/IBM/autopilot/blob/main/SETUP.md) on the main IBM/autopilot repository.
+
+Ensure that Autopilot is properly running with your Kubernetes cluster by following the [usage instructions](https://github.com/IBM/autopilot/blob/main/USAGE.md) on the main IBM/autopilot repository. Please try running the curl commands for running the Autopilot checks/tests to make sure that Autopilot is correctly configured on your cluster.
+
+**2. Expose Autopilot and Kubernetes service endpoints**:
+
+Be sure to have the Autopilot service running on port 3333 (or any port you chose) using the following command:
+```
+kubectl port-forward service/autopilot-healthchecks 3333:3333 -n autopilot
+```
+Expose the Kubernetes API by running `kubectl proxy` which will by default expose port 8001. The dashboard application will be making requests to these endpoints when running health checks or gathering node data.
+
+**3. Clone the autopilot-dashboard repository**:
+```
+git clone [https://github.com/EC528-Fall-2024/autopilot-dashboard.git]
+cd autopilot-dashboard
+```
+**4. Install Dependencies**:
+
+Ensure you have Node.js installed. Then follow these commands to install the necessary dependencies:
+```
+cd app
+npm i
+```
+
+**5. Environment Variables**
+
+Create a .env file in the app directory of our repository to store the necessary environment variables. Below is an example .env file which can be used to run the app locally. A descriptive comment is provided for each environment variable.
+```
+# Service endpoint for Autopilot
+VITE_AUTOPILOT_ENDPOINT=http://localhost:3333
+
+# Service endpoint for Kubernetes API
+VITE_KUBERNETES_ENDPOINT=http://localhost:8001
+
+'''
+Autopilot can only run checks on worker nodes. If you would like the dashboard to filter and only display worker nodes, please set the following variable to the common prefix shared by all workers in the cluster. For example, if all worker nodes begin with wrk, set the variable to wrk. This assumes that all workers in the cluster share the same prefix.
+'''
+VITE_WORKER_NODE_PREFIX=
+```
+
+**6. Running the Application (User Interaction)**:
+
+While in the app directory, run the application with the following command:
+```
+npm run dev
+```
+
+Once the application is running, you should see the following output indicating that the server is ready:
+```
+VITE v5.4.7  ready in 136 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+```
+Open your browser and go to [http://localhost:5173/](http://localhost:5173/) to access the application.
+
+Once the application is running locally, you can access various pages as follows:
+
+## UI
+
+#### Login Page
+- Click on **Login** on the sidebar to access the dummy login page.
+- This login page is non-functional and is not meant to be used in a production environment.
+- If you would like a functioning login system, please refer to the deployment instructions in the next section
+- Click the **Login** button to authenticate.
+   ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/login.jpg)
+
+
+#### Monitoring Page
+- Click on **Monitor Cluster** on the sidebar to access the monitoring cluster page.
+- **Search Bar**: 
+   - At the top of the page, you will find a search input called Search Features.
+   - Enter part or all of a node's name to filter the list of nodes and view only the relevant system metrics.
+- **Filtering feature for each columns**
+  - On each column, click on the funnel icon to filter the nodes.
+  - e.g. Under the **GPU Health** column, click on the funnel icon to filter nodes and display nodes according to their GPU health ("Pass" or "Not Pass").
+- **View Node Details**:
+   - Click on the chevron on any node in the collapsible table to expand it.
+   - This will reveal detailed information about the selected node, including capacity/allocatable resources, and a detailed DCGM level-3 health checks when applicable.
+ ![monitor Image table](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor-updated-table.png)
+ ![monitor Image filter col](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor-filtering.png)
+![monitor Image pagination](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor-cluster-pagination.png)
+
+
+#### Testing Page
+- Click on **Run Tests** on the sidebar to get access to testing page.
+- Use the **Health Checks** menu  to select one or more tests.
+- Use the **Nodes** menu  to select one or more nodes to be tested (by node ID).
+- Use the **Select Node Label** menu to select nodes by node label. Enter a key-value pair (key=value just means the label so labelName=labelValue, e.g., `testlabel=not2`) to specify the nodes to be tested.
+- Use the **Select Job** menu to select nodes by the job which they are running. Enter the namespace and key-value pair to specify the nodes to be tested. Enter in the format namespace:key=value.
+- *Note* you there are three different menus for selecting nodes. The Nodes menu is by ID. the Select Node Label menu is by node label. The Select Job menu is by job. You have the option to use one or more menus when selecting the ndes to be tested
+- Optionally, toggle the **Batches** switch to run tests in batches and enter the batch number. For more detail regarding this optional parameter please refer to the following excerpt from the [USAGE.md](https://github.com/IBM/autopilot/blob/main/USAGE.md) of IBM/autopilot: `batch=<#hosts>`, how many hosts to check at a single moment. Requests to the batch are run in parallel asynchronously. Batching is done to avoid running too many requests in parallel when the number of worker nodes increases. Defaults to all nodes.
+- Click the **Run Tests** button to deploy the tests.
+- Test results will be displayed in real-time in the terminal output section. Use the copy to clipboard button to copy test results. Use the expand button at the top right to make the terminal full screen.
+![test Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/testing.jpg)
+
+## Structure:
+Here is an overview of the project structure:
+```plaintext
+.github/
+ └── workflows/
+     └── set_done_date.yml          # GitHub Actions for CI/CD
+  
+.app/
+ └── src/
+     └── api/
+         ├── getNodes.js                  # Fetches node data
+         ├── getNodesWithStatus.js        # Fetches node data with status
+         └── runTests.js                  # Runs tests on nodes
+     └── components/
+         ├── Button.jsx                   # Button component
+         ├── CollapsibleTable.jsx         # Collapsible table component
+         ├── ColumnFilter.jsx             # Column filter component for tables
+         ├── Dropdown.jsx                 # Dropdown menu component
+         ├── MultiSelect.jsx              # Multi-select input component
+         ├── NumberField.jsx              # Numeric input field component
+         ├── SearchInput.jsx              # Search input component
+         ├── Sidebar.jsx                  # Sidebar navigation component
+         ├── SidebarCarbon.jsx            # Sidebar with Carbon design
+         ├── Switch.jsx                   # Toggle switch component
+         └──  Terminal.jsx                # Terminal-like display component
+     ├── App.jsx                          # Main application component
+     ├── Login.jsx                        # Login page component
+     ├── Monitor.jsx                      # Monitoring page component
+     ├── Testing.jsx                      # Testing page component
+     └── Main.jsx                         # Main entry point for the ap
+ ├── gitignore                      # Specifies files to be ignored by git
+ ├── Dockerfile                     # Docker configuration
+ ├── eslint.config.js               # Linter configuration for the project
+ ├── index.html                     # Main HTML entry point for the frontend
+ ├── nginx.conf                     # Nginx server configuration
+ ├── package-lock.json              # Package lock file 
+ ├── package.json                   # Project metadata and dependencies
+ └── vite.config.js                 # Vite configuration for building the project
+
+.images/
+ └── architecture.png               # Architecture diagram  
+ ├── login-page.png                 # Login page screenshot  
+ ├── monitor-page.png               # Monitoring page screenshot
+ └── test-page.png                  # Testing page screenshot
+
+LICENSE                             # License information
+README.md                           # Project Documentation
+```
+
+** **
+
+# Project Proposal
+
 ## 1.   Vision and Goals Of The Project:
 
 Autopilot is a Kubernetes-native daemon that continuously monitors and evaluates GPUs, network and storage health, designed to detect and report infrastructure-level issues during the lifetime of AI workloads. It is an open-source project developed by IBM Research.
@@ -278,123 +433,3 @@ The release planning of this project will be based on the EC528 lecture regardin
    **<ins> Open Shift Integration </ins>**
 
    - Implement seamless login with OpenShift credentials.
- 
-## Instructions:
-
-Follow these commands to start the front-end application:
-```
-cd app
-npm i
-npm run dev
-```
-
-
-## Structure:
-Here is an overview of the project structure:
-```plaintext
-.github/
- └── workflows/
-     └── set_done_date.yml          # GitHub Actions for CI/CD
-  
-.app/
- └── src/
-     └── api/
-         ├── getNodes.js                  # Fetches node data
-         ├── getNodesWithStatus.js        # Fetches node data with status
-         └── runTests.js                  # Runs tests on nodes
-     └── components/
-         ├── Button.jsx                   # Button component
-         ├── CollapsibleTable.jsx         # Collapsible table component
-         ├── ColumnFilter.jsx             # Column filter component for tables
-         ├── Dropdown.jsx                 # Dropdown menu component
-         ├── MultiSelect.jsx              # Multi-select input component
-         ├── NumberField.jsx              # Numeric input field component
-         ├── SearchInput.jsx              # Search input component
-         ├── Sidebar.jsx                  # Sidebar navigation component
-         ├── SidebarCarbon.jsx            # Sidebar with Carbon design
-         ├── Switch.jsx                   # Toggle switch component
-         └──  Terminal.jsx                # Terminal-like display component
-     ├── App.jsx                          # Main application component
-     ├── Login.jsx                        # Login page component
-     ├── Monitor.jsx                      # Monitoring page component
-     ├── Testing.jsx                      # Testing page component
-     └── Main.jsx                         # Main entry point for the ap
- ├── gitignore                      # Specifies files to be ignored by git
- ├── Dockerfile                     # Docker configuration
- ├── eslint.config.js               # Linter configuration for the project
- ├── index.html                     # Main HTML entry point for the frontend
- ├── nginx.conf                     # Nginx server configuration
- ├── package-lock.json              # Package lock file 
- ├── package.json                   # Project metadata and dependencies
- └── vite.config.js                 # Vite configuration for building the project
-
-.images/
- └── architecture.png               # Architecture diagram  
- ├── login-page.png                 # Login page screenshot  
- ├── monitor-page.png               # Monitoring page screenshot
- └── test-page.png                  # Testing page screenshot
-
-LICENSE                             # License information
-README.md                           # Project Documentation
-```
-## User Instructions
-
-1. **Clone the repository**:
-```
-   git clone [https://github.com/EC528-Fall-2024/autopilot-dashboard.git]
-   cd autopilot-dashboard
-```
-2. **Install Dependencies**:
-Ensure you have Node.js installed. Then follow these commands to install the necessary dependencies and start the front-end application:
-```
-cd app
-npm i
-npm run dev
-```
-
-3. **Running the Application (User Interaction)**:
-Once the application is running, you should see the following output indicating that the server is ready:
-```
-VITE v5.4.7  ready in 136 ms
-
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
-  ➜  press h + enter to show help
-```
-- Open your browser and go to [http://localhost:5173/](http://localhost:5173/) to access the application.
-
-Once the application is running locally, you can access various pages as follows:
-
-## UI
-
-#### Login Page
-- Click on **Login** to access the login page.
-- Enter your username and password.
-- Click the **Login** button to authenticate.
-   ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/login.jpg)
-
-
-#### Monitoring Page
-- Click on **Monitor Cluster** to access the monitoring cluster page.
-- **Search Bar**: 
-   - At the top of the page, you will find a search input called Search Features.
-   - Enter part or all of a node's name to filter the list of nodes and view only the relevant system metrics.
-- **Filtering feature for each columns**
-  - On each column, click on the funnel icon to filter the nodes.
-  - e.g. Under the **GPU Health** column, click on the funnel icon to filter nodes and display nodes according to their GPU health ("Pass" or "Not Pass").
-- **View Node Details**:
-   - Click on the chevron on any node in the collapsible table to expand it.
-   - This will reveal detailed information about the selected node, including capacity/allocatable resources, and a detailed DCGM level-3 health checks when applicable.
- ![monitor Image table](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor-updated-table.png)
- ![monitor Image filter col](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor-filtering.png)
-![monitor Image pagination](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor-cluster-pagination.png)
-
-
-#### Testing Page
-- Click on **Run Tests** to get access to testing page.
-- Use the **Health Checks** menu  to select one or more tests and nodes.
-- Optionally, toggle the **Batches** switch to run tests in batches and enter the batch number.
-- For **Select Node Label**, enter a key-value pair (key=value just means the label so labelName=labelValue, e.g., `testlabel=not2`) to specify the node to be tested.
-- Click the **Run Tests** button to start the test.
-- Test results will be displayed in real-time in the terminal output section.
-![test Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/testing.jpg)
