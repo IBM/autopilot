@@ -56,20 +56,33 @@ Ensure that Autopilot is properly running with your Kubernetes cluster by follow
 
 **2. Expose Autopilot and Kubernetes service endpoints**:
 
-Be sure to have the Autopilot service running on port 3333 (or any port you chose) using the following command:
-```
-kubectl port-forward service/autopilot-healthchecks 3333:3333 -n autopilot
-```
-Expose the Kubernetes API by running `kubectl proxy` which will by default expose port 8001. The dashboard application will be making requests to these endpoints when running health checks or gathering node data.
+1. **Start the Autopilot Service:**
+
+   Be sure to have the Autopilot service running on port 3333 (or any port you chose) using the following command:
+   ```
+   kubectl port-forward service/autopilot-healthchecks 3333:3333 -n autopilot
+   ```
+2. **Expose the Kubernetes API:** 
+
+   Run `kubectl proxy` which will by default expose port 8001. The dashboard application will be making requests to these endpoints when running health checks or gathering node data.
+   ```
+   kubectl proxy
+   ```
+3. **Verify the Proxy Setup:**
+
+   Test if the proxy is properly set up checking for a response by executing:
+   ```
+   curl "http://localhost:8001"
+   ```
 
 **3. Clone the autopilot-dashboard repository**:
 ```
-git clone [https://github.com/EC528-Fall-2024/autopilot-dashboard.git]
+git clone https://github.com/EC528-Fall-2024/autopilot-dashboard.git
 cd autopilot-dashboard
 ```
 **4. Install Dependencies**:
 
-Ensure you have Node.js installed. Then follow these commands to install the necessary dependencies:
+Ensure you have [Node.js](https://nodejs.org/en/download/) version `v20.18.1` or higher installed. Then follow these commands to install the necessary dependencies:
 ```
 cd app
 npm i
@@ -86,7 +99,7 @@ VITE_AUTOPILOT_ENDPOINT=http://localhost:3333
 VITE_KUBERNETES_ENDPOINT=http://localhost:8001
 
 '''
-Autopilot can only run checks on worker nodes. If you would like the dashboard to filter and only display worker nodes, please set the following variable to the common prefix shared by all workers in the cluster. For example, if all worker nodes begin with wrk, set the variable to wrk. This assumes that all workers in the cluster share the same prefix.
+Autopilot can only run checks on worker nodes. If you would like the dashboard to filter and only display worker nodes, please set the following variable to the common prefix shared by all workers in the cluster. For example, if all worker nodes begin with wrk, set the variable to wrk. If no prefix is set all nodes will be displayed. This assumes that all workers in the cluster share the same prefix. 
 '''
 VITE_WORKER_NODE_PREFIX=
 ```
@@ -98,7 +111,7 @@ While in the app directory, run the application with the following command:
 npm run dev
 ```
 
-Once the application is running, you should see the following output indicating that the server is ready:
+Once the application is running, you should see something similar to the following output indicating that the server is ready:
 ```
 VITE v5.4.7  ready in 136 ms
 
@@ -106,7 +119,7 @@ VITE v5.4.7  ready in 136 ms
   ➜  Network: use --host to expose
   ➜  press h + enter to show help
 ```
-Open your browser and go to [http://localhost:5173/](http://localhost:5173/) to access the application.
+Open your browser and go to [http://localhost:5173/](http://localhost:5173/) to access the application. **Ensure that CORS is enabled.** If needed, you can use the following [Allow CORS: Access-Control-Allow-Origin](https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf) Chrome extension to do this.
 
 **7. Skip steps 3 through 6 by pulling container image from Quay repo**
 
