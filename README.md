@@ -191,6 +191,10 @@ If you are running into problems regarding OpenShift permissions or connecting t
 
 If you are trying to run a podman image of the dashboard locally, you will have to remove some components of the nginx.conf, specifically the location /autopilot and location /kubernetes parts.
 
+## Installation using Helm
+
+Instructions for installing the Autopilot Dashboard using a Helm chart that is configured for our container image from Quay can be found here: [Helm Installation Instructions](https://github.com/EC528-Fall-2024/autopilot-dashboard/wiki/4-%E2%80%90-Installation-Instructions-Using-Helm)
+
 ## UI
 
 #### Login Page
