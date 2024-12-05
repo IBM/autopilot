@@ -5,7 +5,7 @@ import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
 import * as styles from './Styles';
 import { Button, Toggle, NumberInput, TextInput, FilterableMultiSelect, Loading } from '@carbon/react';
 
-const workerNodePrefix = import.meta.env.VITE_WORKER_NODE_PREFIX
+const workerNodePrefix = import.meta.env.VITE_WORKER_NODE_PREFIX;
 
 function Testing() {
     const [selectedTests, setSelectedTests] = useState([]);

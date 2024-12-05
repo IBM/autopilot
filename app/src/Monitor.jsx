@@ -7,7 +7,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 // Displaying live node labels and status + current health checks
 
-const workerNodePrefix = import.meta.env.VITE_WORKER_NODE_PREFIX
+const workerNodePrefix = import.meta.env.VITE_WORKER_NODE_PREFIX;
 
 const MonitorWrapper = styled.div`
     padding-left: 0;
