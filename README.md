@@ -108,7 +108,8 @@ VITE v5.4.7  ready in 136 ms
 ```
 Open your browser and go to [http://localhost:5173/](http://localhost:5173/) to access the application.
 
-**Skip steps 3 through 6: Pull from Quay Repo**
+**7. Skip steps 3 through 6 by pulling container image from Quay repo**
+
 You can skip steps 3 through 6 and directly pull an image from our quay repo by running the following commands:
 ```
 podman pull quay.io/anish2sinha/autopilot-dashboard:local
