@@ -108,14 +108,71 @@ VITE v5.4.7  ready in 136 ms
 ```
 Open your browser and go to [http://localhost:5173/](http://localhost:5173/) to access the application.
 
-Once the application is running locally, you can access various pages as follows:
+Once the application is running locally, you can the access various pages as shown in the UI section of our README below:
+
+## User Instructions for Deploying (without login system)
+
+**1. Assumptions**
+
+For these instructions, we assume that you have Kubernetes running on your prod environment. We also assume that you have Autopilot running and properly exposed. Please refer to the [installation instructions](https://github.com/IBM/autopilot/blob/main/SETUP.md) on the main IBM/autopilot repository.
+
+We also use Podman and OpenShift for these deployment instructions, but the process should still be similar when using other technologies.
+
+**2. Updated Environment Variables for Deployment/Prod Environment**
+
+Below is an example .env file which can be used to deploy the app in a prod environment. A descriptive comment is provided for each environment variable or its change from the previous instructions for running the dashboard locally.
+```
+'''
+Make sure the Autopilot variable points to the endpoint in the prod environment which exposes the service. If you would like to use our nginx.conf as a proxy, please set it to /autopilot as shown below as this will redirect it to http://autopilot-healthchecks.autopilot.svc:3333/ using proxy_pass, but feel free to change the URL to your specific server's autopilot service URL.
+'''
+VITE_AUTOPILOT_ENDPOINT=/autopilot
+
+'''
+Make sure the Kubernetes API variable points to the endpoint in the prod environment which exposes the Kubernetes API. If you would like to use our nginx.conf as a proxy, please set it to /kubernetes as shown below as this will redirect it to https://kubernetes.default.svc/ using proxy_pass, but feel free to change the URL to your specific server's autopilot service URL.
+'''
+VITE_KUBERNETES_ENDPOINT=/kubernetes
+
+'''
+Autopilot can only run checks on worker nodes. If you would like the dashboard to filter and only display worker nodes, please set the following variable to the common prefix shared by all workers in the cluster. For example, if all worker nodes begin with wrk, set the variable to wrk. This assumes that all workers in the cluster share the same prefix.
+'''
+VITE_WORKER_NODE_PREFIX=
+
+'''
+Often a service account will be needed to have read node access in a prod environment. Please set the following env variable to this service account's token. Whenever the Kubernetes API is called to read nodes, this token will be passed in the header as Authorization.
+'''
+VITE_SERVICE_ACC_TOKEN=
+```
+
+**3. Build Container Image using Podman and Host on Quay**
+
+To build a container image of our app using Podman and our given Dockerfile, first make sure you are in the app directory of our repo. Set up a Quay account and an image repository. Then run the following podman commands:
+```
+podman build -t <name> .
+podman login quay.io
+podman tag <name> quay.io/<your-username>/<repo-name>:latest
+podman push quay.io/<your-username>/<repo-name>:latest
+```
+Then, to pull and run this image from your Quay repo:
+```
+podman pull quay.io/<your-username>/<repo-name>:latest
+podman run -d -p 8080:8080 quay.io/<your-username>/<repo-name>:latest
+```
+Autopilot dashboard app should now be available and running on your localhost:8080. For the commands shown above we assume you will be using the tag name 'latest' but feel free to use any other name for your tag.
+
+**4. Deploy Container Image from Quay to OpenShift**
+
+On the OpenShift Web CLI, go to the developer topology. On the topology page, right click and select Add to Project -> Container Image. Once you click on the Container Image option, input the url to your Quay repo tag under the Image section. Follow the other instructions, including naming. Ensure that the resource type is Serverless Deployment and set the Target Port to 8080 (as this is what worked for us). Make sure to have the Create Route button checked so that there will be a public URL. Then hit Create button once finished.
+
+**5. Fix nginx.conf file if necessary**
+
+If you are running into problems regarding OpenShift permissions or connecting to the prod environment's Autopilot and Kubernetes services, please take a look at our nginx.conf file in the app directory as this configures the NGINX server which runs the dashboard app.
 
 ## UI
 
 #### Login Page
 - Click on **Login** on the sidebar to access the dummy login page.
 - This login page is non-functional and is not meant to be used in a production environment.
-- If you would like a functioning login system, please refer to the deployment instructions in the next section
+- If you would like a functioning login system, please refer to the deployment instructions. The login page for the dashboard which we deployed to MOC/NERC using Keycloak and GitHub Oauth is shown in the section below.
 - Click the **Login** button to authenticate.
    ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/login.jpg)
 
