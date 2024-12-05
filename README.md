@@ -196,10 +196,13 @@ If you are trying to run a podman image of the dashboard locally, you will have 
 #### Login Page
 - Click on **Login** on the sidebar to access the dummy login page.
 - This login page is non-functional and is not meant to be used in a production environment.
-- If you would like a functioning login system, please refer to the deployment instructions. The login page for the dashboard which we deployed to MOC/NERC using Keycloak and GitHub Oauth is shown in the section below.
+- If you would like a functioning login system, please refer to the [GitHub and Keycloak Login Deployment Tutorial](https://github.com/EC528-Fall-2024/autopilot-dashboard/wiki/3-%E2%80%90-Deployment-instructions-for-Keycloak-and-GitHub-OAuth-Login) on this repo's Wiki. The login page for the dashboard which we deployed to MOC/NERC using Keycloak and GitHub Oauth is shown in the section below.
 - Click the **Login** button to authenticate.
    ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/login.jpg)
 
+#### Example Login Implementation on NERC/MOC using Keycloak and GitHub OAuth
+The login system we implemented for the NERC/MOC deployed used GitHub for OAuth and a Keycloak server for RBAC (role-based access control). When the user first enters the dashboard application, they are redirected to a Keycloak login page below. This page has the option for GitHub login shown in the icon at the bottom of the login box. Once the user is authenticated and has valid access to the app, they are redirected to the Monitor page. For detailed deployment instructions on this login implementation please refer to the [GitHub and Keycloak Login Deployment Tutorial](https://github.com/EC528-Fall-2024/autopilot-dashboard/wiki/3-%E2%80%90-Deployment-instructions-for-Keycloak-and-GitHub-OAuth-Login) on this repo's Wiki.
+![Keycloak Login Page Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/login-keycloak.png)
 
 #### Monitoring Page
 - Click on **Monitor Cluster** on the sidebar to access the monitoring cluster page.
