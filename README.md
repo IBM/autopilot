@@ -108,6 +108,14 @@ VITE v5.4.7  ready in 136 ms
 ```
 Open your browser and go to [http://localhost:5173/](http://localhost:5173/) to access the application.
 
+**Skip steps 3 through 6: Pull from Quay Repo**
+You can skip steps 3 through 6 and directly pull an image from our quay repo by running the following commands:
+```
+podman pull quay.io/anish2sinha/autopilot-dashboard:local
+podman run -d -p 8080:8080 quay.io/anish2sinha/autopilot-dashboard:local
+```
+Autopilot dashboard app should now be available and running on your localhost:8080. Note that the .env for this image is the same as the one shown in step 5. The 'local' tag is specifically meant for local non-prod use and thus has the location /autopilot/ and location /kubernetes/ parts of the nginx.conf file commnted out.
+
 Once the application is running locally, you can the access various pages as shown in the UI section of our README below:
 
 ## User Instructions for Deploying (without login system)
@@ -147,9 +155,9 @@ VITE_SERVICE_ACC_TOKEN=
 
 To build a container image of our app using Podman and our given Dockerfile, first make sure you are in the app directory of our repo. Set up a Quay account and an image repository. Then run the following podman commands:
 ```
-podman build -t <name> .
+podman build -t <repo-name> .
 podman login quay.io
-podman tag <name> quay.io/<your-username>/<repo-name>:latest
+podman tag <repo-name> quay.io/<your-username>/<repo-name>:latest
 podman push quay.io/<your-username>/<repo-name>:latest
 ```
 Then, to pull and run this image from your Quay repo:
@@ -166,6 +174,8 @@ On the OpenShift Web CLI, go to the developer topology. On the topology page, ri
 **5. Fix nginx.conf file if necessary**
 
 If you are running into problems regarding OpenShift permissions or connecting to the prod environment's Autopilot and Kubernetes services, please take a look at our nginx.conf file in the app directory as this configures the NGINX server which runs the dashboard app.
+
+If you are trying to run a podman image of the dashboard locally, you will have to remove some components of the nginx.conf, specifically the location /autopilot and location /kubernetes parts.
 
 ## UI
 
