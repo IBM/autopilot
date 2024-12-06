@@ -42,7 +42,12 @@
    - [OpenShift Deployment](https://sprint5-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org/)
 
 
-Final Presentation: Due December 9th/December 11th
+6. ### [Final Demo](https://youtu.be/yQekX1FL_oY)
+
+   - [Final Demo Slide](https://docs.google.com/presentation/d/1LT-_rjH-Op5uNIkuy835vtNbWrcXCfqnWOcbgueSd7o/edit#slide=id.g308583e7967_0_285)
+   - [OpenShift Deployment](https://prod-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org/)
+
+
 
 ** **
 
