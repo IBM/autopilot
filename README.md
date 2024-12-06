@@ -195,6 +195,19 @@ If you are trying to run a podman image of the dashboard locally, you will have 
 
 Instructions for installing the Autopilot Dashboard using a Helm chart that is configured for our container image from Quay can be found here: [Helm Installation Instructions](https://github.com/EC528-Fall-2024/autopilot-dashboard/wiki/4-%E2%80%90-Installation-Instructions-Using-Helm)
 
+## Updated Application Architecture
+![Updated Application Architecture](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/updated_architecture.png)
+
+The diagram above illustrates the updated application architecture for the IBM Autopilot Dashboard. It consists of three primary pages: Login Page, Monitoring Page, and Testing Page. These pages are hosted on a HTTP NGINX server running within a container on the Kubernetes cluster.
+
+* The **Login Page** allows for user authentication to the cluster, integrating Keycloak with GitHub OAuth, and grants users either admin or viewer access based on credentials.
+* The **Monitoring Page** displays real-time node information and health check results (DCGM level 3 diagnostics) from Autopilot’s labelling of the worker nodes (using the Kubernetes Watch API), allowing users to view the status of the worker nodes.
+* The **Testing Page** enables administrators to run health checks on worker nodes by sending REST API requests to IBM Autopilot. These requests trigger tests that assess the health of GPUs and other components in the cluster. The results of the executed tests are returned to this page and appear in an embedded terminal window.
+
+Within the cluster, IBM Autopilot runs as a DaemonSet across worker nodes, executing health checks and diagnostics on GPU, network, and storage components. For context, a Kubernetes DaemonSet ensures that all Nodes matching a certain criteria run a copy of a Pod.
+
+NOTE: Our application is a dashboard for Autopilot, so the diagram only includes the components of Autopilot which directly interact with the dashboard. Most of Autopilot’s inner workings are not shown for simplicity.
+
 ## UI
 
 #### Login Page
