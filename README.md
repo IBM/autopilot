@@ -47,7 +47,9 @@
    - [Final Demo Slide](https://docs.google.com/presentation/d/1LT-_rjH-Op5uNIkuy835vtNbWrcXCfqnWOcbgueSd7o/edit#slide=id.g308583e7967_0_285)
    - [OpenShift Deployment](https://prod-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org/)
    - Professors and mentors should have full admin access to the deployment link above through their GitHub accounts (click on the GitHub icon at the bottom of the login screen).
-   - We set up a temporary account with user permissions to the deployment link for everyone else. Username: autopilot-dashboard   Password: autopilot-dashboard
+   - We set up a temporary account with user permissions to the deployment link for everyone else:
+    	- Username: autopilot-dashboard
+        - Password: autopilot-dashboard
 
 
 
