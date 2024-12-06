@@ -3,10 +3,11 @@ import styled from "styled-components";
 import watchNodesWithStatus from "./api/watchNodesWithStatus.js";
 import CollapsibleTable from "./components/CollapsibleTable.jsx";
 import SearchInput from './components/SearchInput';
-import { Helmet } from 'react-helmet';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // Displaying live node labels and status + current health checks
+
+const workerNodePrefix = import.meta.env.VITE_WORKER_NODE_PREFIX;
 
 const MonitorWrapper = styled.div`
     padding-left: 0;
@@ -28,7 +29,7 @@ const MonitorWrapper = styled.div`
 function Monitor() {
     const navigate = useNavigate();
     const location = useLocation();
-    const[nodes, setNodes] = useState([]);
+    const [nodes, setNodes] = useState([]);
     const [searchQuery, setSearchQuery] = useState(''); // State for search query
     const [filters, setFilters] = useState({
         gpuHealths: [],
@@ -128,12 +129,12 @@ function Monitor() {
     const updateURL = (newFilters, newSearch) => {
         const params = new URLSearchParams();
         let hasFilters = false;
-        
+
         if (newSearch) {
             params.set('search', newSearch);
             hasFilters = true;
         }
-        
+
         const pluralToSingular = {
             gpuHealths: 'gpuHealth',
             statuses: 'status',
@@ -144,7 +145,7 @@ function Monitor() {
             gpuModels: 'gpuModel',
             gpuCounts: 'gpuCount'
         };
-        
+
         Object.entries(newFilters).forEach(([key, values]) => {
             if (values.length > 0) {
                 const paramKey = pluralToSingular[key] || key.replace(/s$/, '');
@@ -190,14 +191,15 @@ function Monitor() {
         };
 
         watchNodesWithStatus(handleNodeChange)
-            .then(() => console.log('Started watching nodes'))
+            .then(() => { })
             .catch((err) => {
                 console.error('Error fetching nodes:', err);
             });
     }, []);
 
     // Filter nodes for worker nodes only
-    const workerNodes = nodes.filter(node => node.name.startsWith('wrk'));
+    const workerNodes = nodes.filter(node => node.name.startsWith(workerNodePrefix));
+    // const workerNodes = nodes.filter(node => node.name.includes('worker'));
 
     // Filter nodes based on search query
     const filteredNodes = workerNodes.filter(node => {
@@ -207,22 +209,20 @@ function Monitor() {
         );
     });
 
-    
+    useEffect(() => {
+        document.title = 'Monitor Cluster';
+    }, []);
 
     return (
         <MonitorWrapper>
-            <Helmet>
-                <title>Monitor Cluster</title>
-                <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg" />
-            </Helmet>
             <h1>Monitor Cluster</h1>
             <SearchInput
                 searchQuery={searchQuery}
                 setSearchQuery={handleSearchChange}
                 label="Search Features"
             />
-            
-            <CollapsibleTable 
+
+            <CollapsibleTable
                 nodes={filteredNodes}
                 filters={filters}
                 onFilterChange={handleFilterChange}

@@ -10,19 +10,21 @@ export default async function watchNodesWithStatus(onNodeChange) {
     async function startWatching() {
         // Helper fn. to reconnect watch
         function reconnect() {
-            console.log('Reconnecting to Kubernetes watch...');
             startWatching();
         }
 
         try {
-            const apiUrl = `${endpoint}/api/v1/nodes?watch=true${resourceVersion 
-                                    ? `&resourceVersion=${resourceVersion}` : ''}`;
-            const response = await fetch(apiUrl, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            const apiUrl = `${endpoint}/api/v1/nodes?watch=true${resourceVersion
+                ? `&resourceVersion=${resourceVersion}` : ''}`;
+
+            const headers = {};
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+                headers['Content-Type'] = 'application/json';
+            }
+
+            const response = await fetch(apiUrl, { headers });
 
             // If resource version is stale, do full refresh
             if (!response.ok) {
@@ -39,14 +41,13 @@ export default async function watchNodesWithStatus(onNodeChange) {
             let buffer = '';
 
             async function readStream() {
-                const {done, value} = await reader.read();
+                const { done, value } = await reader.read();
                 if (done) {
-                    console.log('Watch request terminated; attempting reconnection...');
                     reconnect();
                     return;
                 }
 
-                buffer += utf8Decoder.decode(value, {stream: true});
+                buffer += utf8Decoder.decode(value, { stream: true });
                 buffer = processBuffer(buffer, onNodeChange);
 
                 await readStream();
@@ -138,10 +139,8 @@ function processBuffer(buffer, onNodeChange) {
                     }
                 };
 
-                console.log(`Node added or modified: ${nodeName}`);
                 onNodeChange(detailedNodeInfo);
             } else if (event.type === "DELETED") {
-                console.log(`Node deleted: ${nodeName}`);
                 onNodeChange({ name: nodeName }, true);
             }
         } catch (error) {

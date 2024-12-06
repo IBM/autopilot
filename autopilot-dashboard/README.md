@@ -36,11 +36,272 @@
    - [Sprint 4 Demo Slide](https://docs.google.com/presentation/d/1kNkAz926yURKGQpXppM6pAH3eHPI8d_wr_910gF1358/edit#slide=id.g308583e7967_0_285)
    - [OpenShift Deployment](https://sprint4-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org)
   
-5. Due November 20th/November 25th
+5. ### [Sprint 5 Demo](https://youtu.be/EWgDT14xfbg)
+
+   - [Sprint 5 Demo Slide](https://docs.google.com/presentation/d/1XyQrheZqX_s2Irwf9fgHQ32YFUtESQtHBdJspb1SWDY/edit?usp=sharing)
+   - [OpenShift Deployment](https://sprint5-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org/)
+
 
 Final Presentation: Due December 9th/December 11th
 
 ** **
+
+## User Instructions for Running Locally
+
+**1. Install Autopilot**
+
+For these instructions, we assume you already have a Kubernetes cluster configured. If you do not yet have Autopilot installed, please follow the [installation instructions](https://github.com/IBM/autopilot/blob/main/SETUP.md) on the main IBM/autopilot repository.
+
+Ensure that Autopilot is properly running with your Kubernetes cluster by following the [usage instructions](https://github.com/IBM/autopilot/blob/main/USAGE.md) on the main IBM/autopilot repository. Please try running the curl commands for running the Autopilot checks/tests to make sure that Autopilot is correctly configured on your cluster.
+
+**2. Expose Autopilot and Kubernetes service endpoints**:
+
+1. **Start the Autopilot Service:**
+
+   Be sure to have the Autopilot service running on port 3333 (or any port you chose) using the following command:
+   ```
+   kubectl port-forward service/autopilot-healthchecks 3333:3333 -n autopilot
+   ```
+2. **Expose the Kubernetes API:** 
+
+   Run `kubectl proxy` which will by default expose port 8001. The dashboard application will be making requests to these endpoints when running health checks or gathering node data.
+   ```
+   kubectl proxy
+   ```
+3. **Verify the Proxy Setup:**
+
+   Test if the proxy is properly set up checking for a response by executing:
+   ```
+   curl "http://localhost:8001"
+   ```
+
+**3. Clone the autopilot-dashboard repository**:
+```
+git clone https://github.com/EC528-Fall-2024/autopilot-dashboard.git
+cd autopilot-dashboard
+```
+**4. Install Dependencies**:
+
+Ensure you have [Node.js](https://nodejs.org/en/download/) version `v20.18.1` or higher installed. Then follow these commands to install the necessary dependencies:
+```
+cd app
+npm i
+```
+
+**5. Environment Variables**
+
+Create a .env file in the app directory of our repository to store the necessary environment variables. Below is an example .env file which can be used to run the app locally. A descriptive comment is provided for each environment variable.
+```
+# Service endpoint for Autopilot
+VITE_AUTOPILOT_ENDPOINT=http://localhost:3333
+
+# Service endpoint for Kubernetes API
+VITE_KUBERNETES_ENDPOINT=http://localhost:8001
+
+'''
+Autopilot can only run checks on worker nodes. If you would like the dashboard to filter and only display worker nodes, please set the following variable to the common prefix shared by all workers in the cluster. For example, if all worker nodes begin with wrk, set the variable to wrk. If no prefix is set all nodes will be displayed. This assumes that all workers in the cluster share the same prefix. 
+'''
+VITE_WORKER_NODE_PREFIX=
+```
+
+**6. Running the Application (User Interaction)**:
+
+While in the app directory, run the application with the following command:
+```
+npm run dev
+```
+
+Once the application is running, you should see something similar to the following output indicating that the server is ready:
+```
+VITE v5.4.7  ready in 136 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+```
+Open your browser and go to [http://localhost:5173/](http://localhost:5173/) to access the application. **Ensure that CORS is enabled.** If needed, you can use the following [Allow CORS: Access-Control-Allow-Origin](https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf) Chrome extension to do this.
+
+**7. Skip steps 3 through 6 by pulling container image from Quay repo**
+
+You can skip steps 3 through 6 and directly pull an image from our quay repo by running the following commands:
+```
+podman pull quay.io/anish2sinha/autopilot-dashboard:local
+podman run -d -p 8080:8080 quay.io/anish2sinha/autopilot-dashboard:local
+```
+Autopilot dashboard app should now be available and running on your localhost:8080. Note that the .env for this image is the same as the one shown in step 5. The 'local' tag is specifically meant for local non-prod use and thus has the location /autopilot/ and location /kubernetes/ parts of the nginx.conf file commnted out.
+
+Once the application is running locally, you can the access various pages as shown in the UI section of our README below:
+
+## User Instructions for Deploying (without login system)
+
+**1. Assumptions**
+
+For these instructions, we assume that you have Kubernetes running on your prod environment. We also assume that you have Autopilot running and properly exposed. Please refer to the [installation instructions](https://github.com/IBM/autopilot/blob/main/SETUP.md) on the main IBM/autopilot repository.
+
+We also use Podman and OpenShift for these deployment instructions, but the process should still be similar when using other technologies.
+
+**2. Updated Environment Variables for Deployment/Prod Environment**
+
+Below is an example .env file which can be used to deploy the app in a prod environment. A descriptive comment is provided for each environment variable or its change from the previous instructions for running the dashboard locally.
+```
+'''
+Make sure the Autopilot variable points to the endpoint in the prod environment which exposes the service. If you would like to use our nginx.conf as a proxy, please set it to /autopilot as shown below as this will redirect it to http://autopilot-healthchecks.autopilot.svc:3333/ using proxy_pass, but feel free to change the URL to your specific server's autopilot service URL.
+'''
+VITE_AUTOPILOT_ENDPOINT=/autopilot
+
+'''
+Make sure the Kubernetes API variable points to the endpoint in the prod environment which exposes the Kubernetes API. If you would like to use our nginx.conf as a proxy, please set it to /kubernetes as shown below as this will redirect it to https://kubernetes.default.svc/ using proxy_pass, but feel free to change the URL to your specific server's autopilot service URL.
+'''
+VITE_KUBERNETES_ENDPOINT=/kubernetes
+
+'''
+Autopilot can only run checks on worker nodes. If you would like the dashboard to filter and only display worker nodes, please set the following variable to the common prefix shared by all workers in the cluster. For example, if all worker nodes begin with wrk, set the variable to wrk. This assumes that all workers in the cluster share the same prefix.
+'''
+VITE_WORKER_NODE_PREFIX=
+
+'''
+Often a service account will be needed to have read node access in a prod environment. Please set the following env variable to this service account's token. Whenever the Kubernetes API is called to read nodes, this token will be passed in the header as Authorization.
+'''
+VITE_SERVICE_ACC_TOKEN=
+```
+
+**3. Build Container Image using Podman and Host on Quay**
+
+To build a container image of our app using Podman and our given Dockerfile, first make sure you are in the app directory of our repo. Set up a Quay account and an image repository. Then run the following podman commands:
+```
+podman build -t <repo-name> .
+podman login quay.io
+podman tag <repo-name> quay.io/<your-username>/<repo-name>:latest
+podman push quay.io/<your-username>/<repo-name>:latest
+```
+Then, to pull and run this image from your Quay repo:
+```
+podman pull quay.io/<your-username>/<repo-name>:latest
+podman run -d -p 8080:8080 quay.io/<your-username>/<repo-name>:latest
+```
+Autopilot dashboard app should now be available and running on your localhost:8080. For the commands shown above we assume you will be using the tag name 'latest' but feel free to use any other name for your tag.
+
+**4. Deploy Container Image from Quay to OpenShift**
+
+On the OpenShift Web CLI, go to the developer topology. On the topology page, right click and select Add to Project -> Container Image. Once you click on the Container Image option, input the url to your Quay repo tag under the Image section. Follow the other instructions, including naming. Ensure that the resource type is Serverless Deployment and set the Target Port to 8080 (as this is what worked for us). Make sure to have the Create Route button checked so that there will be a public URL. Then hit Create button once finished.
+
+**5. Fix nginx.conf file if necessary**
+
+If you are running into problems regarding OpenShift permissions or connecting to the prod environment's Autopilot and Kubernetes services, please take a look at our nginx.conf file in the app directory as this configures the NGINX server which runs the dashboard app.
+
+If you are trying to run a podman image of the dashboard locally, you will have to remove some components of the nginx.conf, specifically the location /autopilot and location /kubernetes parts.
+
+## Installation using Helm
+
+Instructions for installing the Autopilot Dashboard using a Helm chart that is configured for our container image from Quay can be found here: [Helm Installation Instructions](https://github.com/EC528-Fall-2024/autopilot-dashboard/wiki/4-%E2%80%90-Installation-Instructions-Using-Helm)
+
+## Updated Application Architecture
+![Updated Application Architecture](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/updated_architecture.png)
+
+The diagram above illustrates the updated application architecture for the IBM Autopilot Dashboard. It consists of three primary pages: Login Page, Monitoring Page, and Testing Page. These pages are hosted on a HTTP NGINX server running within a container on the Kubernetes cluster.
+
+* The **Login Page** allows for user authentication to the cluster, integrating Keycloak with GitHub OAuth, and grants users either admin or viewer access based on credentials.
+* The **Monitoring Page** displays real-time node information and health check results (DCGM level 3 diagnostics) from Autopilot’s labelling of the worker nodes (using the Kubernetes Watch API), allowing users to view the status of the worker nodes.
+* The **Testing Page** enables administrators to run health checks on worker nodes by sending REST API requests to IBM Autopilot. These requests trigger tests that assess the health of GPUs and other components in the cluster. The results of the executed tests are returned to this page and appear in an embedded terminal window.
+
+Within the cluster, IBM Autopilot runs as a DaemonSet across worker nodes, executing health checks and diagnostics on GPU, network, and storage components. For context, a Kubernetes DaemonSet ensures that all Nodes matching a certain criteria run a copy of a Pod.
+
+NOTE: Our application is a dashboard for Autopilot, so the diagram only includes the components of Autopilot which directly interact with the dashboard. Most of Autopilot’s inner workings are not shown for simplicity.
+
+## UI
+
+#### Login Page
+- Click on **Login** on the sidebar to access the dummy login page.
+- This login page is non-functional and is not meant to be used in a production environment.
+- If you would like a functioning login system, please refer to the [GitHub and Keycloak Login Deployment Tutorial](https://github.com/EC528-Fall-2024/autopilot-dashboard/wiki/3-%E2%80%90-Deployment-instructions-for-Keycloak-and-GitHub-OAuth-Login) on this repo's Wiki. The login page for the dashboard which we deployed to MOC/NERC using Keycloak and GitHub Oauth is shown in the section below.
+- Click the **Login** button to authenticate.
+- Users are typically separated using RBAC (role based access control) between users and admins. Users are able to view the status of worker nodes, but not able to deploy tests. Admins have access to do both (most importantly run/deploy tests).
+   ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/login.jpg)
+
+#### Example Login Implementation on NERC/MOC using Keycloak and GitHub OAuth
+The login system we implemented for the NERC/MOC deployed used GitHub for OAuth and a Keycloak server for RBAC (role-based access control). When the user first enters the dashboard application, they are redirected to a Keycloak login page below. This page has the option for GitHub login shown in the icon at the bottom of the login box. Once the user is authenticated and has valid access to the app, they are redirected to the Monitor page. For detailed deployment instructions on this login implementation please refer to the [GitHub and Keycloak Login Deployment Tutorial](https://github.com/EC528-Fall-2024/autopilot-dashboard/wiki/3-%E2%80%90-Deployment-instructions-for-Keycloak-and-GitHub-OAuth-Login) on this repo's Wiki.
+![Keycloak Login Page Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/login-keycloak.png)
+
+#### Monitoring Page
+- Click on **Monitor Cluster** on the sidebar to access the monitoring cluster page.
+- **Search Bar**: 
+   - At the top of the page, you will find a search input called Search Features.
+   - Enter part or all of a node's name to filter the list of nodes and view only the relevant system metrics.
+- **Filtering feature for each columns**
+  - On each column, click on the funnel icon to filter the nodes.
+  - e.g. Under the **GPU Health** column, click on the funnel icon to filter nodes and display nodes according to their GPU health ("Pass" or "Not Pass").
+- **View Node Details**:
+   - Click on the chevron on any node in the collapsible table to expand it.
+   - This will reveal detailed information about the selected node, including capacity/allocatable resources, and a detailed DCGM level-3 health checks when applicable.
+ ![monitor Image table](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor-updated-table.png)
+ ![monitor Image filter col](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor-filtering.png)
+![monitor Image pagination](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor-cluster-pagination.png)
+
+
+#### Testing Page
+- Click on **Run Tests** on the sidebar to get access to testing page.
+- Use the **Health Checks** menu  to select one or more tests.
+- Use the **Nodes** menu  to select one or more nodes to be tested (by node ID).
+- Use the **Select Node Label** menu to select nodes by node label. Enter a key-value pair (key=value just means the label so labelName=labelValue, e.g., `testlabel=not2`) to specify the nodes to be tested.
+- Use the **Select Job** menu to select nodes by the job which they are running. Enter the namespace and key-value pair to specify the nodes to be tested. Enter in the format namespace:key=value.
+- *Note* you there are three different menus for selecting nodes. The Nodes menu is by ID. the Select Node Label menu is by node label. The Select Job menu is by job. You have the option to use one or more menus when selecting the ndes to be tested
+- Optionally, toggle the **Batches** switch to run tests in batches and enter the batch number. For more detail regarding this optional parameter please refer to the following excerpt from the [USAGE.md](https://github.com/IBM/autopilot/blob/main/USAGE.md) of IBM/autopilot: `batch=<#hosts>`, how many hosts to check at a single moment. Requests to the batch are run in parallel asynchronously. Batching is done to avoid running too many requests in parallel when the number of worker nodes increases. Defaults to all nodes.
+- Click the **Run Tests** button to deploy the tests.
+- Test results will be displayed in real-time in the terminal output section. Use the copy to clipboard button to copy test results. Use the expand button at the top right to make the terminal full screen.
+![test Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/testing.jpg)
+
+## Structure:
+Here is an overview of the project structure:
+```plaintext
+.github/
+ └── workflows/
+     └── set_done_date.yml          # GitHub Actions for CI/CD
+  
+.app/
+ └── src/
+     └── api/
+         ├── getNodes.js                  # Fetches node data
+         ├── getNodesWithStatus.js        # Fetches node data with status
+         └── runTests.js                  # Runs tests on nodes
+     └── components/
+         ├── Button.jsx                   # Button component
+         ├── CollapsibleTable.jsx         # Collapsible table component
+         ├── ColumnFilter.jsx             # Column filter component for tables
+         ├── Dropdown.jsx                 # Dropdown menu component
+         ├── MultiSelect.jsx              # Multi-select input component
+         ├── NumberField.jsx              # Numeric input field component
+         ├── SearchInput.jsx              # Search input component
+         ├── Sidebar.jsx                  # Sidebar navigation component
+         ├── SidebarCarbon.jsx            # Sidebar with Carbon design
+         ├── Switch.jsx                   # Toggle switch component
+         └──  Terminal.jsx                # Terminal-like display component
+     ├── App.jsx                          # Main application component
+     ├── Login.jsx                        # Login page component
+     ├── Monitor.jsx                      # Monitoring page component
+     ├── Testing.jsx                      # Testing page component
+     └── Main.jsx                         # Main entry point for the ap
+ ├── gitignore                      # Specifies files to be ignored by git
+ ├── Dockerfile                     # Docker configuration
+ ├── eslint.config.js               # Linter configuration for the project
+ ├── index.html                     # Main HTML entry point for the frontend
+ ├── nginx.conf                     # Nginx server configuration
+ ├── package-lock.json              # Package lock file 
+ ├── package.json                   # Project metadata and dependencies
+ └── vite.config.js                 # Vite configuration for building the project
+
+.images/
+ └── architecture.png               # Architecture diagram  
+ ├── login-page.png                 # Login page screenshot  
+ ├── monitor-page.png               # Monitoring page screenshot
+ └── test-page.png                  # Testing page screenshot
+
+LICENSE                             # License information
+README.md                           # Project Documentation
+```
+
+** **
+
+# Project Proposal
 
 ## 1.   Vision and Goals Of The Project:
 
@@ -274,117 +535,3 @@ The release planning of this project will be based on the EC528 lecture regardin
    **<ins> Open Shift Integration </ins>**
 
    - Implement seamless login with OpenShift credentials.
- 
-## Instructions:
-
-Follow these commands to start the front-end application:
-```
-cd app
-npm i
-npm run dev
-```
-
-
-## Structure:
-Here is an overview of the project structure:
-```plaintext
-.github/
- └── workflows/
-     └── set_done_date.yml          # GitHub Actions for CI/CD
-  
-.app/
- └── src/
-     └── api/
-         ├── getNodes.js                  # Fetches node data
-         ├── getNodesWithStatus.js        # Fetches node data with status
-         └── runTests.js                  # Runs tests on nodes
-     └── components/
-         ├── Button.jsx                   # Button component
-         ├── CollapsibleTable.jsx         # Collapsible table component
-         ├── ColumnFilter.jsx             # Column filter component for tables
-         ├── Dropdown.jsx                 # Dropdown menu component
-         ├── MultiSelect.jsx              # Multi-select input component
-         ├── NumberField.jsx              # Numeric input field component
-         ├── SearchInput.jsx              # Search input component
-         ├── Sidebar.jsx                  # Sidebar navigation component
-         ├── SidebarCarbon.jsx            # Sidebar with Carbon design
-         ├── Switch.jsx                   # Toggle switch component
-         └──  Terminal.jsx                # Terminal-like display component
-     ├── App.jsx                          # Main application component
-     ├── Login.jsx                        # Login page component
-     ├── Monitor.jsx                      # Monitoring page component
-     ├── Testing.jsx                      # Testing page component
-     └── Main.jsx                         # Main entry point for the ap
- ├── gitignore                      # Specifies files to be ignored by git
- ├── Dockerfile                     # Docker configuration
- ├── eslint.config.js               # Linter configuration for the project
- ├── index.html                     # Main HTML entry point for the frontend
- ├── nginx.conf                     # Nginx server configuration
- ├── package-lock.json              # Package lock file 
- ├── package.json                   # Project metadata and dependencies
- └── vite.config.js                 # Vite configuration for building the project
-
-.images/
- └── architecture.png               # Architecture diagram  
- ├── login-page.png                 # Login page screenshot  
- ├── monitor-page.png               # Monitoring page screenshot
- └── test-page.png                  # Testing page screenshot
-
-LICENSE                             # License information
-README.md                           # Project Documentation
-```
-## User Instructions and UI
-
-1. **Clone the repository**:
-```
-   git clone [https://github.com/EC528-Fall-2024/autopilot-dashboard.git]
-   cd autopilot-dashboard
-```
-2. **Install Dependencies**:
-Ensure you have Node.js installed. Then follow these commands to install the necessary dependencies and start the front-end application:
-```
-cd app
-npm i
-npm run dev
-```
-
-3. **Running the Application (User Interaction)**:
-Once the application is running, you should see the following output indicating that the server is ready:
-```
-VITE v5.4.7  ready in 136 ms
-
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
-  ➜  press h + enter to show help
-```
-- Open your browser and go to [http://localhost:5173/](http://localhost:5173/) to access the application.
-
-Once the application is running locally, you can access various pages as follows:
-
-#### Login Page
-- Click on **Login** to get access to login page.
-- Enter your username and password.
-- Click the **Login** button to authenticate.
-   ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/login.jpg)
-
-
-#### Monitor Cluster Page
-- Click on **Monitor Cluster** to get access to monitor cluster page.
-- **Use Search Filters**: 
-   - At the top of the page, you will find a search input called Search Features.
-   - Enter part or all of a node's name to filter the list of nodes and view only the relevant system metrics.
-- **View Node Details**:
-   - Click on any node in the collapsible table to expand it.
-   - This will reveal detailed information about the selected node, including live status updates and GPU health checks and any related details.
-   - Under the **GPU Health** section, we can click on the funnel icon to filter the nodes. You can choose to display nodes where GPU health is either "Pass" or "Not Pass".
- ![monitor Image 1](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor1.jpg)
- ![monitor Image 2](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/monitor2.jpg)
-
-#### Testing Page
-- Click on **Run Tests** to get access to testing page.
-- Use the **Health Checks** menu  to select one or more tests and nodes.
-- Optionally, toggle the **Batches** switch to run tests in batches and enter the batch number.
-- For **Select Node Label**, enter a key-value pair (key=value just means the label so labelName=labelValue, e.g., `testlabel=not2`) to specify the node to be tested.
-- Click the **Run Tests** button to start the test.
-- Test results will be displayed in real-time in the terminal output section.
-![test Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/testing.jpg)
