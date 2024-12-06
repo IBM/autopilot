@@ -202,6 +202,7 @@ Instructions for installing the Autopilot Dashboard using a Helm chart that is c
 - This login page is non-functional and is not meant to be used in a production environment.
 - If you would like a functioning login system, please refer to the [GitHub and Keycloak Login Deployment Tutorial](https://github.com/EC528-Fall-2024/autopilot-dashboard/wiki/3-%E2%80%90-Deployment-instructions-for-Keycloak-and-GitHub-OAuth-Login) on this repo's Wiki. The login page for the dashboard which we deployed to MOC/NERC using Keycloak and GitHub Oauth is shown in the section below.
 - Click the **Login** button to authenticate.
+- Users are typically separated using RBAC (role based access control) between users and admins. Users are able to view the status of worker nodes, but not able to deploy tests. Admins have access to do both (most importantly run/deploy tests).
    ![Login Image](https://github.com/EC528-Fall-2024/autopilot-dashboard/blob/main/images/login.jpg)
 
 #### Example Login Implementation on NERC/MOC using Keycloak and GitHub OAuth
