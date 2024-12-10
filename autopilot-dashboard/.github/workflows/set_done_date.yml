@@ -1,0 +1,33 @@
+name: Set DoneDate when task is moved to Done
+
+on:
+  workflow_dispatch:
+  issues:
+    types: [edited, transferred]
+  project_card:
+    types: [moved]
+
+jobs:
+  update-done-date:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check if card moved to Done
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const projectColumn = await github.rest.projects.getColumn({
+            column_id: context.payload.project_card.column_id
+          });
+          
+          if (projectColumn.data.name === "Done") {
+            // Assuming DoneDate is a label or metadata in the issue
+            const issueNumber = context.payload.project_card.content_url.split("/").pop();
+            
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              labels: ['Done'],
+              body: `${context.payload.issue.body}\n\n**DoneDate**: ${new Date().toISOString()}`
+            });
+          }
