@@ -269,8 +269,7 @@ Here is an overview of the project structure:
 .app/
  └── src/
      └── api/
-         ├── getNodes.js                  # Fetches node data
-         ├── getNodesWithStatus.js        # Fetches node data with status
+         ├── watchNodesWithStatus.js      # Watch stream on node information
          └── runTests.js                  # Runs tests on nodes
      └── components/
          ├── Button.jsx                   # Button component
@@ -297,12 +296,6 @@ Here is an overview of the project structure:
  ├── package-lock.json              # Package lock file 
  ├── package.json                   # Project metadata and dependencies
  └── vite.config.js                 # Vite configuration for building the project
-
-.images/
- └── architecture.png               # Architecture diagram  
- ├── login-page.png                 # Login page screenshot  
- ├── monitor-page.png               # Monitoring page screenshot
- └── test-page.png                  # Testing page screenshot
 
 LICENSE                             # License information
 README.md                           # Project Documentation
