@@ -63,3 +63,15 @@ The `ServiceMonitor` labeling is not required.
 ```bash
 kubectl label ns autopilot openshift.io/cluster-monitoring=true
 ```
+
+## Enabling Grafana
+To deploy the autopilot Grafana dashboard, you must install the [grafana-operator v5](https://github.com/grafana/grafana-operator) in the `grafana-operator` namespace and create a Grafana instance on your cluster in the same namespace.
+
+Then, run the following commands:
+```bash
+kubectl namespace grafana-operator
+kubectl create -f grafana/autopilot-dashboard.yaml
+kubectl get grafanadashboards
+```
+
+You should see the newly created Grafana dashboard and access it with the Grafana route shown in `kubectl get routes -n grafana-operator`
