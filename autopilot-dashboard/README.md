@@ -42,7 +42,16 @@
    - [OpenShift Deployment](https://sprint5-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org/)
 
 
-Final Presentation: Due December 9th/December 11th
+6. ### [Final Demo](https://youtu.be/yQekX1FL_oY)
+
+   - [Final Demo Slide](https://docs.google.com/presentation/d/1LT-_rjH-Op5uNIkuy835vtNbWrcXCfqnWOcbgueSd7o/edit#slide=id.g308583e7967_0_285)
+   - [OpenShift Deployment](https://prod-autopilot-dashboard-f3dc9e.apps.shift.nerc.mghpcc.org/)
+   - Professors and mentors should have full admin access to the deployment link above through their GitHub accounts (click on the GitHub icon at the bottom of the login screen).
+   - We set up a temporary account with user permissions to the deployment link for everyone else:
+    	- Username: autopilot-dashboard
+        - Password: autopilot-dashboard
+
+
 
 ** **
 
@@ -260,8 +269,7 @@ Here is an overview of the project structure:
 .app/
  └── src/
      └── api/
-         ├── getNodes.js                  # Fetches node data
-         ├── getNodesWithStatus.js        # Fetches node data with status
+         ├── watchNodesWithStatus.js      # Watch stream on node information
          └── runTests.js                  # Runs tests on nodes
      └── components/
          ├── Button.jsx                   # Button component
@@ -288,12 +296,6 @@ Here is an overview of the project structure:
  ├── package-lock.json              # Package lock file 
  ├── package.json                   # Project metadata and dependencies
  └── vite.config.js                 # Vite configuration for building the project
-
-.images/
- └── architecture.png               # Architecture diagram  
- ├── login-page.png                 # Login page screenshot  
- ├── monitor-page.png               # Monitoring page screenshot
- └── test-page.png                  # Testing page screenshot
 
 LICENSE                             # License information
 README.md                           # Project Documentation
