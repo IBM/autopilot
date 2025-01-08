@@ -62,10 +62,16 @@ As part of this workload, Autopilot will generate the Ring Workload and then sta
 
 ```bash
 # Invoked via the `status` handle:
-curl "http://autopilot-healthchecks-autopilot.<domain>/status?check=iperf&workload=ring&pclients=<NUMBER_OF_IPERF3_CLIENTS>&startport=<STARTING_IPERF3_SERVER_PORT>"
+curl "http://127.0.0.1:3333/status?check=iperf&workload=ring&pclients=<NUMBER_OF_IPERF3_CLIENTS>&startport=<STARTING_IPERF3_SERVER_PORT>"
+
+# Invoked via the `status` with defaults (iperf clients = 8, starting server port = 5200, workload = ring):
+curl "http://127.0.0.1:3333/status?check=iperf"
 
 # Invoked via the `iperf` handle directly:
-curl "http://autopilot-healthchecks-autopilot.<domain>/iperf?workload=ring&pclients=<NUMBER_OF_IPERF3_CLIENTS>&startport=<STARTING_IPERF3_SERVER_PORT>"
+curl "http://127.0.0.1:3333/iperf?workload=ring&pclients=<NUMBER_OF_IPERF3_CLIENTS>&startport=<STARTING_IPERF3_SERVER_PORT>"
+
+# Invoked via the `iperf` handle directly (iperf clients = 8, starting server port = 5200, workload = ring):
+curl "http://127.0.0.1:3333/iperf"
 ```
 
 ## Concrete Example
