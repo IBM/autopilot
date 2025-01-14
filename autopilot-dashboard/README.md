@@ -102,10 +102,10 @@ npm i
 Create a .env file in the app directory of our repository to store the necessary environment variables. Below is an example .env file which can be used to run the app locally. A descriptive comment is provided for each environment variable.
 ```
 # Service endpoint for Autopilot
-VITE_AUTOPILOT_ENDPOINT=http://localhost:3333
+VITE_AUTOPILOT_ENDPOINT=http://127.0.0.1:3333
 
 # Service endpoint for Kubernetes API
-VITE_KUBERNETES_ENDPOINT=http://localhost:8001
+VITE_KUBERNETES_ENDPOINT=http://127.0.0.1:8001
 
 '''
 Autopilot can only run checks on worker nodes. If you would like the dashboard to filter and only display worker nodes, please set the following variable to the common prefix shared by all workers in the cluster. For example, if all worker nodes begin with wrk, set the variable to wrk. If no prefix is set all nodes will be displayed. This assumes that all workers in the cluster share the same prefix. 

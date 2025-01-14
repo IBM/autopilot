@@ -3,8 +3,7 @@ export default async function runTests(selectedTests, selectedNodes = [], jobVal
         const testsValue = selectedTests.join(',');
         const nodesValue = selectedNodes.join(',');
 
-        const endpoint = import.meta.env.VITE_AUTOPILOT_ENDPOINT;
-        let url = `${endpoint}/status?check=${testsValue}`;
+        let url = `/autopilot/status?check=${testsValue}`;
 
         if (nodesValue) {
             url += `&host=${nodesValue}`;

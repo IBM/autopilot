@@ -4,7 +4,6 @@ let resourceVersion = null;
 
 // Callbacks (onNodeChange) are used to handle changes in node names incrementally
 export default async function watchNodesWithStatus(onNodeChange) {
-    const endpoint = import.meta.env.VITE_KUBERNETES_ENDPOINT;
     const token = import.meta.env.VITE_SERVICE_ACC_TOKEN;
 
     async function startWatching() {
@@ -14,7 +13,7 @@ export default async function watchNodesWithStatus(onNodeChange) {
         }
 
         try {
-            const apiUrl = `${endpoint}/api/v1/nodes?watch=true${resourceVersion
+            const apiUrl = `/kubernetes/api/v1/nodes?watch=true${resourceVersion
                 ? `&resourceVersion=${resourceVersion}` : ''}`;
 
             const headers = {};
