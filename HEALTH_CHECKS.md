@@ -6,6 +6,8 @@ Here is a breakdown of the existing health checks:
     - Description  : Host-to-device connection speeds, one measurement per GPU. Codebase in tag [v12.4.1](https://github.com/NVIDIA/cuda-samples/tree/master/Samples/1_Utilities/bandwidthTest)
     - Outputs: Pass/fail results based on PCIe bandwidth thresholds.
     - Implementation: Compares bandwidth results to a threshold (e.g., 8 GB/s). If the measured bandwidth falls below the threshold, it triggers a failure.
+    - It is recommended to set a threshold that is 25% or lower of the expected peak PCIe bandwidth capability, which maps to maximum peak from 16 lanes to 4 lanes. For example, for a PCIe Gen4x16, reported peak bandwidth is 63GB/s. A degradation at 25% is 15.75GB/s, which corresponds to PCIe Gen4x4.
+    - The measured bandwidth is expected to be at least 80% of the expected peak PCIe generation bandwidth.
 2. **GPU Memory Check (remapped)**
     - Description: Information from nvidia-smi regarding GPU memory remapped rows.
     - Outputs: Reports the state of GPU memory (normal/faulty).
@@ -35,14 +37,36 @@ These checks are configured to run periodically (e.g., hourly), and results are 
 
 ## Deep Diagnostics and Node Labeling
 
-Autopilot runs health checks periodically on GPU nodes, and if any of the health checks returns an error, the node is labeled with `autopilot.ibm.com/gpuhealth: ERR`. Otherwise, the label is set as `PASS`.
+Autopilot's periodic health checks, will label the worker nodes according to the result obtained.
+Lightweight and invasive health checks, may use different labeling system.
 
-Also, more extensive tests, namely DCGM diagnostics level 3, are also executed automatically only on nodes that have free GPUs. This deeper analysis is needed to reveal problems in the GPUs that can be found only after running level 3 DCGM diagnostic.
+If the health checks, lightweight or invasive, report success, the node is marked with
+
+```yaml
+autopilot.ibm.com/gpuhealth: PASS
+```
+
+When the lightweight health checks report an issue, the node is labelled with
+
+```yaml
+autopilot.ibm.com/gpuhealth: WARN
+```
+
+### Invasive health checks
+
+The invasive DCGM diagnostics level 3 health check, executed automatically only on nodes that have free GPUs. This deeper analysis is needed to reveal problems in the GPUs that can be found only after running level 3 DCGM diagnostic.
 This type of diagnostics can help deciding if the worker node should be used for running workloads or not. To facilitate this task, Autopilot will label nodes with key `autopilot.ibm.com/dcgm.level.3`.
 
-If errors are found during the level 3 diagnostics, the label `autopilot.ibm.com/dcgm.level.3` will contain detailed information about the error in the following format: 
+If a fatal error is found, the `gpuhealth` label is updated to `EVICT`.
 
-`ERR_Year-Month-Date_Hour.Minute.UTC_Diagnostic_Test.gpuID,Diagnostic_Test.gpuID,...`
+Only fatal errors should produce an `EVICT` label. We follow [NVIDIA recommendations](https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/feature-overview.html#id3), although it is possible to customize the list of tests through the Helm chart. The default values are `[PCIe,NVLink,ECC,GPU Memory]`.
+
+
+If errors are found during the level 3 diagnostics, the label `autopilot.ibm.com/dcgm.level.3` will contain detailed information about the error in the following format:
+
+```yaml
+autopilot.ibm.com/dcgm.level.3: ERR_Year-Month-Date_Hour.Minute.UTC_Diagnostic_Test.gpuID,Diagnostic_Test.gpuID,...`
+```
 
 - `ERR`: An indicator that an error has occurred
 - `Year-Month-Date_Hour.Minute.UTC`: Timestamp of completed diagnostics
@@ -52,6 +76,7 @@ If errors are found during the level 3 diagnostics, the label `autopilot.ibm.com
 **Example:** `autopilot.ibm.com/dcgm.level.3=ERR_2024-10-10_19.12.03UTC_page_retirement_row_remap.0`
 
 If there are no errors, the value is set to `PASS_Year-Month-Date_Hour.Minute.UTC`.
+
 
 ### Logs and Metrics
 

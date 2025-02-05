@@ -1,4 +1,4 @@
-package handlers
+package healthcheck
 
 import (
 	"errors"
@@ -17,8 +17,15 @@ func PeriodicCheck() {
 	klog.Info("Running a periodic check")
 	utils.HealthcheckLock.Lock()
 	defer utils.HealthcheckLock.Unlock()
-	checks := utils.GetPeriodicChecks()
-	runAllTestsLocal("all", checks, "1", "None", "None", nil)
+	checks := GetPeriodicChecks()
+	RunHealthLocalNode(checks, "1", "None", "None", nil)
+	hasFailures := GetNodeStatus()
+	klog.Info("Errors after running periodic health checks: ", hasFailures)
+	if hasFailures {
+		utils.PatchNode(utils.GPUHealthWarnLabel, utils.NodeName, true)
+	} else {
+		utils.PatchNode(utils.GPUHealthPassLabel, utils.NodeName, true)
+	}
 }
 
 func InvasiveCheck() {
@@ -26,47 +33,28 @@ func InvasiveCheck() {
 	utils.HealthcheckLock.Lock()
 	defer utils.HealthcheckLock.Unlock()
 	if utils.GPUsAvailability() {
-		klog.Info("Begining invasive health checks, updating node label =TESTING for node ", os.Getenv("NODE_NAME"))
-		label := `
-		{
-			"metadata": {
-				"labels": {
-					"autopilot.ibm.com/gpuhealth": "TESTING"
-					}
-			}
-		}
-		`
-		utils.PatchNode(label, os.Getenv("NODE_NAME"))
+		klog.Info("Starting invasive health checks, updating node label =TESTING for node ", utils.NodeName)
+		utils.PatchNode(utils.GPUHealthTestingLabel, utils.NodeName, true)
 		err := utils.CreateJob("dcgm")
 		if err != nil {
-			klog.Info("Invasive health checks failed, updating node label for node ", os.Getenv("NODE_NAME"))
-			label := `
-		{
-			"metadata": {
-				"labels": {
-					"autopilot.ibm.com/gpuhealth": ""
-					}
-			}
-		}
-		`
-			utils.PatchNode(label, os.Getenv("NODE_NAME"))
+			klog.Info("Invasive health checks Job creation failed, reset node label for node ", utils.NodeName)
+			utils.PatchNode(utils.GPUHealthEmptyLabel, utils.NodeName, true)
 		}
 	}
 }
 
-func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string, nodelabel string, r *http.Request) (*[]byte, error) {
+func RunHealthLocalNode(checks string, dcgmR string, jobName string, nodelabel string, r *http.Request) (*[]byte, error) {
 	out := []byte("")
 	var tmp *[]byte
 	var err error
-	gpufailures := false
 	start := time.Now()
 	if strings.Contains(checks, "all") {
-		checks = utils.GetPeriodicChecks()
+		checks = GetPeriodicChecks()
 	}
 	klog.Info("Health checks ", checks)
 	for _, check := range strings.Split(checks, ",") {
 		switch check {
-		case "ping":
+		case string(Ping):
 			klog.Info("Running health check: ", check)
 			pingnodes := "all"
 			if r != nil {
@@ -75,77 +63,61 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 					pingnodes = "all"
 				}
 			}
-			tmp, err = runPing(pingnodes, jobName, nodelabel)
+			tmp, err = RunPing(pingnodes, jobName, nodelabel)
 			if err != nil {
 				klog.Error(err.Error())
 				return tmp, err
 			}
 			out = append(out, *tmp...)
 
-		case "dcgm":
+		case string(DCGM):
 			klog.Info("Running health check: ", check, " -r ", dcgmR)
-			tmp, err = runDCGM(dcgmR)
-			if err != nil {
-				klog.Error(err.Error())
-				return tmp, err
-			}
-			if strings.Contains(string(*tmp), "FAIL") {
-				klog.Info("GPU failure reported, updating node label for node ", os.Getenv("NODE_NAME"))
-				gpufailures = true
-			}
-			out = append(out, *tmp...)
-
-		case "pciebw":
-			klog.Info("Running health check: ", check)
-			tmp, err = runPCIeBw()
-			if err != nil {
-				klog.Error(err.Error())
-				return tmp, err
-			}
-			if strings.Contains(string(*tmp), "FAIL") {
-				klog.Info("GPU failure reported, updating node label for node ", os.Getenv("NODE_NAME"))
-				gpufailures = true
-			}
-			out = append(out, *tmp...)
-
-		case "remapped":
-			klog.Info("Running health check: ", check)
-			tmp, err = runRemappedRows()
-			if err != nil {
-				klog.Error(err.Error())
-				return tmp, err
-			}
-			if strings.Contains(string(*tmp), "FAIL") {
-				klog.Info("GPU failure reported, updating node label for node ", os.Getenv("NODE_NAME"))
-				gpufailures = true
-			}
-			out = append(out, *tmp...)
-
-		case "gpupower":
-			klog.Info("Running health check: ", check)
-			tmp, err = runGPUPower()
-			if err != nil {
-				klog.Error(err.Error())
-				return tmp, err
-			}
-			if strings.Contains(string(*tmp), "FAIL") {
-				klog.Info("GPU failure reported, updating node label for node ", os.Getenv("NODE_NAME"))
-				gpufailures = true
-			}
-			out = append(out, *tmp...)
-
-		case "gpumem":
-			klog.Info("Running health check: ", check)
-			tmp, err = runGPUMem()
+			tmp, err = RunDCGM(dcgmR)
 			if err != nil {
 				klog.Error(err.Error())
 				return tmp, err
 			}
 			out = append(out, *tmp...)
 
-		case "pvc":
+		case string(PCIeBW):
 			klog.Info("Running health check: ", check)
-			tmp, err = runCreateDeletePVC()
+			tmp, err = RunPCIeBW()
+			if err != nil {
+				klog.Error(err.Error())
+				return tmp, err
+			}
+			out = append(out, *tmp...)
+
+		case string(RowRemap):
+			klog.Info("Running health check: ", check)
+			tmp, err = RunRemappedRows()
+			if err != nil {
+				klog.Error(err.Error())
+				return tmp, err
+			}
+			out = append(out, *tmp...)
+
+		case string(GPUPower):
+			klog.Info("Running health check: ", check)
+			tmp, err = RunGPUPower()
+			if err != nil {
+				klog.Error(err.Error())
+				return tmp, err
+			}
+			out = append(out, *tmp...)
+
+		case string(GPUMem):
+			klog.Info("Running health check: ", check)
+			tmp, err = RunGPUMem()
+			if err != nil {
+				klog.Error(err.Error())
+				return tmp, err
+			}
+			out = append(out, *tmp...)
+
+		case string(PVC):
+			klog.Info("Running health check: ", check)
+			tmp, err = RunCreateDeletePVC()
 			if err != nil {
 				klog.Error(err.Error())
 				return tmp, err
@@ -157,37 +129,14 @@ func runAllTestsLocal(nodes string, checks string, dcgmR string, jobName string,
 			out = append(out, []byte(notsupported)...)
 		}
 	}
-	label := ""
-	if gpufailures {
-		label = `
-		{
-			"metadata": {
-				"labels": {
-					"autopilot.ibm.com/gpuhealth": "ERR"
-					}
-			}
-		}
-		`
-	} else {
-		// In case a previous run failed but the current one succeeds, we can reset the label
-		label = `
-		{
-			"metadata": {
-				"labels": {
-					"autopilot.ibm.com/gpuhealth": "PASS"
-					}
-			}
-		}
-		`
-		utils.PatchNode(label, os.Getenv("NODE_NAME"))
-	}
+
 	end := time.Now()
 	diff := end.Sub(start)
 	klog.Info("Total time (s) for all checks: ", diff.Seconds())
 	return &out, nil
 }
 
-func runAllTestsRemote(host string, check string, batch string, jobName string, dcgmR string, nodelabel string) (*[]byte, error) {
+func RunHealthRemoteNodes(host string, check string, batch string, jobName string, dcgmR string, nodelabel string) (*[]byte, error) {
 	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName, " --dcgmR="+dcgmR, " --nodelabel="+nodelabel)
 
 	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--nodes="+host, "--check="+check, "--batchSize="+batch, "--wkload="+jobName, "--dcgmR="+dcgmR, "--nodelabel="+nodelabel).Output()
@@ -200,7 +149,8 @@ func runAllTestsRemote(host string, check string, batch string, jobName string, 
 	return &out, nil
 }
 
-func runRemappedRows() (*[]byte, error) {
+func RunRemappedRows() (*[]byte, error) {
+	HealthCheckStatus[RowRemap] = false
 	out, err := exec.Command("python3", "./gpu-remapped/entrypoint.py").CombinedOutput()
 	if err != nil {
 		klog.Info("Out:", string(out))
@@ -211,6 +161,7 @@ func runRemappedRows() (*[]byte, error) {
 
 		if strings.Contains(string(out[:]), "FAIL") {
 			klog.Info("Remapped Rows test failed.", string(out[:]))
+			HealthCheckStatus[RowRemap] = true
 		}
 
 		if strings.Contains(string(out[:]), "ABORT") {
@@ -229,15 +180,16 @@ func runRemappedRows() (*[]byte, error) {
 				klog.Error(err.Error())
 				return nil, err
 			} else {
-				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", rm)
-				utils.HchecksGauge.WithLabelValues("remapped", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(rm)
+				klog.Info("Observation: ", utils.NodeName, " ", strconv.Itoa(gpuid), " ", rm)
+				utils.HchecksGauge.WithLabelValues(string(RowRemap), utils.NodeName, utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(rm)
 			}
 		}
 	}
 	return &out, nil
 }
 
-func runGPUMem() (*[]byte, error) {
+func RunGPUMem() (*[]byte, error) {
+	HealthCheckStatus[GPUMem] = false
 	out, err := exec.Command("python3", "./gpu-mem/entrypoint.py").CombinedOutput()
 	if err != nil {
 		klog.Info("Out:", string(out))
@@ -248,8 +200,9 @@ func runGPUMem() (*[]byte, error) {
 
 		if strings.Contains(string(out[:]), "FAIL") {
 			klog.Info("GPU Memory check failed.", string(out[:]))
-			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " 1")
-			utils.HchecksGauge.WithLabelValues("gpumem", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, "0").Set(1)
+			klog.Info("Observation: ", utils.NodeName, " 1")
+			utils.HchecksGauge.WithLabelValues(string(GPUMem), utils.NodeName, utils.CPUModel, utils.GPUModel, "0").Set(1)
+			HealthCheckStatus[GPUMem] = true
 		}
 
 		if strings.Contains(string(out[:]), "ABORT") {
@@ -257,14 +210,15 @@ func runGPUMem() (*[]byte, error) {
 			return &out, nil
 		}
 
-		klog.Info("Observation: ", os.Getenv("NODE_NAME"), " 0")
-		utils.HchecksGauge.WithLabelValues("gpumem", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, "0").Set(0)
+		klog.Info("Observation: ", utils.NodeName, " 0")
+		utils.HchecksGauge.WithLabelValues(string(GPUMem), utils.NodeName, utils.CPUModel, utils.GPUModel, "0").Set(0)
 	}
 	return &out, nil
 }
 
-func runPCIeBw() (*[]byte, error) {
-	out, err := exec.Command("python3", "./gpu-bw/entrypoint.py", "-t", utils.UserConfig.BWThreshold).CombinedOutput()
+func RunPCIeBW() (*[]byte, error) {
+	HealthCheckStatus[PCIeBW] = false
+	out, err := exec.Command("python3", "./gpu-bw/entrypoint.py", "-t", strconv.Itoa(utils.UserConfig.BWThreshold)).CombinedOutput()
 	if err != nil {
 		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
@@ -274,6 +228,7 @@ func runPCIeBw() (*[]byte, error) {
 
 		if strings.Contains(string(out[:]), "FAIL") {
 			klog.Info("PCIe BW test failed.", string(out[:]))
+			HealthCheckStatus[PCIeBW] = true
 		}
 
 		if strings.Contains(string(out[:]), "ABORT") {
@@ -293,17 +248,22 @@ func runPCIeBw() (*[]byte, error) {
 				klog.Error(err.Error())
 				return nil, err
 			} else {
-				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", bw)
-				utils.HchecksGauge.WithLabelValues("pciebw", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(bw)
+				logline := "Observation: " + utils.NodeName + " " + strconv.Itoa(gpuid) + " " + v
+				if bw < float64(utils.UserConfig.BWThreshold) {
+					logline += "  [[ LOW PCIE -- Below expected threshold of " + strconv.Itoa(utils.UserConfig.BWThreshold) + " Gb/s ]]"
+					HealthCheckStatus[PCIeBW] = true
+				}
+				klog.Info(logline)
+				utils.HchecksGauge.WithLabelValues(string(PCIeBW), utils.NodeName, utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(bw)
 			}
 		}
 	}
 	return &out, nil
 }
 
-func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error) {
+func RunPing(nodelist string, jobName string, nodelabel string) (*[]byte, error) {
+	HealthCheckStatus[Ping] = false
 	out, err := exec.Command("python3", "./network/ping-entrypoint.py", "--nodes", nodelist, "--job", jobName, "--nodelabel", nodelabel).CombinedOutput()
-	// klog.Info("Running command: ./network/ping-entrypoint.py ", " --nodes ", nodelist, " --job ", jobName)
 	if err != nil {
 		klog.Info(string(out))
 		klog.Error(err.Error())
@@ -313,6 +273,7 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 
 		if strings.Contains(string(out[:]), "FAIL") {
 			klog.Info("Ping test failed.", string(out[:]))
+			HealthCheckStatus[PCIeBW] = true
 		}
 
 		if strings.Contains(string(out[:]), "ABORT") {
@@ -328,11 +289,11 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 				entry := strings.Split(line, " ")
 				if _, exists := unreach_nodes[entry[1]]; !exists {
 					if entry[len(entry)-1] == "1" {
-						utils.HchecksGauge.WithLabelValues("ping", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, entry[1]).Set(float64(1))
+						utils.HchecksGauge.WithLabelValues(string(Ping), utils.NodeName, utils.CPUModel, utils.GPUModel, entry[1]).Set(float64(1))
 						klog.Info("Observation: ", entry[1], " ", entry[2], " ", entry[3], " Unreachable")
 						unreach_nodes[entry[1]] = append(unreach_nodes[entry[1]], entry[2])
 					} else {
-						utils.HchecksGauge.WithLabelValues("ping", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, entry[1]).Set(float64(0))
+						utils.HchecksGauge.WithLabelValues(string(Ping), utils.NodeName, utils.CPUModel, utils.GPUModel, entry[1]).Set(float64(0))
 					}
 				}
 			}
@@ -342,7 +303,7 @@ func runPing(nodelist string, jobName string, nodelabel string) (*[]byte, error)
 	return &out, nil
 }
 
-func runIperf(workload string, pclients string, startport string, cleanup string) (*[]byte, error) {
+func RunIperf(workload string, pclients string, startport string, cleanup string) (*[]byte, error) {
 
 	args := []string{"./network/iperf3_entrypoint.py", "--workload", workload, "--pclients", pclients, "--startport", startport}
 
@@ -357,7 +318,7 @@ func runIperf(workload string, pclients string, startport string, cleanup string
 	return &out, nil
 }
 
-func startIperfServers(numservers string, startport string) (*[]byte, error) {
+func StartIperfServers(numservers string, startport string) (*[]byte, error) {
 	out, err := exec.Command("python3", "./network/iperf3_start_servers.py", "--numservers", numservers, "--startport", startport).CombinedOutput()
 	if err != nil {
 		klog.Info(string(out))
@@ -369,7 +330,7 @@ func startIperfServers(numservers string, startport string) (*[]byte, error) {
 	return &out, nil
 }
 
-func stopAllIperfServers() (*[]byte, error) {
+func StopAllIperfServers() (*[]byte, error) {
 	out, err := exec.Command("python3", "./network/iperf3_stop_servers.py").CombinedOutput()
 	if err != nil {
 		klog.Info(string(out))
@@ -381,7 +342,7 @@ func stopAllIperfServers() (*[]byte, error) {
 	return &out, nil
 }
 
-func startIperfClients(dstip string, dstport string, numclients string) (*[]byte, error) {
+func StartIperfClients(dstip string, dstport string, numclients string) (*[]byte, error) {
 	if dstip == "" || dstport == "" || numclients == "" {
 		klog.Error("Must provide arguments \"dstip\", \"dstport\", and \"startport\".")
 		return nil, nil
@@ -398,8 +359,9 @@ func startIperfClients(dstip string, dstport string, numclients string) (*[]byte
 	return &out, nil
 }
 
-func runDCGM(dcgmR string) (*[]byte, error) {
-	out, err := exec.Command("python3", "./gpu-dcgm/entrypoint.py", "-r", dcgmR).Output()
+func RunDCGM(dcgmR string) (*[]byte, error) {
+	HealthCheckStatus[DCGM] = false
+	out, err := exec.Command("python3", "./gpu-dcgm/entrypoint.py", "-r", dcgmR, "-l").Output()
 	if err != nil {
 		klog.Error(err.Error())
 		return nil, err
@@ -419,17 +381,19 @@ func runDCGM(dcgmR string) (*[]byte, error) {
 		var res float64
 		res = 0
 		if strings.Contains(split[len(split)-1], "SUCCESS") {
-			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " Pass ", res)
+			klog.Info("Observation: ", utils.NodeName, " Pass ", res)
 		} else {
 			res = 1
-			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " Fail ", res)
+			klog.Info("Observation: ", utils.NodeName, " Fail ", res)
+			HealthCheckStatus[DCGM] = true
 		}
-		utils.HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, "").Set(res)
+		utils.HchecksGauge.WithLabelValues(string(DCGM), utils.NodeName, utils.CPUModel, utils.GPUModel, "").Set(res)
 	}
 	return &out, nil
 }
 
-func runGPUPower() (*[]byte, error) {
+func RunGPUPower() (*[]byte, error) {
+	HealthCheckStatus[GPUPower] = false
 	out, err := exec.Command("bash", "./gpu-power/power-throttle.sh").Output()
 	if err != nil {
 		klog.Error(err.Error())
@@ -439,6 +403,7 @@ func runGPUPower() (*[]byte, error) {
 
 	if strings.Contains(string(out[:]), "FAIL") {
 		klog.Info("Power Throttle test failed.", string(out[:]))
+		HealthCheckStatus[GPUPower] = true
 	}
 
 	if strings.Contains(string(out[:]), "ABORT") {
@@ -457,20 +422,21 @@ func runGPUPower() (*[]byte, error) {
 			klog.Error(err.Error())
 			return nil, err
 		}
-		klog.Info("Observation: ", os.Getenv("NODE_NAME"), " ", strconv.Itoa(gpuid), " ", pw)
-		utils.HchecksGauge.WithLabelValues("power-slowdown", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(pw)
+		klog.Info("Observation: ", utils.NodeName, " ", strconv.Itoa(gpuid), " ", pw)
+		utils.HchecksGauge.WithLabelValues("power-slowdown", utils.NodeName, utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(pw)
 
 	}
 	return &out, nil
 }
 
-func runCreateDeletePVC() (*[]byte, error) {
+func RunCreateDeletePVC() (*[]byte, error) {
 	_, exists := os.LookupEnv("PVC_TEST_STORAGE_CLASS")
 	if !exists {
 		b := []byte("Storage class not set. Cannot run. ABORT")
 		return &b, errors.New("storage class not set")
 	}
-	err := utils.CreatePVC()
+	HealthCheckStatus[PVC] = false
+	err := createPVC()
 	if err != nil {
 		klog.Error(err.Error())
 		b := []byte("Create PVC Failed. ABORT")
@@ -480,10 +446,9 @@ func runCreateDeletePVC() (*[]byte, error) {
 	waitonpvc := time.NewTicker(30 * time.Second)
 	defer waitonpvc.Stop()
 	<-waitonpvc.C
-	out, err := utils.ListPVC()
+	out, err := ListPVC()
 	if err != nil {
 		klog.Error(err.Error())
-
 	}
 	b := []byte(out)
 	return &b, nil

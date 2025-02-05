@@ -1,4 +1,12 @@
 #!/bin/bash
+OUT="$(bash /home/autopilot/utils/briefings.sh | grep ABORT)"
+echo ${OUT}
+if [[ ! -z $OUT ]]; then
+    echo "[[GPU POWER]] ABORT"
+    exit 0
+fi
+echo "[[GPU POWER]] Briefings completed. Continue with power cap evaluation."
+
 RES=$(ls -d /dev/nvidia* 2>1)
 numre='^[0-9]+$'
 D=-1
