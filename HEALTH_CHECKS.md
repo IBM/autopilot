@@ -57,10 +57,14 @@ autopilot.ibm.com/gpuhealth: WARN
 The invasive DCGM diagnostics level 3 health check, executed automatically only on nodes that have free GPUs. This deeper analysis is needed to reveal problems in the GPUs that can be found only after running level 3 DCGM diagnostic.
 This type of diagnostics can help deciding if the worker node should be used for running workloads or not. To facilitate this task, Autopilot will label nodes with key `autopilot.ibm.com/dcgm.level.3`.
 
-If a fatal error is found, the `gpuhealth` label is updated to `EVICT`.
+If a fatal error is found, the `gpuhealth` label is updated to evict.
+
+
+```yaml
+autopilot.ibm.com/gpuhealth: EVICT
+```
 
 Only fatal errors should produce an `EVICT` label. We follow [NVIDIA recommendations](https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/feature-overview.html#id3), although it is possible to customize the list of tests through the Helm chart. The default values are `[PCIe,NVLink,ECC,GPU Memory]`.
-
 
 If errors are found during the level 3 diagnostics, the label `autopilot.ibm.com/dcgm.level.3` will contain detailed information about the error in the following format:
 
@@ -77,7 +81,6 @@ autopilot.ibm.com/dcgm.level.3: ERR_Year-Month-Date_Hour.Minute.UTC_Diagnostic_T
 
 If there are no errors, the value is set to `PASS_Year-Month-Date_Hour.Minute.UTC`.
 
-
 ### Logs and Metrics
 
 All health checks results are exported through Prometheus, but they can be also found in each pod's logs.
@@ -88,3 +91,5 @@ All metrics are accessible through Prometheus and Grafana dashboards. The gauge 
 - `node`, filter by node name
 - `cpumodel` and `gpumodel`, for heterogeneous clusters
 - `deviceid` to select specific GPUs, when available
+
+For more information on how to set up alerts based on metrics, please refer to the [alert manager folder](alertmanager/README.md).
