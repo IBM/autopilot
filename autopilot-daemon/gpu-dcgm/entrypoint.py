@@ -15,11 +15,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-r', '--run', type=str, default='1')
 parser.add_argument('-l', '--label_node', action='store_true')
 args = parser.parse_args()
+
 def main():
     output = os.popen('bash ./utils/briefings.sh')
     result = output.read()
     print(result)
-
+    
     if "ABORT" not in result:
         print("[[ DCGM ]] Briefings completed. Continue with dcgm evaluation.")
         command = ['dcgmi', 'diag', '-j', '-r', args.run]
@@ -217,11 +218,29 @@ def patch_node(success, output):
     timestamp = now.strftime("%Y-%m-%d_%H.%M.%SUTC")
     result = ""
     general_health = "PASS"
-    if success:
-        result = "PASS_"+timestamp
+    try:
+        k8s_node = v1.read_node(nodename)
+    except ApiException as e:
+        print("Exception when calling corev1api->read_node: %s\n" % e)
+        exit()
+
+    node_labels = k8s_node.metadata.labels
+    if os.getenv("DCGM_FATAL_ERRORS") == "":
+        # Only fatal errors should produce an EVICT label. Based on https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/feature-overview.html#id3
+        dcgm_fatal_errors = ['PCIe','NVLink','ECC','GPU Memory']
     else:
+        dcgm_fatal_errors = os.getenv("DCGM_FATAL_ERRORS")
+
+    if success and node_labels["autopilot.ibm.com/gpuhealth"] in ["PASS", "TESTING"]:
+        # If there is some other warning coming from other tests, i.e., ping or storage, we would overwrite this information. Let's play it safe at this point.
+        result = "PASS_"+timestamp
+    elif not success:
         result = "ERR_"+timestamp+"_"+output
-        general_health = "EVICT"
+        general_health = "WARN"
+        for error in dcgm_fatal_errors:
+            unified = unify_string_format(error)
+            if unified in result:
+                general_health = "EVICT"
 
     label = {
         "metadata": {
@@ -230,7 +249,6 @@ def patch_node(success, output):
                 "autopilot.ibm.com/gpuhealth": general_health}
         }
     }
-    print("label: ", result)
     try:
         api_response = v1.patch_node(nodename, label)
     except ApiException as e:

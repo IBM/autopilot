@@ -1,6 +1,6 @@
 <!-- 
 
--=-=-=-= Replace the itallic content with your own. -=-=-=-=
+-=-=-=-= Replace the italic content with your own. -=-=-=-=
 -=-=-=-=  Don't forget to update the GitHub Issue   -=-=-=-=
 -=-=-=-=      your Pull-Request pertains to!        -=-=-=-=
 

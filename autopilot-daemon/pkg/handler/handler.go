@@ -1,11 +1,13 @@
-package handlers
+package handler
 
 import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
+	"github.com/IBM/autopilot/pkg/healthcheck"
 	"github.com/IBM/autopilot/pkg/utils"
 	"k8s.io/klog/v2"
 )
@@ -36,7 +38,7 @@ func SystemStatusHandler() http.Handler {
 		if dcgmR == "" {
 			dcgmR = "1"
 		}
-		if strings.Contains(checks, "iperf") {
+		if strings.Contains(checks, string(healthcheck.Iperf)) {
 			klog.Info("Running iperf3 on hosts ", hosts, " or job ", jobName)
 			w.Write([]byte("Running iperf3 on hosts " + hosts + " or job " + jobName + "\n\n"))
 			checks = strings.Trim(checks, "iperf")
@@ -56,7 +58,7 @@ func SystemStatusHandler() http.Handler {
 			if r.URL.Query().Has("cleanup") {
 				cleanup = "--cleanup"
 			}
-			out, err := runIperf(workload, pclients, startport, cleanup)
+			out, err := healthcheck.RunIperf(workload, pclients, startport, cleanup)
 			if err != nil {
 				klog.Error(err.Error())
 			}
@@ -66,19 +68,25 @@ func SystemStatusHandler() http.Handler {
 		}
 		if checks != "" {
 			if hosts == os.Getenv("NODE_NAME") {
-				klog.Info("Running iperf3 on all hosts")
-				w.Write([]byte("Running iperf3 on all hosts\n\n"))
 				utils.HealthcheckLock.Lock()
 				defer utils.HealthcheckLock.Unlock()
-				out, err := runAllTestsLocal(hosts, checks, dcgmR, jobName, nodelabel, r)
+				out, err := healthcheck.RunHealthLocalNode(checks, dcgmR, jobName, nodelabel, r)
 				if err != nil {
 					klog.Error(err.Error())
 				}
 				w.Write(*out)
+				hasFailures := healthcheck.GetNodeStatus()
+				klog.Info("Errors after running local, on demand health checks: ", hasFailures)
+				if hasFailures {
+					utils.PatchNode(utils.GPUHealthWarnLabel, utils.NodeName, false)
+				} else {
+					utils.PatchNode(utils.GPUHealthPassLabel, utils.NodeName, false)
+				}
+
 			} else {
 				klog.Info("Asking to run on remote node(s) ", hosts, " or with node label ", nodelabel)
 				w.Write([]byte("Asking to run on remote node(s) " + hosts + " or with node label " + nodelabel + "\n\n"))
-				out, err := runAllTestsRemote(hosts, checks, batch, jobName, dcgmR, nodelabel)
+				out, err := healthcheck.RunHealthRemoteNodes(hosts, checks, batch, jobName, dcgmR, nodelabel)
 				if err != nil {
 					klog.Error(err.Error())
 				}
@@ -90,10 +98,10 @@ func SystemStatusHandler() http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func PCIeBWHandler(pciebw string) http.Handler {
+func PCIeBWHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Requesting pcie test with bw: " + pciebw + "\n"))
-		out, err := runPCIeBw()
+		w.Write([]byte("Requesting pcie test with bw: " + strconv.Itoa(utils.UserConfig.BWThreshold) + "\n"))
+		out, err := healthcheck.RunPCIeBW()
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -108,7 +116,7 @@ func PCIeBWHandler(pciebw string) http.Handler {
 func RemappedRowsHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Requesting Remapped Rows check on all GPUs\n"))
-		out, err := runRemappedRows()
+		out, err := healthcheck.RunRemappedRows()
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -135,7 +143,7 @@ func PingHandler() http.Handler {
 		if nodelabel == "" {
 			nodelabel = "None"
 		}
-		out, err := runPing(hosts, jobName, nodelabel)
+		out, err := healthcheck.RunPing(hosts, jobName, nodelabel)
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -148,15 +156,15 @@ func PingHandler() http.Handler {
 
 func InvasiveCheckHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Launching invasive health checks. Results will added to 'autopilot.ibm.com/gpuhealth' node label"))
-		InvasiveCheck()
+		w.Write([]byte("Launching invasive health checks. Results will be added to 'autopilot.ibm.com/gpuhealth' and 'autopilot.ibm.com/dcgm.level.3' node labels\n"))
+		healthcheck.InvasiveCheck()
 	}
 	return http.HandlerFunc(fn)
 }
 
 func IperfHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		
+
 		workload := r.URL.Query().Get("workload")
 		if workload == "" {
 			workload = "ring"
@@ -173,7 +181,7 @@ func IperfHandler() http.Handler {
 		if r.URL.Query().Has("cleanup") {
 			cleanup = "--cleanup"
 		}
-		out, err := runIperf(workload, pclients, startport, cleanup)
+		out, err := healthcheck.RunIperf(workload, pclients, startport, cleanup)
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -194,7 +202,7 @@ func StartIperfServersHandler() http.Handler {
 		if startport == "" {
 			startport = "5200"
 		}
-		out, err := startIperfServers(numservers, startport)
+		out, err := healthcheck.StartIperfServers(numservers, startport)
 
 		if err != nil {
 			klog.Error(err.Error())
@@ -208,7 +216,7 @@ func StartIperfServersHandler() http.Handler {
 
 func StopAllIperfServersHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		out, err := stopAllIperfServers()
+		out, err := healthcheck.StopAllIperfServers()
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -224,7 +232,7 @@ func StartIperfClientsHandler() http.Handler {
 		dstip := r.URL.Query().Get("dstip")
 		dstport := r.URL.Query().Get("dstport")
 		numclients := r.URL.Query().Get("numclients")
-		out, err := startIperfClients(dstip,dstport,numclients)
+		out, err := healthcheck.StartIperfClients(dstip, dstport, numclients)
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -242,7 +250,7 @@ func DCGMHandler() http.Handler {
 		if dcgmR == "" {
 			dcgmR = "1"
 		}
-		out, err := runDCGM(dcgmR)
+		out, err := healthcheck.RunDCGM(dcgmR)
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -256,7 +264,7 @@ func DCGMHandler() http.Handler {
 func GpuPowerHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("GPU Power Measurement test"))
-		out, err := runGPUPower()
+		out, err := healthcheck.RunGPUPower()
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -270,7 +278,7 @@ func GpuPowerHandler() http.Handler {
 func GpuMemHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("GPU Memory DGEMM+DAXPY test"))
-		out, err := runGPUPower()
+		out, err := healthcheck.RunGPUPower()
 		if err != nil {
 			klog.Error(err.Error())
 		}
@@ -284,7 +292,7 @@ func GpuMemHandler() http.Handler {
 func PVCHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("PVC create-delete test\n"))
-		out, err := runCreateDeletePVC()
+		out, err := healthcheck.RunCreateDeletePVC()
 		if err != nil {
 			klog.Error(err.Error())
 		}

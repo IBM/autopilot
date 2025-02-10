@@ -20,12 +20,16 @@ pullSecrets:
   name: autopilot-pull-secret
   imagePullSecretData: 
   
+env:
 # List of periodic checks to be executed every `repeat` hours.
 # If not running on GPU nodes, pciebw,remapped,dcgm and gpupower can be removed
-env:
   - name: "PERIODIC_CHECKS"
     value: "pciebw,remapped,dcgm,ping,gpupower"
+# Storage class name to test
   - name: "PVC_TEST_STORAGE_CLASS"
+    value: ""
+# List of GPU errors considered fatal, as a result of a dcgmi run. This is used to label nodes with extra WARN/EVICT labels. The list defaults to [PCIe,NVLink,ECC,GPU Memory] and refers to https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/feature-overview.html#id3
+  - name: "DCGM_FATAL_ERRORS"
     value: ""
 
 service:

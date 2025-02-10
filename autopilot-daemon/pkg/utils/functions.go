@@ -1,8 +1,8 @@
 package utils
 
 import (
+	"errors"
 	"os"
-	"time"
 
 	"context"
 
@@ -40,17 +40,6 @@ func GetClientsetInstance() *K8sClientset {
 	return k8sClientset
 }
 
-func GetPeriodicChecks() string {
-	defaultPeriodicChecks := "pciebw,remapped,dcgm,ping,gpupower"
-
-	checks, exists := os.LookupEnv("PERIODIC_CHECKS")
-	if !exists {
-		klog.Info("Run all periodic health checks\n")
-		return defaultPeriodicChecks
-	}
-	return checks
-}
-
 func GetNode(nodename string) (*corev1.Node, error) {
 	cset := GetClientsetInstance()
 	fieldselector, err := fields.ParseSelector("metadata.name=" + nodename)
@@ -68,14 +57,14 @@ func GetNode(nodename string) (*corev1.Node, error) {
 
 // Returns true if GPUs are not currently requested by any workload
 func GPUsAvailability() bool {
-	node, _ := GetNode(os.Getenv("NODE_NAME"))
+	node, _ := GetNode(NodeName)
 	nodelabels := node.Labels
 	if _, found := nodelabels["nvidia.com/gpu.present"]; !found {
-		klog.Info("GPUs not found on node ", os.Getenv("NODE_NAME"), ". Cannot run invasive health checks.")
+		klog.Info("At least one GPU busy on node ", NodeName, ". Cannot run invasive health checks.")
 		return false
 	}
 	// Once cleared, list pods using gpus and abort the check if gpus are in use
-	fieldselector, err := fields.ParseSelector("spec.nodeName=" + os.Getenv("NODE_NAME") + ",status.phase!=" + string(corev1.PodSucceeded))
+	fieldselector, err := fields.ParseSelector("spec.nodeName=" + NodeName + ",status.phase!=" + string(corev1.PodSucceeded))
 	if err != nil {
 		klog.Info("Error in creating the field selector ", err.Error())
 		return false
@@ -138,7 +127,7 @@ func CreateJob(healthcheck string) error {
 				Spec: corev1.PodSpec{
 					RestartPolicy:      "Never",
 					ServiceAccountName: "autopilot",
-					NodeName:           os.Getenv("NODE_NAME"),
+					NodeName:           NodeName,
 					InitContainers: []corev1.Container{
 						{
 							Name:            "init",
@@ -166,7 +155,7 @@ func CreateJob(healthcheck string) error {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "NODE_NAME",
-									Value: os.Getenv("NODE_NAME"),
+									Value: NodeName,
 								},
 							},
 						},
@@ -186,58 +175,34 @@ func CreateJob(healthcheck string) error {
 	return nil
 }
 
-func CreatePVC() error {
+func PatchNode(label string, nodename string, force bool) error {
 	cset := GetClientsetInstance()
-	storageclass := os.Getenv("PVC_TEST_STORAGE_CLASS")
-	pvcTemplate := corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: os.Getenv("POD_NAME"),
-		},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			StorageClassName: &storageclass,
-			AccessModes: []corev1.PersistentVolumeAccessMode{
-				corev1.ReadWriteMany,
-			},
-			Resources: corev1.VolumeResourceRequirements{
-				Requests: corev1.ResourceList{
-					"storage": resource.MustParse("100Mi"),
-				},
-			},
-		},
-	}
-	// Check if any previous instance exists, cleanup if so
-	pvc, _ := GetClientsetInstance().Cset.CoreV1().PersistentVolumeClaims(os.Getenv("NAMESPACE")).Get(context.Background(), os.Getenv("POD_NAME"), metav1.GetOptions{})
 
-	if pvc.Name != "" {
-		klog.Info("[PVC Create] Found pre-existing instance. Cleanup ", pvc.Name)
-		DeletePVC(os.Getenv("POD_NAME"))
-		waitDelete := time.NewTimer(30 * time.Second)
-		<-waitDelete.C
-	}
-
-	_, err := cset.Cset.CoreV1().PersistentVolumeClaims(os.Getenv("NAMESPACE")).Create(context.TODO(), &pvcTemplate, metav1.CreateOptions{})
-
+	// Should not patch the gpuhealth label if it's currently in TESTING or EVICT
+	node, err := cset.Cset.CoreV1().Nodes().Get(context.TODO(), nodename, v1.GetOptions{})
 	if err != nil {
-		klog.Info("[PVC Create] Failed. ABORT. ", err.Error())
+		klog.Info("[Node Patch] Failed read node ", err.Error())
+		return err
 	}
-	return err
-}
-
-func DeletePVC(pvc string) error {
-	cset := GetClientsetInstance()
-	err := cset.Cset.CoreV1().PersistentVolumeClaims(os.Getenv("NAMESPACE")).Delete(context.TODO(), pvc, metav1.DeleteOptions{})
-	if err != nil {
-		klog.Info("[PVC Delete] Failed. ABORT. ", err.Error())
+	labels := node.GetLabels()
+	if current, found := labels["autopilot.ibm.com/gpuhealth"]; found {
+		klog.Info("Node ", nodename, " label found ", current)
+		if current == "TESTING" || current == "EVICT" {
+			if !force {
+				klog.Info("Cannot patch node's label, value found: ", current)
+				return errors.New("Node status " + current)
+			} else {
+				klog.Info("Force patch for completed testing")
+			}
+		}
+	} else {
+		klog.Info("No label found, will go ahead patching the node")
 	}
-	return err
-}
-
-func PatchNode(label string, nodename string) error {
-	cset := GetClientsetInstance()
-	_, err := cset.Cset.CoreV1().Nodes().Patch(context.TODO(), nodename, types.StrategicMergePatchType, []byte(label), v1.PatchOptions{})
+	_, err = cset.Cset.CoreV1().Nodes().Patch(context.TODO(), nodename, types.StrategicMergePatchType, []byte(label), v1.PatchOptions{})
 	if err != nil {
 		klog.Info("[Node Patch] Failed. ", err.Error())
 		return err
 	}
+	klog.Info("Node patched with label ", label)
 	return nil
 }

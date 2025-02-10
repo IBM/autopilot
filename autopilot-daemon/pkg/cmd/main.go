@@ -8,7 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/IBM/autopilot/pkg/handlers"
+	"github.com/IBM/autopilot/pkg/handler"
+	"github.com/IBM/autopilot/pkg/healthcheck"
 	"github.com/IBM/autopilot/pkg/utils"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -17,7 +18,7 @@ import (
 
 func main() {
 	port := flag.String("port", "3333", "Port for the webhook to listen to. Defaulted to 3333")
-	bwThreshold := flag.String("bw", "4", "Sets bandwidth threshold for the init container")
+	bwThreshold := flag.Int("bw", 4, "Sets bandwidth threshold for the init container")
 	logFile := flag.String("logfile", "", "File where to save all the events")
 	v := flag.String("loglevel", "2", "Log level")
 	repeat := flag.Int("w", 24, "Run all tests periodically on each node. Time set in hours. Defaults to 24h")
@@ -45,6 +46,9 @@ func main() {
 
 	utils.InitHardwareMetrics()
 
+	// Init the node status map
+	healthcheck.InitNodeStatusMap()
+
 	pMux := http.NewServeMux()
 	promHandler := promhttp.HandlerFor(reg, promhttp.HandlerOpts{})
 	pMux.Handle("/metrics", promHandler)
@@ -59,7 +63,7 @@ func main() {
 	}()
 
 	readinessMux := http.NewServeMux()
-	readinessMux.Handle("/readinessprobe", handlers.ReadinessProbeHandler())
+	readinessMux.Handle("/readinessprobe", handler.ReadinessProbeHandler())
 
 	go func() {
 		klog.Info("Serving Readiness Probe on :8080")
@@ -72,19 +76,19 @@ func main() {
 
 	hcMux := http.NewServeMux()
 
-	hcMux.Handle("/dcgm", handlers.DCGMHandler())
-	hcMux.Handle("/gpumem", handlers.GpuMemHandler())
-	hcMux.Handle("/gpupower", handlers.GpuPowerHandler())
-	hcMux.Handle("/iperf", handlers.IperfHandler())
-	hcMux.Handle("/iperfservers", handlers.StartIperfServersHandler())
-	hcMux.Handle("/iperfstopservers", handlers.StopAllIperfServersHandler())
-	hcMux.Handle("/iperfclients", handlers.StartIperfClientsHandler())
-	hcMux.Handle("/invasive", handlers.InvasiveCheckHandler())
-	hcMux.Handle("/pciebw", handlers.PCIeBWHandler(utils.UserConfig.BWThreshold))
-	hcMux.Handle("/ping", handlers.PingHandler())
-	hcMux.Handle("/pvc", handlers.PVCHandler())
-	hcMux.Handle("/remapped", handlers.RemappedRowsHandler())
-	hcMux.Handle("/status", handlers.SystemStatusHandler())
+	hcMux.Handle("/dcgm", handler.DCGMHandler())
+	hcMux.Handle("/gpumem", handler.GpuMemHandler())
+	hcMux.Handle("/gpupower", handler.GpuPowerHandler())
+	hcMux.Handle("/iperf", handler.IperfHandler())
+	hcMux.Handle("/iperfservers", handler.StartIperfServersHandler())
+	hcMux.Handle("/iperfstopservers", handler.StopAllIperfServersHandler())
+	hcMux.Handle("/iperfclients", handler.StartIperfClientsHandler())
+	hcMux.Handle("/invasive", handler.InvasiveCheckHandler())
+	hcMux.Handle("/pciebw", handler.PCIeBWHandler())
+	hcMux.Handle("/ping", handler.PingHandler())
+	hcMux.Handle("/pvc", handler.PVCHandler())
+	hcMux.Handle("/remapped", handler.RemappedRowsHandler())
+	hcMux.Handle("/status", handler.SystemStatusHandler())
 
 	s := &http.Server{
 		Addr:         ":" + *port,
@@ -119,7 +123,7 @@ func main() {
 	go utils.WatchNode()
 
 	// Run the health checks at startup, then start the timer
-	handlers.PeriodicCheck()
+	healthcheck.PeriodicCheck()
 
 	periodicChecksTicker := time.NewTicker(time.Duration(*repeat) * time.Hour)
 	defer periodicChecksTicker.Stop()
@@ -128,10 +132,10 @@ func main() {
 	for {
 		select {
 		case <-periodicChecksTicker.C:
-			handlers.PeriodicCheck()
+			healthcheck.PeriodicCheck()
 		case <-invasiveChecksTicker.C:
 			if *invasive > 0 {
-				handlers.InvasiveCheck()
+				healthcheck.InvasiveCheck()
 			}
 		}
 	}
