@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -67,7 +66,7 @@ func SystemStatusHandler() http.Handler {
 			}
 		}
 		if checks != "" {
-			if hosts == os.Getenv("NODE_NAME") {
+			if hosts == utils.NodeName {
 				utils.HealthcheckLock.Lock()
 				defer utils.HealthcheckLock.Unlock()
 				out, err := healthcheck.RunHealthLocalNode(checks, dcgmR, jobName, nodelabel, r)

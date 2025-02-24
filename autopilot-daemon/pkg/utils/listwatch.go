@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"os"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -15,10 +14,9 @@ import (
 )
 
 func WatchNode() {
-
 	watchFunc := func(options metav1.ListOptions) (watch.Interface, error) {
 		timeout := int64(60)
-		fieldselector, err := fields.ParseSelector("metadata.name=" + os.Getenv("NODE_NAME"))
+		fieldselector, err := fields.ParseSelector("metadata.name=" + NodeName)
 		if err != nil {
 			klog.Info("Error in creating the field selector", err.Error())
 			return nil, err
@@ -44,11 +42,11 @@ func WatchNode() {
 				if val, found := labels[key]; found {
 					var res float64
 					res = 0
-					if strings.Contains(val, "ERR") {
+					if strings.Contains(val, "EVICT") {
 						res = 1
-						klog.Info("[DCGM level 3] Update observation: ", os.Getenv("NODE_NAME"), " Error found")
+						klog.Info("[DCGM level 3] Update observation: ", NodeName, " Fatal error found")
 					}
-					HchecksGauge.WithLabelValues("dcgm", os.Getenv("NODE_NAME"), CPUModel, GPUModel, "").Set(res)
+					HchecksGauge.WithLabelValues("dcgm", NodeName, CPUModel, GPUModel, "").Set(res)
 				}
 			}
 		}

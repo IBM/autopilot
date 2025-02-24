@@ -139,7 +139,7 @@ func RunHealthLocalNode(checks string, dcgmR string, jobName string, nodelabel s
 func RunHealthRemoteNodes(host string, check string, batch string, jobName string, dcgmR string, nodelabel string) (*[]byte, error) {
 	klog.Info("About to run command:\n", "./utils/runHealthchecks.py", " --nodes="+host, " --check="+check, " --batchSize="+batch, " --wkload="+jobName, " --dcgmR="+dcgmR, " --nodelabel="+nodelabel)
 
-	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+os.Getenv("NAMESPACE"), "--nodes="+host, "--check="+check, "--batchSize="+batch, "--wkload="+jobName, "--dcgmR="+dcgmR, "--nodelabel="+nodelabel).Output()
+	out, err := exec.Command("python3", "./utils/runHealthchecks.py", "--service=autopilot-healthchecks", "--namespace="+utils.Namespace, "--nodes="+host, "--check="+check, "--batchSize="+batch, "--wkload="+jobName, "--dcgmR="+dcgmR, "--nodelabel="+nodelabel).Output()
 	if err != nil {
 		klog.Info(string(out))
 		klog.Error(err.Error())

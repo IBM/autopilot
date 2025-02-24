@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"os"
+	"strconv"
 
 	"context"
 
@@ -96,11 +97,11 @@ func CreateJob(healthcheck string) error {
 	switch healthcheck {
 	case "dcgm":
 		cmd = []string{"python3"}
-		args = []string{"gpu-dcgm/entrypoint.py", "-r", "3", "-l"}
+		args = []string{"gpu-dcgm/entrypoint.py", "-r", "3", "-l", "-v"}
 	}
 	cset := GetClientsetInstance()
 
-	fieldselector, err := fields.ParseSelector("metadata.name=" + os.Getenv("POD_NAME"))
+	fieldselector, err := fields.ParseSelector("metadata.name=" + PodName)
 	if err != nil {
 		klog.Info("Error in creating the field selector", err.Error())
 		return err
@@ -113,7 +114,13 @@ func CreateJob(healthcheck string) error {
 		return err
 	}
 	autopilotPod := pods.Items[0]
-	ttlsec := int32(30) // setting TTL to 30 sec
+	// setting TTL to 30 sec, but looking for used defined value
+	ttlsec := int32(30)
+	if os.Getenv("INVASIVE_JOB_TTLSEC") != "" {
+		val, _ := strconv.Atoi(os.Getenv("INVASIVE_JOB_TTLSEC"))
+		ttlsec = int32(val)
+	}
+
 	backofflimits := int32(0)
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -165,7 +172,7 @@ func CreateJob(healthcheck string) error {
 		},
 	}
 	klog.Info("Try create Job")
-	_, err = cset.Cset.BatchV1().Jobs("autopilot").Create(context.TODO(), job,
+	_, err = cset.Cset.BatchV1().Jobs(Namespace).Create(context.TODO(), job,
 		metav1.CreateOptions{})
 	if err != nil {
 		klog.Info("Couldn't create Job ", err.Error())
