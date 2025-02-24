@@ -31,6 +31,9 @@ env:
 # List of GPU errors considered fatal, as a result of a dcgmi run. This is used to label nodes with extra WARN/EVICT labels. The list defaults to [PCIe,NVLink,ECC,GPU Memory] and refers to https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/feature-overview.html#id3
   - name: "DCGM_FATAL_ERRORS"
     value: ""
+# Invasive jobs (e.g., dcgm level 3), are executed as separate job. The job deletes itself by default after 30s. This parameter can be customized by the env variable below
+  - name: "INVASIVE_JOB_TTLSEC"
+    value: ""
 
 service:
   port: 3333

@@ -20,10 +20,10 @@ spec:
       labels:
         severity: warning
         alert: autopilot
-    - alert: AutopilotDCGMLevel1Errors
+    - alert: AutopilotDCGMErrors
       annotations:
         description: |
-          GPUs on node {{ $labels.node }} have DCGM Level 1 failures{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
+          GPUs on node {{ $labels.node }} have DCGM failures{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
         summary: GPUs have DCGM failures
       expr: |
         sum (autopilot_health_checks{health="dcgm"}==1) by (node)
@@ -59,7 +59,7 @@ spec:
           A node reported errors after running DCGM level 3 - check health of nodes{{ with $console_url := "console_url" | query }}{{ if ne (len (label "url" (first $console_url ) ) ) 0}} on cluster {{ label "url" (first $console_url) }}{{ end }}{{ end }}.
         summary: Node {{ $labels.node }} has GPU errors
       expr: |  
-        kube_node_labels{label_autopilot_ibm_com_dcgm_level_3=~".*ERR.*"} and kube_node_labels{label_autopilot_ibm_com_dcgm_level_3!~""} and kube_node_labels{label_autopilot_ibm_com_dcgm_level_3!~".*page_retirement_row_remap.*"}
+        kube_node_labels{label_autopilot_ibm_com_dcgm_level_3=~".*EVICT.*"} and kube_node_labels{label_autopilot_ibm_com_dcgm_level_3!~""}
       for: 5m
       labels:
         severity: critical

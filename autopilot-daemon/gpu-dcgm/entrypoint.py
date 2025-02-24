@@ -14,6 +14,7 @@ nodename = os.getenv("NODE_NAME")
 parser = argparse.ArgumentParser()
 parser.add_argument('-r', '--run', type=str, default='1')
 parser.add_argument('-l', '--label_node', action='store_true')
+parser.add_argument('-v', '--verbose', action='store_true')
 args = parser.parse_args()
 
 def main():
@@ -202,6 +203,8 @@ def try_dcgm(command):
        print("[[ DCGM ]] exited with error: " + result.stderr + " ERR")
     else:
         testpaths = os.getenv("AUTOPILOT_DCGM_RESULT_PATHS")
+        if args.verbose:
+            print(result.stdout)
         if testpaths == None:
             success, output = parse_all_results(result.stdout)
         if success:

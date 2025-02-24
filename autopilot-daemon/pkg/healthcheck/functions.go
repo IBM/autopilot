@@ -13,7 +13,7 @@ import (
 )
 
 func ListPVC() (string, error) {
-	pvc, err := utils.GetClientsetInstance().Cset.CoreV1().PersistentVolumeClaims(os.Getenv("NAMESPACE")).Get(context.Background(), os.Getenv("POD_NAME"), metav1.GetOptions{})
+	pvc, err := utils.GetClientsetInstance().Cset.CoreV1().PersistentVolumeClaims(utils.Namespace).Get(context.Background(), utils.PodName, metav1.GetOptions{})
 	if err != nil {
 		klog.Error("Error in creating the lister", err.Error())
 		return "ABORT", err
@@ -22,15 +22,15 @@ func ListPVC() (string, error) {
 	case "Bound":
 		{
 			klog.Info("[PVC Create-Delete] PVC Bound: SUCCESS")
-			klog.Info("Observation: ", os.Getenv("NODE_NAME"), " 0")
-			utils.HchecksGauge.WithLabelValues("pvc", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, "").Set(0)
+			klog.Info("Observation: ", utils.NodeName, " 0")
+			utils.HchecksGauge.WithLabelValues("pvc", utils.NodeName, utils.CPUModel, utils.GPUModel, "").Set(0)
 		}
 	case "Pending":
 		{
 			waitonpvc := time.NewTicker(time.Minute)
 			defer waitonpvc.Stop()
 			<-waitonpvc.C
-			pvc, err := utils.GetClientsetInstance().Cset.CoreV1().PersistentVolumeClaims(os.Getenv("NAMESPACE")).Get(context.Background(), os.Getenv("POD_NAME"), metav1.GetOptions{})
+			pvc, err := utils.GetClientsetInstance().Cset.CoreV1().PersistentVolumeClaims(utils.Namespace).Get(context.Background(), utils.PodName, metav1.GetOptions{})
 			if err != nil {
 				klog.Error("[PVC Create-Delete] Error in creating the lister: ", err.Error())
 				return "[PVC Create-Delete] PVC not found. ABORT ", err
@@ -38,9 +38,9 @@ func ListPVC() (string, error) {
 			phase := pvc.Status.Phase
 			if pvc.Status.Phase == "Pending" {
 				klog.Info("[PVC Create-Delete] Timer is up with PVC Pending. Force delete. FAIL")
-				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " 1")
-				utils.HchecksGauge.WithLabelValues("pvc", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, "").Set(1)
-				err := deletePVC(os.Getenv("POD_NAME"))
+				klog.Info("Observation: ", utils.NodeName, " 1")
+				utils.HchecksGauge.WithLabelValues("pvc", utils.NodeName, utils.CPUModel, utils.GPUModel, "").Set(1)
+				err := deletePVC(utils.PodName)
 				if err != nil {
 					return "[PVC Create-Delete] Error in deleting the PVC. ABORT ", err
 				}
@@ -49,12 +49,12 @@ func ListPVC() (string, error) {
 			}
 			if phase == "Bound" {
 				klog.Info("[PVC Create-Delete] PVC Bound: SUCCESS")
-				klog.Info("Observation: ", os.Getenv("NODE_NAME"), " 0")
-				utils.HchecksGauge.WithLabelValues("pvc", os.Getenv("NODE_NAME"), utils.CPUModel, utils.GPUModel, "").Set(0)
+				klog.Info("Observation: ", utils.NodeName, " 0")
+				utils.HchecksGauge.WithLabelValues("pvc", utils.NodeName, utils.CPUModel, utils.GPUModel, "").Set(0)
 			}
 		}
 	}
-	err = deletePVC(os.Getenv("POD_NAME"))
+	err = deletePVC(utils.PodName)
 	if err != nil {
 		return "Error in deleting the PVC. ABORT ", err
 	}
@@ -63,7 +63,7 @@ func ListPVC() (string, error) {
 
 func deletePVC(pvc string) error {
 	cset := utils.GetClientsetInstance()
-	err := cset.Cset.CoreV1().PersistentVolumeClaims(os.Getenv("NAMESPACE")).Delete(context.TODO(), pvc, metav1.DeleteOptions{})
+	err := cset.Cset.CoreV1().PersistentVolumeClaims(utils.Namespace).Delete(context.TODO(), pvc, metav1.DeleteOptions{})
 	if err != nil {
 		klog.Info("[PVC Delete] Failed. ABORT. ", err.Error())
 	}
@@ -75,7 +75,7 @@ func createPVC() error {
 	storageclass := os.Getenv("PVC_TEST_STORAGE_CLASS")
 	pvcTemplate := corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: os.Getenv("POD_NAME"),
+			Name: utils.PodName,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			StorageClassName: &storageclass,
@@ -90,16 +90,16 @@ func createPVC() error {
 		},
 	}
 	// Check if any previous instance exists, cleanup if so
-	pvc, _ := utils.GetClientsetInstance().Cset.CoreV1().PersistentVolumeClaims(os.Getenv("NAMESPACE")).Get(context.Background(), os.Getenv("POD_NAME"), metav1.GetOptions{})
+	pvc, _ := utils.GetClientsetInstance().Cset.CoreV1().PersistentVolumeClaims(utils.Namespace).Get(context.Background(), utils.PodName, metav1.GetOptions{})
 
 	if pvc.Name != "" {
 		klog.Info("[PVC Create] Found pre-existing instance. Cleanup ", pvc.Name)
-		deletePVC(os.Getenv("POD_NAME"))
+		deletePVC(utils.PodName)
 		waitDelete := time.NewTimer(30 * time.Second)
 		<-waitDelete.C
 	}
 
-	_, err := cset.Cset.CoreV1().PersistentVolumeClaims(os.Getenv("NAMESPACE")).Create(context.TODO(), &pvcTemplate, metav1.CreateOptions{})
+	_, err := cset.Cset.CoreV1().PersistentVolumeClaims(utils.Namespace).Create(context.TODO(), &pvcTemplate, metav1.CreateOptions{})
 
 	if err != nil {
 		klog.Info("[PVC Create] Failed. ABORT. ", err.Error())
