@@ -44,12 +44,13 @@ def parse_all_results(result: str):
     output = ""
     for category in tests_dict:
         for test in category['tests']:
-            if test['results'][0]['status'] == 'Fail':
-                success = False
-                print(test['name'], ":", test['results'][0]['status'])
-                output+=f'{unify_string_format(test["name"])}'
-                for entry in test['results']:
-                    output+=f'{"."+str(entry["gpu_id"]) if "gpu_id" in entry else "NoGPUid"}'
+            for result in test['results']:
+                if result['status'] == 'Fail':
+                    success = False
+                    print(test['name'], ":", test['results'][0]['status'])
+                    output+=f'{unify_string_format(test["name"])}'
+                    for entry in test['results']:
+                        output+=f'{"."+str(entry["gpu_id"]) if "gpu_id" in entry else "NoGPUid"}'
     return success, output
 
 
