@@ -10,7 +10,7 @@ The role of Autopilot is to detect and report any problems that are detected by 
 
 It implements a set of health checks evaluating the status of the system. These health checks focus mainly on subtle/software issues (i.e., row-remapping or PCIe link degradation), but also run connectivity tests (i.e., ping, iperf) to verify that secondary NICs are reachable. It can also verify that persistent volume claims (PVC) creation is functional for a given storage class.
 
-![image](figures/autopilot-daemon-pod.svg)
+![image](figures/autopilot-daemon-pod.png)
 
 Autopilot is deployed as a Kubernetes DaemonSet on all worker nodes that have GPUs. Each pod exposes a Service that can be accessed through RESTful API to request the execution of health checks. Therefore, each health check has its own entry point, but also a generic “status” entry point is provided.
 
