@@ -22,18 +22,6 @@ Running on GPU nodes only, will:
 Alternatively, `onlyOnGPUNodes` can be set to false and Autopilot will run on all worker nodes, regardless of the accelerators.
 Notice that, in this heterogeneous case, the GPU health checks will error out in the non-GPU nodes.
 
-If you do not want to create a new namespace and use an existing one, then set `create: false` and specify the namespace name.
-On OpenShift, please notice that you **must** label the namespace `oc label ns <namespace> openshift.io/cluster-monitoring=true` to have Prometheus scrape metrics from Autopilot.
-
-- To pull the image from a private registry, i.e., in case of development, the admin needs to add `imagePullSecret` data in one of the helm charts. It is possible to avoid the creation of the pull secret by setting the value `create` to false in the imagePullSecret block, and by setting the name of the one that will be used (i.e., `autopilot-pull-secret`).
-
-```yaml
-pullSecrets:
-  create: true
-  name: autopilot-pull-secret
-  imagePullSecretData: <base64 encoded-key>
-```
-
 - Autopilot runs tests periodically. The default is set to every hour and 4 hours for regular and deep diagnostics respectively, but these can be customized be changing the following
 
 ```yaml
@@ -41,7 +29,21 @@ repeat: <hours> # periodic health checks timer (default 1h)
 invasive: <hours> # deeper diagnostic timer (default 4h, 0 to disable)
 ```
 
-- PCIe bandwidth critical value is defaulted to 4GB/s. It can be customized by changing the following
+- The list of GPU errors considered fatal as a result of a dcgmi run, can be customized through the `DCGM_FATAL_ERRORS` environment variable. This is used to label nodes with extra WARN/EVICT labels. The list defaults to [PCIe,NVLink,ECC,GPU Memory] and refers to https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/feature-overview.html#id3
+
+```yaml
+  - name: "DCGM_FATAL_ERRORS"
+    value: ""
+```
+
+- Invasive jobs (e.g., dcgm level 3), are executed as separate job. The job deletes itself by default after 30s. This parameter can be customized by the env variable below
+
+```yaml
+  - name: "INVASIVE_JOB_TTLSEC"
+    value: ""
+```
+
+- PCIe bandwidth critical value is defaulted to 4GB/s. It is recommended to set a threshold that is 25% or lower of the expected peak PCIe bandwidth capability, which maps to maximum peak from 16 lanes to 4 lanes. For example, for a PCIe Gen4x16, reported peak bandwidth is 63GB/s. A degradation at 25% is 15.75GB/s, which corresponds to PCIe Gen4x4. The measured bandwidth is expected to be at least 80% of the expected peak PCIe generation bandwidth.
 
 ```yaml
 PCIeBW: <val>
@@ -75,3 +77,5 @@ If you have your own configuration file, it can be passed to the `helm` install 
 ```bash
 helm upgrade autopilot autopilot/autopilot --install --namespace=autopilot --create-namespace <-f your-config.yml>
 ```
+
+For more customization, please refer to `values.yaml`.
