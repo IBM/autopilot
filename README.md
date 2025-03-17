@@ -10,7 +10,7 @@ The role of Autopilot is to detect and report any problems that are detected by 
 
 It implements a set of health checks evaluating the status of the system. These health checks focus mainly on subtle/software issues (i.e., row-remapping or PCIe link degradation), but also run connectivity tests (i.e., ping, iperf) to verify that secondary NICs are reachable. It can also verify that persistent volume claims (PVC) creation is functional for a given storage class.
 
-![image](figures/autopilot-daemon-pod.pdf)
+![image](figures/autopilot-daemon-pod.svg)
 
 Autopilot is deployed as a Kubernetes DaemonSet on all worker nodes that have GPUs. Each pod exposes a Service that can be accessed through RESTful API to request the execution of health checks. Therefore, each health check has its own entry point, but also a generic “status” entry point is provided.
 
@@ -20,7 +20,7 @@ The main code is written in Go, while health checks are written in a combination
 
 If Autopilot requires full access to GPUs to run more invasive workloads, it will spawn a separate job with resources requests and limits set.
 
-![image](figures/autopilot-main-loop.pdf)
+![image](figures/autopilot-main-loop.svg)
 
 ## Health Checks
 
@@ -51,7 +51,7 @@ Lightweight and invasive health checks, may use different labeling system. Refer
 
 The information saved in the labels, can be used by admins, kube-scheduler or other workload management systems like [CodeFlare](https://project-codeflare.github.io/appwrapper/arch-fault-tolerance/) to steer the execution of workloads for enhanced fault tolerance.
 
-![image](figures/big-picture.pdf)
+![image](figures/big-picture.svg)
 
 ## Install
 
