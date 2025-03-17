@@ -35,6 +35,8 @@ Here is a breakdown of the existing health checks:
 
 These checks are configured to run periodically (e.g., hourly), and results are accessible via Prometheus, direct API queries or labels on the worker nodes.
 
+![image](figures/periodic-check-flow.svg)
+
 ## Deep Diagnostics and Node Labeling
 
 Autopilot's periodic health checks, will label the worker nodes according to the result obtained.
@@ -55,10 +57,12 @@ autopilot.ibm.com/gpuhealth: WARN
 ### Invasive health checks
 
 The invasive DCGM diagnostics level 3 health check, executed automatically only on nodes that have free GPUs. This deeper analysis is needed to reveal problems in the GPUs that can be found only after running level 3 DCGM diagnostic.
+
+![image](figures/invasive-check-flow.svg)
+
 This type of diagnostics can help deciding if the worker node should be used for running workloads or not. To facilitate this task, Autopilot will label nodes with key `autopilot.ibm.com/dcgm.level.3`.
 
 If a fatal error is found, the `gpuhealth` label is updated to evict.
-
 
 ```yaml
 autopilot.ibm.com/gpuhealth: EVICT
