@@ -68,7 +68,11 @@ kubectl label ns autopilot openshift.io/cluster-monitoring=true
 
 To deploy the autopilot Grafana dashboard, you need a Grafana instance on your cluster. For instance, Grafana and Prometheus can be installed via `prometheus-community/kube-prometheus-stack` helm charts.
 
-The dashboard can be installed by either importing the `autopilot-dashboard.json` file in the Grafana web console, or by applying the `GrafanaDashboard` object provided by running the following command:
+The dashboard can be installed by:
+
+- Importing the `autopilot-dashboard.json` file in the Grafana web console;
+- Importing the dashboard id `23123` in the Grafana web console. The dashboard is published in the [Grafana dashboards](https://grafana.com/grafana/dashboards/23123-autopilot-metrics/) website under the name of Autopilot Metrics;
+- Applying the `GrafanaDashboard` object provided by running the following command:
 
 ```bash
 kubectl create -f grafana/autopilot-dashboard.yaml [-n <grafana-operator-namespace>]
