@@ -64,14 +64,18 @@ The `ServiceMonitor` labeling is not required.
 kubectl label ns autopilot openshift.io/cluster-monitoring=true
 ```
 
-## Enabling Grafana
-To deploy the autopilot Grafana dashboard, you must install the [grafana-operator v5](https://github.com/grafana/grafana-operator) in the `grafana-operator` namespace and create a Grafana instance on your cluster in the same namespace.
+## Enabling Grafana Dashboard
 
-Then, run the following commands:
+To deploy the autopilot Grafana dashboard, you need a Grafana instance on your cluster. For instance, Grafana and Prometheus can be installed via `prometheus-community/kube-prometheus-stack` helm charts.
+
+The dashboard can be installed by:
+
+- Importing the `autopilot-dashboard.json` file in the Grafana web console;
+- Importing the dashboard id `23123` in the Grafana web console. The dashboard is published in the [Grafana dashboards](https://grafana.com/grafana/dashboards/23123-autopilot-metrics/) website under the name of Autopilot Metrics;
+- Applying the `GrafanaDashboard` object provided by running the following command:
+
 ```bash
-kubectl namespace grafana-operator
-kubectl create -f grafana/autopilot-dashboard.yaml
-kubectl get grafanadashboards
+kubectl create -f grafana/autopilot-dashboard.yaml [-n <grafana-operator-namespace>]
 ```
 
-You should see the newly created Grafana dashboard and access it with the Grafana route shown in `kubectl get routes -n grafana-operator`
+The dashboard have some default values, for instance `3.4Gb/s` for the PCIe bandwidth alert threshold, but each value can be customized.
