@@ -1,3 +1,5 @@
+<img src="figures/autopilot-logo.png" width="25%" height="25%">
+
 # AI Training Autopilot
 
 Autopilot is a Kubernetes-native daemon that continuously monitors and evaluates GPUs, network and storage health, designed to detect and report infrastructure-level issues during the lifetime of AI workloads. It is an open-source project developed by IBM Research.
