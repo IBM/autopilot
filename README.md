@@ -1,5 +1,4 @@
-<!-- ![Autopilot Logo](figures/autopilot-logo.png) -->
-<img src="figures/autopilot-logo.png" width="50%" height="50%">
+<img src="figures/autopilot-logo.png" width="25%" height="25%">
 
 # AI Training Autopilot
 
