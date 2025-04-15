@@ -48,11 +48,7 @@ def parse_all_results(result: str):
             for result in test['results']:
                 if result['status'] == 'Fail':
                     success = False
-                    if test_failing is False:
-                        output+=f'{unify_string_format(test["name"])}'
-                        test_failing=True
-                    output+=f'{"." + str(result["gpu_id"]) if "gpu_id" in result else "NoGPUid"}'
-    return success, output
+    return success, dcgm_dict
 
 
 # parsing the json result string based on a comma-separated list of paths (levels separated by '.')
