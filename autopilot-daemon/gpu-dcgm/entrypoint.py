@@ -240,7 +240,7 @@ def patch_node(success, output):
         # If there is some other warning coming from other tests, i.e., ping or storage, we would overwrite this information. Let's play it safe at this point.
         result = "PASS_"+timestamp
     elif not success:
-        result = "ERR_"+timestamp+"_"+output
+        result = "ERR_"+timestamp
         general_health = "WARN"
         for error in dcgm_fatal_errors:
             unified = unify_string_format(error)
@@ -251,7 +251,10 @@ def patch_node(success, output):
         "metadata": {
             "labels": {
                 "autopilot.ibm.com/dcgm.level.3": result,
-                "autopilot.ibm.com/gpuhealth": general_health}
+                "autopilot.ibm.com/gpuhealth": general_health},
+            "annotations": {
+                "autopilot.ibm.com/dcgm.level.3.output": str(output)
+            }
         }
     }
     try:
