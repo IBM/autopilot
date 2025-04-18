@@ -48,7 +48,11 @@ def parse_all_results(result: str):
             for result in test['results']:
                 if result['status'] == 'Fail':
                     success = False
-    return success, dcgm_dict
+                    if test_failing is False:
+                        output += f'{unify_string_format(test["name"])}'
+                        test_failing = True
+                    output += f'{"." + str(result["gpu_id"]) if "gpu_id" in result else "NoGPUid"}'
+    return success, output
 
 
 # parsing the json result string based on a comma-separated list of paths (levels separated by '.')
@@ -240,7 +244,7 @@ def patch_node(success, output,run_level):
         general_health = "WARN"
         for error in dcgm_fatal_errors:
             unified = unify_string_format(error)
-            if unified in result:
+            if unified in output:
                 general_health = "EVICT"
 
     label = {
