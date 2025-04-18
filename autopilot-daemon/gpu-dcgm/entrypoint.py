@@ -25,7 +25,7 @@ def main():
     if "ABORT" not in result:
         print("[[ DCGM ]] Briefings completed. Continue with dcgm evaluation.")
         command = ['dcgmi', 'diag', '-j', '-r', args.run]
-        try_dcgm(command)
+        try_dcgm(command,args.run)
     else:
         print("[[ DCGM ]] ABORT")
         print(result)
@@ -182,7 +182,7 @@ def parse_selected_results(result: str, testpaths: str):
 
 
 
-def try_dcgm(command):
+def try_dcgm(command,run_level):
     result = subprocess.run(command, text=True, capture_output=True)
     return_code = result.returncode  # 0 for success
     if return_code != 0:
@@ -211,10 +211,10 @@ def try_dcgm(command):
             print("Host", nodename)
             print("[[ DCGM ]] FAIL")
         if args.label_node:
-            patch_node(success, output)
+            patch_node(success, output,run_level)
 
 
-def patch_node(success, output):
+def patch_node(success, output,run_level):
     now = datetime.datetime.now(datetime.timezone.utc)
     timestamp = now.strftime("%Y-%m-%d_%H.%M.%SUTC")
     result = ""
@@ -246,10 +246,10 @@ def patch_node(success, output):
     label = {
         "metadata": {
             "labels": {
-                "autopilot.ibm.com/dcgm.level.3": result,
+                f"autopilot.ibm.com/dcgm.level.{run_level}": result,
                 "autopilot.ibm.com/gpuhealth": general_health},
             "annotations": {
-                "autopilot.ibm.com/dcgm.level.3.output": str(output)
+                f"autopilot.ibm.com/dcgm.level.{run_level}.output": str(output)
             }
         }
     }
