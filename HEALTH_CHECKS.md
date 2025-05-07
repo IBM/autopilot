@@ -70,10 +70,13 @@ autopilot.ibm.com/gpuhealth: EVICT
 
 Only fatal errors should produce an `EVICT` label. We follow [NVIDIA recommendations](https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/feature-overview.html#id3), although it is possible to customize the list of tests through the Helm chart. The default values are `[PCIe,NVLink,ECC,GPU Memory]`.
 
-If errors are found during the level 3 diagnostics, the label `autopilot.ibm.com/dcgm.level.3` will contain detailed information about the error in the following format:
+If errors are found during the level 3 diagnostics, the label `autopilot.ibm.com/dcgm.level.3` will contain the result and timestamp related to the latest run, while the annotation `autopilot.ibm.com/dcgm.level.3.output` will contain detailed information about the error in the following format:
 
 ```yaml
-autopilot.ibm.com/dcgm.level.3: ERR_Year-Month-Date_Hour.Minute.UTC_Diagnostic_Test.gpuID,Diagnostic_Test.gpuID,...`
+labels:
+    autopilot.ibm.com/dcgm.level.3: ERR_Year-Month-Date_Hour.Minute.UTC
+annotations:
+    autopilot.ibm.com/dcgm.level.3.output: Diagnostic_Test.gpuID,Diagnostic_Test.gpuID,...`
 ```
 
 - `ERR`: An indicator that an error has occurred
@@ -81,9 +84,16 @@ autopilot.ibm.com/dcgm.level.3: ERR_Year-Month-Date_Hour.Minute.UTC_Diagnostic_T
 - `Diagnostic_Test`: Name of the test that has failed (formatted to replace spaces with underscores)
 - `gpuID`: ID of GPU where the failure has occurred
 
-**Example:** `autopilot.ibm.com/dcgm.level.3=ERR_2024-10-10_19.12.03UTC_page_retirement_row_remap.0`
+**Example:** 
+```
+labels:
+    autopilot.ibm.com/dcgm.level.3=ERR_2024-10-10_19.12.03UTC
+annotations:
+    autopilot.ibm.com/dcgm.level.3.output=memory_bandwidth.0.1.2.3
 
-If there are no errors, the value is set to `PASS_Year-Month-Date_Hour.Minute.UTC`.
+```
+
+If there are no errors, the value of `autopilot.ibm.com/dcgm.level.3` is set to `PASS_Year-Month-Date_Hour.Minute.UTC` while `autopilot.ibm.com/dcgm.level.3.output` will be empty.
 
 ### Logs and Metrics
 
