@@ -105,4 +105,4 @@ RUN chmod 777 /tmp
 
 
 
-CMD ["/usr/local/bin/autopilot"]
+CMD ["/usr/local/bin/autopilot", "daemon"]
