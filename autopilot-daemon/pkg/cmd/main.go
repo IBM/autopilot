@@ -21,8 +21,8 @@ func main() {
 	bwThreshold := flag.Int("bw", 4, "Sets bandwidth threshold for the init container")
 	logFile := flag.String("logfile", "", "File where to save all the events")
 	v := flag.String("loglevel", "2", "Log level")
-	repeat := flag.Int("w", 24, "Run all tests periodically on each node. Time set in hours. Defaults to 24h")
-	invasive := flag.Int("invasive-check-timer", 4, "Run invasive checks (e.g., dcgmi level 3) on each node when GPUs are free. Time set in hours. Defaults to 4h. Set to 0 to avoid invasive checks")
+	repeat := flag.String("w", "24h", "Run all tests periodically on each node. Time set in interval format. Defaults to 24h")
+	invasive := flag.String("invasive-check-timer", "4h", "Run invasive checks (e.g., dcgmi level 3) on each node when GPUs are free. Time set in interval format. Defaults to 4h. Set to 0 to avoid invasive checks")
 
 	flag.Parse()
 
@@ -125,16 +125,28 @@ func main() {
 	// Run the health checks at startup, then start the timer
 	healthcheck.PeriodicCheck()
 
-	periodicChecksTicker := time.NewTicker(time.Duration(*repeat) * time.Hour)
+	// Parse the repeat and invasive intervals to durations
+	repeatDuration, err := utils.ParseInterval(*repeat)
+	if err != nil {
+		klog.Error("Error parsing repeat interval: ", err)
+		os.Exit(1)
+	}
+	invasiveDuration, err := utils.ParseInterval(*invasive)
+	if err != nil {
+		klog.Error("Error parsing invasive check interval: ", err)
+		os.Exit(1)
+	}
+
+	periodicChecksTicker := time.NewTicker(repeatDuration)
 	defer periodicChecksTicker.Stop()
-	invasiveChecksTicker := time.NewTicker(time.Duration(*invasive) * time.Hour)
+	invasiveChecksTicker := time.NewTicker(invasiveDuration)
 	defer invasiveChecksTicker.Stop()
 	for {
 		select {
 		case <-periodicChecksTicker.C:
 			healthcheck.PeriodicCheck()
 		case <-invasiveChecksTicker.C:
-			if *invasive > 0 {
+			if invasiveDuration > 0 {
 				healthcheck.InvasiveCheck()
 			}
 		}
