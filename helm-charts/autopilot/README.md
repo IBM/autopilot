@@ -25,8 +25,8 @@ Notice that, in this heterogeneous case, the GPU health checks will error out in
 - Autopilot runs tests periodically. The default is set to every hour and 4 hours for regular and deep diagnostics respectively, but these can be customized be changing the following
 
 ```yaml
-repeat: <hours> # periodic health checks timer (default 1h)
-invasive: <hours> # deeper diagnostic timer (default 4h, 0 to disable)
+repeat: <interval-format> # periodic health checks timer (default 1h) (e.g., 1h, 30m, 15s)
+invasive: <interval-format> # deeper diagnostic timer (default 4h, 0 to disable) (e.g., 1h, 30m, 15s)
 ```
 
 - The list of GPU errors considered fatal as a result of a dcgmi run, can be customized through the `DCGM_FATAL_ERRORS` environment variable. This is used to label nodes with extra WARN/EVICT labels. The list defaults to [PCIe,NVLink,ECC,GPU Memory] and refers to https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/feature-overview.html#id3
