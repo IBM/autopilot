@@ -106,3 +106,26 @@ func createPVC() error {
 	}
 	return err
 }
+
+// RunPVCCheck executes the PVC create/delete check
+func RunPVCCheck() (string, error) {
+	_, exists := os.LookupEnv("PVC_TEST_STORAGE_CLASS")
+	if !exists {
+		return "Storage class not set. Cannot run. ABORT", errors.New("storage class not set")
+	}
+	err := createPVC()
+	if err != nil {
+		klog.Error(err.Error())
+		return "Create PVC Failed. ABORT", err
+	}
+	// Wait a few seconds before start checking
+	waitonpvc := time.NewTicker(30 * time.Second)
+	defer waitonpvc.Stop()
+	<-waitonpvc.C
+	out, err := ListPVC()
+	if err != nil {
+		klog.Error(err.Error())
+		return out, err
+	}
+	return out, nil
+}

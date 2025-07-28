@@ -277,7 +277,7 @@ func GpuPowerHandler() http.Handler {
 func GpuMemHandler() http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("GPU Memory DGEMM+DAXPY test"))
-		out, err := healthcheck.RunGPUPower()
+		out, err := healthcheck.RunGPUMem()
 		if err != nil {
 			klog.Error(err.Error())
 		}

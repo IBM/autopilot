@@ -10,6 +10,14 @@ import (
 	"time"
 
 	"github.com/IBM/autopilot/pkg/utils"
+	"github.com/IBM/autopilot/pkg/healthcheck/pciebw"
+	"github.com/IBM/autopilot/pkg/healthcheck/remapped"
+	"github.com/IBM/autopilot/pkg/healthcheck/gpumem"
+	"github.com/IBM/autopilot/pkg/healthcheck/dcgm"
+	"github.com/IBM/autopilot/pkg/healthcheck/ping"
+	"github.com/IBM/autopilot/pkg/healthcheck/gpupower"
+	"github.com/IBM/autopilot/pkg/healthcheck/iperf"
+	"github.com/IBM/autopilot/pkg/healthcheck/pvc"
 	"k8s.io/klog/v2"
 )
 
@@ -151,194 +159,299 @@ func RunHealthRemoteNodes(host string, check string, batch string, jobName strin
 
 func RunRemappedRows() (*[]byte, error) {
 	HealthCheckStatus[RowRemap] = false
-	out, err := exec.Command("python3", "./gpu-remapped/entrypoint.py").CombinedOutput()
+	
+	// Use the new Go implementation
+	result, err := remapped.RunRemappedRowsCheck()
+	out := []byte(result)
+	
 	if err != nil {
 		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
-		return nil, err
-	} else {
-		klog.Info("Remapped Rows check test completed:")
-
+		
+		// Check if it's a specific failure we should handle
 		if strings.Contains(string(out[:]), "FAIL") {
 			klog.Info("Remapped Rows test failed.", string(out[:]))
 			HealthCheckStatus[RowRemap] = true
+		} else if !strings.Contains(string(out[:]), "ABORT") && !strings.Contains(string(out[:]), "SKIP") {
+			// Actual execution failure
+			return nil, err
 		}
+	} else {
+		klog.Info("Remapped Rows check test completed:")
+	}
 
-		if strings.Contains(string(out[:]), "ABORT") {
-			klog.Info("Remapped Rows cannot be run. ", string(out[:]))
-			return &out, nil
-		}
+	if strings.Contains(string(out[:]), "ABORT") {
+		klog.Info("Remapped Rows cannot be run. ", string(out[:]))
+		return &out, nil
+	}
 
-		output := strings.TrimSuffix(string(out[:]), "\n")
-		split := strings.Split(output, "\n")
-		rmr := split[len(split)-1]
-		final := strings.Split(rmr, " ")
+	if strings.Contains(string(out[:]), "SKIP") {
+		klog.Info("Remapped Rows test skipped. ", string(out[:]))
+		return &out, nil
+	}
 
-		for gpuid, v := range final {
-			rm, err := strconv.ParseFloat(v, 64)
-			if err != nil {
-				klog.Error(err.Error())
-				return nil, err
-			} else {
-				klog.Info("Observation: ", utils.NodeName, " ", strconv.Itoa(gpuid), " ", rm)
-				utils.HchecksGauge.WithLabelValues(string(RowRemap), utils.NodeName, utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(rm)
+	// Parse output for metrics
+	output := strings.TrimSuffix(string(out[:]), "\n")
+	split := strings.Split(output, "\n")
+	
+	if len(split) >= 1 {
+		// Check if the first line is "FAIL"
+		if split[0] == "FAIL" && len(split) >= 2 {
+			// Remapped rows line is the second line
+			rmr := split[1]
+			final := strings.Split(rmr, " ")
+			
+			for gpuid, v := range final {
+				if v != "" {
+					rm, err := strconv.ParseFloat(v, 64)
+					if err != nil {
+						klog.Error(err.Error())
+						continue
+					} else {
+						klog.Info("Observation: ", utils.NodeName, " ", strconv.Itoa(gpuid), " ", rm)
+						utils.HchecksGauge.WithLabelValues(string(RowRemap), utils.NodeName, utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(rm)
+					}
+				}
+			}
+		} else if split[0] != "FAIL" {
+			// Success case - remapped rows line is the first line
+			rmr := split[0]
+			final := strings.Split(rmr, " ")
+			
+			for gpuid, v := range final {
+				if v != "" {
+					rm, err := strconv.ParseFloat(v, 64)
+					if err != nil {
+						klog.Error(err.Error())
+						continue
+					} else {
+						klog.Info("Observation: ", utils.NodeName, " ", strconv.Itoa(gpuid), " ", rm)
+						utils.HchecksGauge.WithLabelValues(string(RowRemap), utils.NodeName, utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(rm)
+					}
+				}
 			}
 		}
 	}
+	
 	return &out, nil
 }
 
 func RunGPUMem() (*[]byte, error) {
 	HealthCheckStatus[GPUMem] = false
-	out, err := exec.Command("python3", "./gpu-mem/entrypoint.py").CombinedOutput()
+	
+	// Use the new Go implementation
+	result, err := gpumem.RunGPUMemCheck()
+	out := []byte(result)
+	
 	if err != nil {
 		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
-		return nil, err
-	} else {
-		klog.Info("GPU Memory check completed:")
-
+		
+		// Check if it's a specific failure we should handle
 		if strings.Contains(string(out[:]), "FAIL") {
 			klog.Info("GPU Memory check failed.", string(out[:]))
 			klog.Info("Observation: ", utils.NodeName, " 1")
 			utils.HchecksGauge.WithLabelValues(string(GPUMem), utils.NodeName, utils.CPUModel, utils.GPUModel, "0").Set(1)
 			HealthCheckStatus[GPUMem] = true
+		} else if !strings.Contains(string(out[:]), "ABORT") && !strings.Contains(string(out[:]), "SKIP") {
+			// Actual execution failure
+			return nil, err
 		}
-
-		if strings.Contains(string(out[:]), "ABORT") {
-			klog.Info("GPU Memory check cannot be run. ", string(out[:]))
-			return &out, nil
+	} else {
+		klog.Info("GPU Memory check completed:")
+		
+		// Check if the result indicates success
+		if strings.Contains(string(out[:]), "Health Check successful") {
+			klog.Info("Observation: ", utils.NodeName, " 0")
+			utils.HchecksGauge.WithLabelValues(string(GPUMem), utils.NodeName, utils.CPUModel, utils.GPUModel, "0").Set(0)
+		} else if strings.Contains(string(out[:]), "Health Check unsuccessful") {
+			klog.Info("GPU Memory check failed.", string(out[:]))
+			klog.Info("Observation: ", utils.NodeName, " 1")
+			utils.HchecksGauge.WithLabelValues(string(GPUMem), utils.NodeName, utils.CPUModel, utils.GPUModel, "0").Set(1)
+			HealthCheckStatus[GPUMem] = true
 		}
-
-		klog.Info("Observation: ", utils.NodeName, " 0")
-		utils.HchecksGauge.WithLabelValues(string(GPUMem), utils.NodeName, utils.CPUModel, utils.GPUModel, "0").Set(0)
 	}
+	
+	if strings.Contains(string(out[:]), "ABORT") {
+		klog.Info("GPU Memory check cannot be run. ", string(out[:]))
+		return &out, nil
+	}
+
+	if strings.Contains(string(out[:]), "SKIP") {
+		klog.Info("GPU Memory check skipped. ", string(out[:]))
+		return &out, nil
+	}
+	
 	return &out, nil
 }
 
 func RunPCIeBW() (*[]byte, error) {
 	HealthCheckStatus[PCIeBW] = false
-	out, err := exec.Command("python3", "./gpu-bw/entrypoint.py", "-t", strconv.Itoa(utils.UserConfig.BWThreshold)).CombinedOutput()
+	
+	// Use the new Go implementation
+	result, err := pciebw.RunPCIeBWCheck(utils.UserConfig.BWThreshold)
+	out := []byte(result)
+	
 	if err != nil {
 		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
-		return nil, err
+		
+		// Check if it's a threshold failure
+		if strings.Contains(string(out[:]), "SUCCESS") {
+			// Even though there's an error, if we have SUCCESS in output,
+			// it's a threshold failure, not an execution failure
+			klog.Info("PCIe BW test failed due to low bandwidth.", string(out[:]))
+			HealthCheckStatus[PCIeBW] = true
+		} else {
+			// Actual execution failure
+			return nil, err
+		}
 	} else {
 		klog.Info("GPU PCIe BW test completed:")
+	}
 
-		if strings.Contains(string(out[:]), "FAIL") {
-			klog.Info("PCIe BW test failed.", string(out[:]))
-			HealthCheckStatus[PCIeBW] = true
-		}
+	if strings.Contains(string(out[:]), "ABORT") {
+		klog.Info("PCIe BW cannot be run. ", string(out[:]))
+		return &out, nil
+	}
 
-		if strings.Contains(string(out[:]), "ABORT") {
-			klog.Info("PCIe BW cannot be run. ", string(out[:]))
-			return &out, nil
-		}
+	if strings.Contains(string(out[:]), "SKIP") {
+		klog.Info("PCIe BW test skipped. ", string(out[:]))
+		return &out, nil
+	}
 
-		output := strings.TrimSuffix(string(out[:]), "\n")
-		split := strings.Split(output, "\n")
+	// Parse output for metrics
+	output := strings.TrimSuffix(string(out[:]), "\n")
+	split := strings.Split(output, "\n")
 
+	if len(split) >= 3 {
+		// Host line
+		hostLine := split[len(split)-2]
+		// Bandwidths line
 		bws := split[len(split)-1]
 		final := strings.Split(bws, " ")
 
 		for gpuid, v := range final {
-			bw, err := strconv.ParseFloat(v, 64)
-			if err != nil {
-				klog.Error(err.Error())
-				return nil, err
-			} else {
-				logline := "Observation: " + utils.NodeName + " " + strconv.Itoa(gpuid) + " " + v
-				if bw < float64(utils.UserConfig.BWThreshold) {
-					logline += "  [[ LOW PCIE -- Below expected threshold of " + strconv.Itoa(utils.UserConfig.BWThreshold) + " Gb/s ]]"
-					HealthCheckStatus[PCIeBW] = true
+			if v != "" {
+				bw, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					klog.Error(err.Error())
+					continue
+				} else {
+					logline := "Observation: " + utils.NodeName + " " + strconv.Itoa(gpuid) + " " + v
+					if bw < float64(utils.UserConfig.BWThreshold) {
+						logline += "  [[ LOW PCIE -- Below expected threshold of " + strconv.Itoa(utils.UserConfig.BWThreshold) + " Gb/s ]]"
+						HealthCheckStatus[PCIeBW] = true
+					}
+					klog.Info(logline)
+					utils.HchecksGauge.WithLabelValues(string(PCIeBW), utils.NodeName, utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(bw)
 				}
-				klog.Info(logline)
-				utils.HchecksGauge.WithLabelValues(string(PCIeBW), utils.NodeName, utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(bw)
 			}
 		}
 	}
+
 	return &out, nil
 }
 
 func RunPing(nodelist string, jobName string, nodelabel string) (*[]byte, error) {
 	HealthCheckStatus[Ping] = false
-	out, err := exec.Command("python3", "./network/ping-entrypoint.py", "--nodes", nodelist, "--job", jobName, "--nodelabel", nodelabel).CombinedOutput()
+	
+	// Parse nodelist into a slice
+	nodes := strings.Split(strings.ReplaceAll(nodelist, " ", ""), ",")
+	
+	// Use the new Go implementation
+	result, err := ping.RunPingCheck(nodes, jobName, nodelabel)
+	out := []byte(result)
+	
 	if err != nil {
-		klog.Info(string(out))
+		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
-		return nil, err
+		
+		// Check if it's a specific failure we should handle
+		if !strings.Contains(string(out[:]), "ABORT") {
+			// Actual execution failure
+			return nil, err
+		}
 	} else {
 		klog.Info("Ping test completed:")
+	}
+	
+	if strings.Contains(string(out[:]), "ABORT") {
+		klog.Info("Ping cannot be run. ", string(out[:]))
+		return &out, nil
+	}
 
-		if strings.Contains(string(out[:]), "FAIL") {
-			klog.Info("Ping test failed.", string(out[:]))
-			HealthCheckStatus[PCIeBW] = true
-		}
-
-		if strings.Contains(string(out[:]), "ABORT") {
-			klog.Info("Ping cannot be run. ", string(out[:]))
-			return &out, nil
-		}
-
-		output := strings.TrimSuffix(string(out[:]), "\n")
-		lines := strings.Split(output, "\n")
-		unreach_nodes := make(map[string][]string)
-		for _, line := range lines {
-			if strings.HasPrefix(line, "Node") {
-				entry := strings.Split(line, " ")
-				if _, exists := unreach_nodes[entry[1]]; !exists {
+	// Parse output for metrics
+	output := strings.TrimSuffix(string(out[:]), "\n")
+	lines := strings.Split(output, "\n")
+	unreach_nodes := make(map[string][]string)
+	for _, line := range lines {
+		if strings.HasPrefix(line, "Node") {
+			entry := strings.Split(line, " ")
+			if len(entry) >= 5 {
+				nodeName := entry[1]
+				if _, exists := unreach_nodes[nodeName]; !exists {
 					if entry[len(entry)-1] == "1" {
-						utils.HchecksGauge.WithLabelValues(string(Ping), utils.NodeName, utils.CPUModel, utils.GPUModel, entry[1]).Set(float64(1))
-						klog.Info("Observation: ", entry[1], " ", entry[2], " ", entry[3], " Unreachable")
-						unreach_nodes[entry[1]] = append(unreach_nodes[entry[1]], entry[2])
+						utils.HchecksGauge.WithLabelValues(string(Ping), utils.NodeName, utils.CPUModel, utils.GPUModel, nodeName).Set(float64(1))
+						klog.Info("Observation: ", nodeName, " ", entry[2], " ", entry[3], " Unreachable")
+						unreach_nodes[nodeName] = append(unreach_nodes[nodeName], entry[2])
 					} else {
-						utils.HchecksGauge.WithLabelValues(string(Ping), utils.NodeName, utils.CPUModel, utils.GPUModel, entry[1]).Set(float64(0))
+						utils.HchecksGauge.WithLabelValues(string(Ping), utils.NodeName, utils.CPUModel, utils.GPUModel, nodeName).Set(float64(0))
 					}
 				}
 			}
 		}
-		klog.Info("Unreachable nodes count: ", len(unreach_nodes))
 	}
+	klog.Info("Unreachable nodes count: ", len(unreach_nodes))
+	
 	return &out, nil
 }
 
 func RunIperf(workload string, pclients string, startport string, cleanup string) (*[]byte, error) {
-
-	args := []string{"./network/iperf3_entrypoint.py", "--workload", workload, "--pclients", pclients, "--startport", startport}
-
-	if cleanup != "" {
-		args = append(args, cleanup)
-	}
-	out, err := exec.Command("python3", args...).CombinedOutput()
+	// Use the new Go implementation
+	result, err := iperf.RunIperfCheck(workload, pclients, startport)
 	if err != nil {
+		klog.Error("iperf3 test failed:", err)
 		return nil, err
 	}
+	
+	// Handle cleanup if requested
+	if cleanup != "" {
+		_, err := iperf.StopAllIperfServers()
+		if err != nil {
+			klog.Error("Failed to stop iperf servers:", err)
+			return nil, err
+		}
+	}
+	
+	out := []byte(result)
 	klog.Info("iperf3 test completed:\n", string(out))
 	return &out, nil
 }
 
 func StartIperfServers(numservers string, startport string) (*[]byte, error) {
-	out, err := exec.Command("python3", "./network/iperf3_start_servers.py", "--numservers", numservers, "--startport", startport).CombinedOutput()
+	// Use the new Go implementation
+	result, err := iperf.StartIperfServers(numservers, startport)
 	if err != nil {
-		klog.Info(string(out))
-		klog.Error(err.Error())
+		klog.Error("Failed to start iperf servers:", err)
 		return nil, err
-	} else {
-		klog.Info("iperf3 servers started.")
 	}
+	
+	out := []byte(result)
+	klog.Info("iperf3 servers started.")
 	return &out, nil
 }
 
 func StopAllIperfServers() (*[]byte, error) {
-	out, err := exec.Command("python3", "./network/iperf3_stop_servers.py").CombinedOutput()
+	// Use the new Go implementation
+	result, err := iperf.StopAllIperfServers()
 	if err != nil {
-		klog.Info(string(out))
-		klog.Error(err.Error())
+		klog.Error("Failed to stop iperf servers:", err)
 		return nil, err
-	} else {
-		klog.Info("iperf3 servers stopped.")
 	}
+	
+	out := []byte(result)
+	klog.Info("iperf3 servers stopped.")
 	return &out, nil
 }
 
@@ -348,84 +461,113 @@ func StartIperfClients(dstip string, dstport string, numclients string) (*[]byte
 		return nil, nil
 	}
 
-	out, err := exec.Command("python3", "./network/iperf3_start_clients.py", "--dstip", dstip, "--dstport", dstport, "--numclients", numclients).CombinedOutput()
+	// Use the new Go implementation
+	result, err := iperf.StartIperfClients(dstip, dstport, numclients)
 	if err != nil {
-		klog.Info(string(out))
-		klog.Error(err.Error())
+		klog.Error("Failed to start iperf clients:", err)
 		return nil, err
-	} else {
-		klog.Info("iperf3 clients started.")
 	}
+	
+	out := []byte(result)
+	klog.Info("iperf3 clients started.")
 	return &out, nil
 }
 
 func RunDCGM(dcgmR string) (*[]byte, error) {
 	HealthCheckStatus[DCGM] = false
-	out, err := exec.Command("python3", "./gpu-dcgm/entrypoint.py", "-r", dcgmR, "-l").Output()
+	
+	// Use the new Go implementation
+	result, err := dcgm.RunDCGMCheck(dcgmR)
+	out := []byte(result)
+	
 	if err != nil {
+		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
-		return nil, err
+		
+		// Check if it's a specific failure we should handle
+		if !strings.Contains(string(out[:]), "ABORT") {
+			// Actual execution failure
+			return nil, err
+		}
 	} else {
 		klog.Info("DCGM test completed:")
-
-		if strings.Contains(string(out[:]), "ERR") {
-			klog.Info("DCGM test exited with errors.", string(out[:]))
-		}
-
-		if strings.Contains(string(out[:]), "ABORT") {
-			klog.Info("DCGM cannot be run. ", string(out[:]))
-			return &out, nil
-		}
-		output := strings.TrimSuffix(string(out[:]), "\n")
-		split := strings.Split(output, "\n")
-		var res float64
-		res = 0
-		if strings.Contains(split[len(split)-1], "SUCCESS") {
-			klog.Info("Observation: ", utils.NodeName, " Pass ", res)
-		} else {
-			res = 1
-			klog.Info("Observation: ", utils.NodeName, " Fail ", res)
-			HealthCheckStatus[DCGM] = true
-		}
-		utils.HchecksGauge.WithLabelValues(string(DCGM), utils.NodeName, utils.CPUModel, utils.GPUModel, "").Set(res)
 	}
+	
+	if strings.Contains(string(out[:]), "ABORT") {
+		klog.Info("DCGM cannot be run. ", string(out[:]))
+		return &out, nil
+	}
+
+	// Parse output for metrics
+	output := strings.TrimSuffix(string(out[:]), "\n")
+	split := strings.Split(output, "\n")
+	var res float64
+	res = 0
+	if strings.Contains(output, "SUCCESS") {
+		klog.Info("Observation: ", utils.NodeName, " Pass ", res)
+	} else {
+		res = 1
+		klog.Info("Observation: ", utils.NodeName, " Fail ", res)
+		HealthCheckStatus[DCGM] = true
+	}
+	utils.HchecksGauge.WithLabelValues(string(DCGM), utils.NodeName, utils.CPUModel, utils.GPUModel, "").Set(res)
+	
 	return &out, nil
 }
 
 func RunGPUPower() (*[]byte, error) {
 	HealthCheckStatus[GPUPower] = false
-	out, err := exec.Command("bash", "./gpu-power/power-throttle.sh").Output()
+	
+	// Use the new Go implementation
+	result, err := gpupower.RunGPUPowerCheck()
+	out := []byte(result)
+	
 	if err != nil {
+		klog.Info("Out:", string(out))
 		klog.Error(err.Error())
-		return nil, err
+		
+		// Check if it's a specific failure we should handle
+		if !strings.Contains(string(out[:]), "ABORT") {
+			// Actual execution failure
+			return nil, err
+		}
+	} else {
+		klog.Info("Power Throttle check test completed:")
 	}
-	klog.Info("Power Throttle check test completed:")
-
-	if strings.Contains(string(out[:]), "FAIL") {
-		klog.Info("Power Throttle test failed.", string(out[:]))
-		HealthCheckStatus[GPUPower] = true
-	}
-
+	
 	if strings.Contains(string(out[:]), "ABORT") {
 		klog.Info("Power Throttle cannot be run. ", string(out[:]))
 		return &out, nil
 	}
 
+	// Parse output for metrics
 	output := strings.TrimSuffix(string(out[:]), "\n")
 	split := strings.Split(output, "\n")
-	pwrs := split[len(split)-1]
-	final := strings.Split(pwrs, " ")
-
-	for gpuid, v := range final {
-		pw, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			klog.Error(err.Error())
-			return nil, err
+	
+	// Get the last line which contains the power values
+	if len(split) > 0 {
+		pwrs := split[len(split)-1]
+		final := strings.Split(pwrs, " ")
+		
+		for gpuid, v := range final {
+			if v != "" {
+				pw, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					klog.Error(err.Error())
+					continue
+				}
+				klog.Info("Observation: ", utils.NodeName, " ", strconv.Itoa(gpuid), " ", pw)
+				utils.HchecksGauge.WithLabelValues("power-slowdown", utils.NodeName, utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(pw)
+			}
 		}
-		klog.Info("Observation: ", utils.NodeName, " ", strconv.Itoa(gpuid), " ", pw)
-		utils.HchecksGauge.WithLabelValues("power-slowdown", utils.NodeName, utils.CPUModel, utils.GPUModel, strconv.Itoa(gpuid)).Set(pw)
-
 	}
+	
+	// Check if there was a failure
+	if strings.Contains(output, "FAIL") {
+		klog.Info("Power Throttle test failed.", output)
+		HealthCheckStatus[GPUPower] = true
+	}
+	
 	return &out, nil
 }
 
@@ -436,20 +578,14 @@ func RunCreateDeletePVC() (*[]byte, error) {
 		return &b, errors.New("storage class not set")
 	}
 	HealthCheckStatus[PVC] = false
-	err := createPVC()
+	
+	// Use the new Go implementation
+	result, err := pvc.RunPVCCheck()
 	if err != nil {
 		klog.Error(err.Error())
-		b := []byte("Create PVC Failed. ABORT")
+		b := []byte(result)
 		return &b, err
 	}
-	// Wait a few seconds before start checking
-	waitonpvc := time.NewTicker(30 * time.Second)
-	defer waitonpvc.Stop()
-	<-waitonpvc.C
-	out, err := ListPVC()
-	if err != nil {
-		klog.Error(err.Error())
-	}
-	b := []byte(out)
+	b := []byte(result)
 	return &b, nil
 }
