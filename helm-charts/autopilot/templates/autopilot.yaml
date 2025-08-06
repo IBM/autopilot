@@ -51,7 +51,7 @@ spec:
            - sh
            - -c
            - |
-             /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }} --invasive-check-timer {{ .Values.invasive }}
+             /usr/local/bin/autopilot --port {{ .Values.service.port }} --loglevel={{ .Values.loglevel }} --bw {{ .Values.PCIeBW }} --w {{ .Values.repeat }} --invasive-check-timer {{ .Values.invasive }} --workers {{ .Values.workers }}
           imagePullPolicy: {{ .Values.image.pullPolicy }} 
           name: autopilot
           securityContext:
