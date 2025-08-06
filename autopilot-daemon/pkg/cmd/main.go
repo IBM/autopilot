@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/IBM/autopilot/pkg/handler"
 	"github.com/IBM/autopilot/pkg/healthcheck"
 	"github.com/IBM/autopilot/pkg/utils"
+	"github.com/IBM/autopilot/pkg/worker"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/klog/v2"
@@ -122,8 +124,13 @@ func main() {
 	// Create a Watcher over nodes. Needed to export metrics from data created by external jobs (i.e., dcgm Jobs)
 	go utils.WatchNode()
 
+	// Create a WorkerPool to handle tasks concurrently
+	numCPU := runtime.NumCPU()
+	workerPool := worker.CreateWorkerPool(2 * numCPU) // use 2 workers per CPU core
+	klog.Infof("Starting WorkerPool with %d workers", 2*numCPU)
+
 	// Run the health checks at startup, then start the timer
-	healthcheck.PeriodicCheck()
+	workerPool.Submit(worker.TaskPeriodicCheck)
 
 	// Parse the repeat and invasive intervals to durations
 	repeatDuration, err := utils.ParseInterval(*repeat)
@@ -144,10 +151,10 @@ func main() {
 	for {
 		select {
 		case <-periodicChecksTicker.C:
-			healthcheck.PeriodicCheck()
+			workerPool.Submit(worker.TaskPeriodicCheck)
 		case <-invasiveChecksTicker.C:
 			if invasiveDuration > 0 {
-				healthcheck.InvasiveCheck()
+				workerPool.Submit(worker.TaskInvasiveCheck)
 			}
 		}
 	}

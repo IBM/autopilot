@@ -19,7 +19,7 @@ func CreateWorkerPool(numberOfWorkers int) *WorkerPool {
 
 	// start the specified number of workers
 	for i := 0; i < numberOfWorkers; i++ {
-		go worker(taskQueue, syncMap)
+		go worker(taskQueue, syncMap) // start a worker goroutine, see worker.go for implementation
 	}
 
 	return &WorkerPool{
@@ -35,7 +35,8 @@ func (wp *WorkerPool) Submit(task TaskType) {
 		return // task is already running, do not submit again
 	}
 
-	// mark the task as running
+	// mark the task as running, so it won't be submitted again
+	// the worker will remove it from runningTasks when done
 	wp.runningTasks.Store(task, struct{}{})
 	wp.taskQueue <- task
 }
