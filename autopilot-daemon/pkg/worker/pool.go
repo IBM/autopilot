@@ -1,24 +1,39 @@
 package worker
 
+import "sync"
+
 // WorkerPool manages a pool of go-routines that process tasks concurrently.
 type WorkerPool struct {
-	taskChannel chan TaskType
+	// runningTasks keeps track of tasks currently being processed
+	runningTasks *sync.Map
+	// taskQueue is a channel where tasks are submitted for processing
+	taskQueue chan TaskType
 }
 
 // CreateWorkerPool initializes a new WorkerPool with a specified number of workers.
 func CreateWorkerPool(numberOfWorkers int) *WorkerPool {
-	taskChannel := make(chan TaskType)
+	syncMap := &sync.Map{}
+	taskQueue := make(chan TaskType)
 
+	// start the specified number of workers
 	for i := 0; i < numberOfWorkers; i++ {
-		go worker(taskChannel)
+		go worker(taskQueue, syncMap)
 	}
 
 	return &WorkerPool{
-		taskChannel: taskChannel,
+		runningTasks: syncMap,
+		taskQueue:    taskQueue,
 	}
 }
 
 // Submit adds a task to the worker pool for processing.
 func (wp *WorkerPool) Submit(task TaskType) {
-	wp.taskChannel <- task
+	// check if the task is running
+	if _, exists := wp.runningTasks.Load(task); exists {
+		return // task is already running, do not submit again
+	}
+
+	// mark the task as running
+	wp.runningTasks.Store(task, struct{}{})
+	wp.taskQueue <- task
 }
