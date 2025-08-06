@@ -25,7 +25,7 @@ func main() {
 	v := flag.String("loglevel", "2", "Log level")
 	repeat := flag.String("w", "24h", "Run all tests periodically on each node. Time set in interval format. Defaults to 24h")
 	invasive := flag.String("invasive-check-timer", "4h", "Run invasive checks (e.g., dcgmi level 3) on each node when GPUs are free. Time set in interval format. Defaults to 4h. Set to 0 to avoid invasive checks")
-	workersLimit := flag.Int("workers", 0, "Number of workers to use for concurrent tasks. Defaults to 0 which uses 2*number_of_logical_CPU_cores")
+	poolSizeInput := flag.Int("workers", 0, "Number of workers to use for concurrent health checks. Defaults to 0 which uses 2*number_of_logical_CPU_cores")
 
 	flag.Parse()
 
@@ -125,15 +125,16 @@ func main() {
 	// Create a Watcher over nodes. Needed to export metrics from data created by external jobs (i.e., dcgm Jobs)
 	go utils.WatchNode()
 
-	// Create a WorkerPool to handle tasks concurrently
-	numCPU := runtime.NumCPU()
-	if *workersLimit > 0 {
+	// Set the pool size based on the number of CPU cores
+	poolSize := runtime.NumCPU() * 2 // use 2 workers per CPU core
+	if *poolSizeInput > 0 {
 		// if user has set a limit, use it
-		numCPU = *workersLimit
+		poolSize = *poolSizeInput
 	}
 
-	workerPool := worker.CreateWorkerPool(2 * numCPU) // use 2 workers per CPU core
-	klog.Infof("Starting WorkerPool with %d workers", 2*numCPU)
+	// Create a WorkerPool to handle tasks concurrently
+	workerPool := worker.CreateWorkerPool(poolSize)
+	klog.Infof("Starting WorkerPool with %d workers", poolSize)
 
 	// Run the health checks at startup, then start the timer
 	workerPool.Submit(worker.TaskPeriodicCheck)
