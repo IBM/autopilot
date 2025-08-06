@@ -1,6 +1,8 @@
 package worker
 
-import "sync"
+import (
+	"sync"
+)
 
 // WorkerPool manages a pool of go-routines that process tasks concurrently.
 type WorkerPool struct {

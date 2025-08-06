@@ -1,6 +1,12 @@
 package worker
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/IBM/autopilot/pkg/healthcheck"
+
+	"k8s.io/klog/v2"
+)
 
 // worker is a function that processes tasks from the task queue.
 // it runs in a separate goroutine and listens for tasks to process.
@@ -9,11 +15,11 @@ func worker(c chan TaskType, sm *sync.Map) {
 	for task := range c {
 		switch task {
 		case TaskPeriodicCheck:
-			// Handle periodic check
+			healthcheck.PeriodicCheck()
 		case TaskInvasiveCheck:
-			// Handle invasive check
+			healthcheck.InvasiveCheck()
 		default:
-			// Handle unknown task type
+			klog.Errorf("Unknown task type: %v", task)
 		}
 
 		// mark the task as completed
