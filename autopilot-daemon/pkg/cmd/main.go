@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/IBM/autopilot/pkg/handler"
 	"github.com/IBM/autopilot/pkg/healthcheck"
 	"github.com/IBM/autopilot/pkg/utils"
+	"github.com/IBM/autopilot/pkg/worker"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/klog/v2"
@@ -23,6 +25,7 @@ func main() {
 	v := flag.String("loglevel", "2", "Log level")
 	repeat := flag.String("w", "24h", "Run all tests periodically on each node. Time set in interval format. Defaults to 24h")
 	invasive := flag.String("invasive-check-timer", "4h", "Run invasive checks (e.g., dcgmi level 3) on each node when GPUs are free. Time set in interval format. Defaults to 4h. Set to 0 to avoid invasive checks")
+	poolSizeInput := flag.Int("workers", 0, "Number of workers to use for concurrent health checks. Defaults to 0 which uses 2*number_of_logical_CPU_cores")
 
 	flag.Parse()
 
@@ -122,8 +125,19 @@ func main() {
 	// Create a Watcher over nodes. Needed to export metrics from data created by external jobs (i.e., dcgm Jobs)
 	go utils.WatchNode()
 
+	// Set the pool size based on the number of CPU cores
+	poolSize := runtime.NumCPU() * 2 // use 2 workers per CPU core
+	if *poolSizeInput > 0 {
+		// if user has set a limit, use it
+		poolSize = *poolSizeInput
+	}
+
+	// Create a WorkerPool to handle tasks concurrently
+	workerPool := worker.CreateWorkerPool(poolSize)
+	klog.Infof("Starting WorkerPool with %d workers", poolSize)
+
 	// Run the health checks at startup, then start the timer
-	healthcheck.PeriodicCheck()
+	workerPool.Submit(worker.TaskPeriodicCheck)
 
 	// Parse the repeat and invasive intervals to durations
 	repeatDuration, err := utils.ParseInterval(*repeat)
@@ -144,10 +158,10 @@ func main() {
 	for {
 		select {
 		case <-periodicChecksTicker.C:
-			healthcheck.PeriodicCheck()
+			workerPool.Submit(worker.TaskPeriodicCheck)
 		case <-invasiveChecksTicker.C:
 			if invasiveDuration > 0 {
-				healthcheck.InvasiveCheck()
+				workerPool.Submit(worker.TaskInvasiveCheck)
 			}
 		}
 	}
