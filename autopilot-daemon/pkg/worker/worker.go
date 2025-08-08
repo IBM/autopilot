@@ -13,6 +13,8 @@ import (
 // it removes the task from the runningTasks map once completed.
 func worker(c chan TaskType, sm *sync.Map) {
 	for task := range c {
+		klog.InfoS("Processing task", "task", task.String())
+
 		switch task {
 		case TaskPeriodicCheck:
 			healthcheck.PeriodicCheck()
@@ -24,5 +26,6 @@ func worker(c chan TaskType, sm *sync.Map) {
 
 		// mark the task as completed
 		sm.Delete(task)
+		klog.InfoS("Task completed", "task", task.String())
 	}
 }

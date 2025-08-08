@@ -2,6 +2,8 @@ package worker
 
 import (
 	"sync"
+
+	"k8s.io/klog/v2"
 )
 
 // WorkerPool manages a pool of go-routines that process tasks concurrently.
@@ -32,6 +34,7 @@ func CreateWorkerPool(numberOfWorkers int) *WorkerPool {
 func (wp *WorkerPool) Submit(task TaskType) {
 	// check if the task is running
 	if _, exists := wp.runningTasks.Load(task); exists {
+		klog.InfoS("Task already running, skipping submission", "task", task.String())
 		return // task is already running, do not submit again
 	}
 
@@ -39,4 +42,6 @@ func (wp *WorkerPool) Submit(task TaskType) {
 	// the worker will remove it from runningTasks when done
 	wp.runningTasks.Store(task, struct{}{})
 	wp.taskQueue <- task
+
+	klog.InfoS("Task submitted to worker pool", "task", task.String())
 }
